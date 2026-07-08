@@ -1,0 +1,38 @@
+.gitignore پیشنهادی
+# OS
+.DS_Store
+Thumbs.db
+
+# IDEs
+.idea/
+.vscode/
+*.iml
+
+# Logs
+*.log
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+.venv/
+venv/
+
+# Node
+node_modules/
+dist/
+build/
+
+# Android / Gradle
+.gradle/
+build/
+local.properties
+captures/
+.externalNativeBuild/
+
+# Temporary files
+*.tmp
+*.swp
+*.bak

@@ -1,0 +1,117 @@
+@startuml admin_uc_02
+title Use Case Diagram - ادمین
+left to right direction
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam backgroundColor white
+skinparam defaultFontName Vazirmatn
+skinparam actorStyle awesome
+skinparam linetype ortho
+
+actor "مهمان" as Guest
+actor "کاربر سیستم" as SystemUser
+actor "ادمین" as Admin
+actor "سرویس پیامک" as SMS
+actor "سیستم فایل/ذخیره‌سازی تصاویر" as Storage
+
+Admin --|> SystemUser
+
+rectangle "اپلیکیشن فروش محصولات پلاستیکی" as System {
+
+  package "حساب کاربری" {
+    (ورود با OTP) as UC_Login
+    (مشاهده پروفایل) as UC_ViewProfile
+    (ویرایش پروفایل) as UC_EditProfile
+    (تغییر شماره تلفن) as UC_ChangePhone
+    (درخواست حذف حساب کاربری) as UC_DeleteRequest
+  }
+
+  package "مدیریت محصولات" {
+    (ثبت محصول جدید) as UC_AddProduct
+    (ویرایش محصول) as UC_EditProduct
+    (تغییر قیمت محصول) as UC_ChangePrice
+    (تغییر موجودی محصول) as UC_ChangeStock
+    (فعال/غیرفعال کردن محصول) as UC_ToggleProduct
+    (حذف محصول) as UC_DeleteProduct
+    (مشاهده تاریخچه تغییرات محصول) as UC_ProductHistory
+  }
+
+  package "مدیریت سفارشات" {
+    (مشاهده لیست سفارش‌ها) as UC_OrderList
+    (مشاهده جزئیات سفارش) as UC_ViewOrderDetails
+    (تخصیص سفارش به ویزیتور) as UC_AssignVisitor
+    (لغو سفارش توسط ادمین) as UC_AdminCancelOrder
+    (مشاهده تاریخچه وضعیت سفارش) as UC_OrderStatusHistory
+  }
+
+  package "مدیریت ویزیتور" {
+    (ایجاد ویزیتور جدید) as UC_CreateVisitor
+    (فعال/غیرفعال کردن ویزیتور) as UC_ToggleVisitor
+    (مشاهده عملکرد ویزیتور) as UC_VisitorPerformance
+  }
+
+  package "پنل مدیریت و گزارش‌ها" {
+    (مشاهده داشبورد مدیریتی) as UC_Dashboard
+    (مدیریت کاربران) as UC_ManageUsers
+    (مشاهده گزارش‌ها) as UC_Reports
+  }
+
+  package "فرایندهای سیستمی" {
+    (ارسال OTP) as UC_SendOTP
+    (اعتبارسنجی OTP) as UC_ValidateOTP
+    (ثبت تاریخچه تغییرات) as UC_LogHistory
+    (انقضای نشست کاربر) as UC_SessionTimeout
+    (ارسال پیامک اطلاع‌رسانی) as UC_SendNotification
+  }
+}
+
+Guest --> UC_Login
+
+SystemUser --> UC_ViewProfile
+SystemUser --> UC_EditProfile
+SystemUser --> UC_ChangePhone
+SystemUser --> UC_DeleteRequest
+
+Admin --> UC_Dashboard
+Admin --> UC_AddProduct
+Admin --> UC_EditProduct
+Admin --> UC_ChangePrice
+Admin --> UC_ChangeStock
+Admin --> UC_ToggleProduct
+Admin --> UC_DeleteProduct
+Admin --> UC_ProductHistory
+
+Admin --> UC_OrderList
+Admin --> UC_ViewOrderDetails
+Admin --> UC_AssignVisitor
+Admin --> UC_AdminCancelOrder
+Admin --> UC_OrderStatusHistory
+
+Admin --> UC_CreateVisitor
+Admin --> UC_ToggleVisitor
+Admin --> UC_VisitorPerformance
+Admin --> UC_ManageUsers
+Admin --> UC_Reports
+
+UC_Login ..> UC_SendOTP : <<include>>
+UC_Login ..> UC_ValidateOTP : <<include>>
+UC_ChangePhone ..> UC_SendOTP : <<include>>
+UC_ChangePhone ..> UC_ValidateOTP : <<include>>
+
+UC_AddProduct ..> UC_LogHistory : <<include>>
+UC_EditProduct ..> UC_LogHistory : <<include>>
+UC_ChangePrice ..> UC_LogHistory : <<include>>
+UC_ChangeStock ..> UC_LogHistory : <<include>>
+UC_DeleteProduct ..> UC_LogHistory : <<include>>
+
+UC_AssignVisitor ..> UC_SendNotification : <<include>>
+UC_AdminCancelOrder ..> UC_LogHistory : <<include>>
+UC_ToggleVisitor ..> UC_LogHistory : <<include>>
+
+UC_SessionTimeout ..> UC_Login : <<extend>>
+
+UC_SendOTP --> SMS
+UC_SendNotification --> SMS
+UC_AddProduct --> Storage
+
+@enduml

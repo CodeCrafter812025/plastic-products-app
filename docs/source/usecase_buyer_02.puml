@@ -1,0 +1,116 @@
+@startuml buyer_uc_01
+title Use Case Diagram - خریدار
+left to right direction
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam backgroundColor white
+skinparam defaultFontName Vazirmatn
+skinparam actorStyle awesome
+skinparam linetype ortho
+
+actor "مهمان" as Guest
+actor "کاربر سیستم" as SystemUser
+actor "خریدار" as Buyer
+actor "سرویس پیامک" as SMS
+
+Buyer --|> SystemUser
+
+rectangle "اپلیکیشن فروش محصولات پلاستیکی" as System {
+
+  package "حساب کاربری" {
+    (ثبت‌نام با OTP) as UC_Register
+    (ورود با OTP) as UC_Login
+    (مشاهده پروفایل) as UC_ViewProfile
+    (ویرایش پروفایل) as UC_EditProfile
+    (تغییر شماره تلفن) as UC_ChangePhone
+    (درخواست حذف حساب کاربری) as UC_DeleteRequest
+  }
+
+  package "محصولات" {
+    (مشاهده لیست محصولات) as UC_ListProducts
+    (جستجوی محصول) as UC_Search
+    (فیلتر محصولات) as UC_Filter
+    (مشاهده جزئیات محصول) as UC_ProductDetails
+    (تماس با کارخانه) as UC_CallFactory
+  }
+
+  package "سبد خرید و سفارش" {
+    (افزودن به سبد خرید) as UC_AddCart
+    (تغییر مقدار آیتم) as UC_UpdateCart
+    (حذف آیتم از سبد) as UC_RemoveCart
+    (خالی کردن سبد خرید) as UC_ClearCart
+    (ثبت سفارش) as UC_PlaceOrder
+    (ویرایش سفارش قبل از تخصیص) as UC_EditOrder
+    (لغو سفارش قبل از تخصیص) as UC_CancelOrder
+    (مشاهده سفارش‌های من) as UC_MyOrders
+    (مشاهده جزئیات سفارش) as UC_ViewOrderDetails
+    (دریافت پیامک وضعیت سفارش) as UC_OrderSMS
+    (دریافت فاکتور PDF) as UC_GetInvoice
+    (جستجوی پیشرفته) as UC_AdvancedSearch
+  }
+
+  package "فرایندهای سیستمی" {
+    (ارسال OTP) as UC_SendOTP
+    (اعتبارسنجی OTP) as UC_ValidateOTP
+    (کنترل موجودی هنگام ثبت سفارش) as UC_CheckStock
+    (محاسبه مبلغ نهایی سفارش) as UC_CalcTotal
+    (ثبت تاریخچه تغییرات) as UC_LogHistory
+    (انقضای نشست کاربر) as UC_SessionTimeout
+    (ارسال پیامک اطلاع‌رسانی) as UC_SendNotification
+  }
+}
+
+Guest --> UC_Register
+Guest --> UC_Login
+
+SystemUser --> UC_ViewProfile
+SystemUser --> UC_EditProfile
+SystemUser --> UC_ChangePhone
+SystemUser --> UC_DeleteRequest
+
+Buyer --> UC_ListProducts
+Buyer --> UC_Search
+Buyer --> UC_Filter
+Buyer --> UC_ProductDetails
+Buyer --> UC_CallFactory
+Buyer --> UC_AddCart
+Buyer --> UC_UpdateCart
+Buyer --> UC_RemoveCart
+Buyer --> UC_ClearCart
+Buyer --> UC_PlaceOrder
+Buyer --> UC_EditOrder
+Buyer --> UC_CancelOrder
+Buyer --> UC_MyOrders
+Buyer --> UC_ViewOrderDetails
+Buyer --> UC_OrderSMS
+Buyer --> UC_GetInvoice
+Buyer --> UC_AdvancedSearch
+
+UC_Register ..> UC_SendOTP : <<include>>
+UC_Login ..> UC_SendOTP : <<include>>
+UC_Register ..> UC_ValidateOTP : <<include>>
+UC_Login ..> UC_ValidateOTP : <<include>>
+UC_ChangePhone ..> UC_SendOTP : <<include>>
+UC_ChangePhone ..> UC_ValidateOTP : <<include>>
+
+UC_PlaceOrder ..> UC_CheckStock : <<include>>
+UC_PlaceOrder ..> UC_CalcTotal : <<include>>
+UC_PlaceOrder ..> UC_LogHistory : <<include>>
+
+UC_CancelOrder ..> UC_LogHistory : <<include>>
+UC_EditOrder ..> UC_LogHistory : <<include>>
+
+UC_OrderSMS ..> UC_SendNotification : <<include>>
+
+UC_CallFactory ..> UC_ProductDetails : <<extend>>
+UC_Search ..> UC_ListProducts : <<extend>>
+UC_Filter ..> UC_ListProducts : <<extend>>
+UC_GetInvoice ..> UC_ViewOrderDetails : <<extend>>
+UC_AdvancedSearch ..> UC_Search : <<extend>>
+
+UC_SessionTimeout ..> UC_Login : <<extend>>
+
+UC_SendOTP --> SMS
+UC_SendNotification --> SMS
+
+@enduml

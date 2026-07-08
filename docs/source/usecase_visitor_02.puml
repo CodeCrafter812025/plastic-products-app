@@ -1,0 +1,68 @@
+@startuml visitor_uc_03
+title Use Case Diagram - ویزیتور
+left to right direction
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam backgroundColor white
+skinparam defaultFontName Vazirmatn
+skinparam actorStyle awesome
+skinparam linetype ortho
+
+actor "مهمان" as Guest
+actor "کاربر سیستم" as SystemUser
+actor "ویزیتور" as Visitor
+actor "سرویس پیامک" as SMS
+
+Visitor --|> SystemUser
+
+rectangle "اپلیکیشن فروش محصولات پلاستیکی" as System {
+
+  package "حساب کاربری" {
+    (ورود با OTP) as UC_Login
+    (مشاهده پروفایل) as UC_ViewProfile
+    (ویرایش پروفایل) as UC_EditProfile
+    (تغییر شماره تلفن) as UC_ChangePhone
+    (درخواست حذف حساب کاربری) as UC_DeleteRequest
+  }
+
+  package "سفارش‌های تخصیص‌یافته" {
+    (مشاهده سفارش‌های تخصیص‌یافته) as UC_AssignedOrders
+    (مشاهده جزئیات سفارش) as UC_ViewOrderDetails
+    (تغییر وضعیت به «بارگیری شد») as UC_Loaded
+    (تغییر وضعیت به «تحویل داده شد») as UC_Delivered
+  }
+
+  package "فرایندهای سیستمی" {
+    (ارسال OTP) as UC_SendOTP
+    (اعتبارسنجی OTP) as UC_ValidateOTP
+    (ارسال پیامک اطلاع‌رسانی) as UC_SendNotification
+    (انقضای نشست کاربر) as UC_SessionTimeout
+  }
+}
+
+Guest --> UC_Login
+
+SystemUser --> UC_ViewProfile
+SystemUser --> UC_EditProfile
+SystemUser --> UC_ChangePhone
+SystemUser --> UC_DeleteRequest
+
+Visitor --> UC_AssignedOrders
+Visitor --> UC_ViewOrderDetails
+Visitor --> UC_Loaded
+Visitor --> UC_Delivered
+
+UC_Login ..> UC_SendOTP : <<include>>
+UC_Login ..> UC_ValidateOTP : <<include>>
+UC_ChangePhone ..> UC_SendOTP : <<include>>
+UC_ChangePhone ..> UC_ValidateOTP : <<include>>
+
+UC_Loaded ..> UC_SendNotification : <<include>>
+UC_Delivered ..> UC_SendNotification : <<include>>
+
+UC_SessionTimeout ..> UC_Login : <<extend>>
+
+UC_SendOTP --> SMS
+UC_SendNotification --> SMS
+
+@enduml
