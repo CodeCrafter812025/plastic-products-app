@@ -82,9 +82,14 @@ CREATE TABLE products (
     created\_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),  
     updated\_at TIMESTAMP WITH TIME ZONE,
 
-    CONSTRAINT chk\_products\_price\_nonnegative CHECK (price \>= 0),  
-    CONSTRAINT chk\_products\_stock\_nonnegative CHECK (stock \>= 0),  
-    CONSTRAINT fk\_products\_created\_by  
+    CONSTRAINT chk\_products\_price\_nonnegative CHECK (price \>= 0), CONSTRAINT chk\_products\_stock\_nonnegative CHECK (stock \>= 0), CONSTRAINT chk\_products\_image\_urls\_max\_5 CHECK (  
+    CASE  
+        WHEN jsonb\_typeof(image\_urls) \= 'array'  
+        THEN jsonb\_array\_length(image\_urls) \<= 5  
+        ELSE FALSE  
+    END  
+),  
+ CONSTRAINT fk\_products\_created\_by   
         FOREIGN KEY (created\_by) REFERENCES users(id) ON DELETE RESTRICT  
 );
 

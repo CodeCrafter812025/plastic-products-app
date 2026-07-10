@@ -561,35 +561,42 @@ Content-Type: application/json
 
 ## **5-3. ثبت محصول جدید**
 
-**Method:** `POST`  
-**Path:** `/api/v1/products`  
-**Auth:** دارد  
-**Role:** admin  
-**Use Case:** UC-24
+**Method**: \`POST\`  
+**Path**: \`/api/v1/products\`  
+**Auth**: دارد  
+**Role**: \`admin\`  
+**Use Case**: \`UC-24\`
 
-### **Request Body**
+**هدف**
 
+ثبت یک محصول جدید توسط ادمین.
+
+**Request Body**
+
+\`\`\`json  
 {  
-  "title": "پلی‌اتیلن سنگین",  
-  "price": 25000,  
-  "weight": 25,  
-  "color": "شیری",  
-  "quality": "اولیه",  
-  "description": "مناسب برای تولید کیسه‌های ضخیم",  
-  "stock": 1000,  
-  "image\_urls": \["https://cdn.example.com/1.jpg"\]  
-}
+  "**title**": "پلی‌اتیلن سنگین",  
+  "**price**": 25000,  
+  "**weight**": 25,  
+  "**color**": "شیری",  
+  "**quality**": "اولیه",  
+  "**description**": "مناسب برای تولید کیسه‌های ضخیم",  
+  "**stock**": 1000,  
+  "**image\_urls**": \["https://cdn.example.com/1.jpg"\]  
+}  
+\`\`\`
 
 ### **قوانین**
 
-* حداکثر ۵ URL برای `image_urls`  
-* هر URL باید معتبر باشد  
-* `image_urls` اگر ارسال نشود، مقدار پیش‌فرض `[]` ذخیره می‌شود
+\* \`image\_urls\` حداکثر ۵ URL دارد.  
+\* هر URL باید معتبر باشد.  
+\* اگر \`image\_urls\` ارسال نشود، مقدار پیش‌فرض \`\[\]\` ذخیره می‌شود.
 
 ### **پاسخ موفق**
 
-**Status:** `201 Created`
+\*\*Status:\*\* \`201 Created\`
 
+\`\`\`json  
 {  
   "success": true,  
   "data": {  
@@ -597,7 +604,8 @@ Content-Type: application/json
     "message": "محصول با موفقیت ثبت شد"  
   },  
   "timestamp": "2025-07-06T10:30:00Z"  
-}
+}  
+\`\`\`
 
 ---
 
@@ -1168,26 +1176,153 @@ Content-Type: application/json
 
 ## **11-1. مشاهده گزارش‌ها**
 
-**Method:** `GET`  
-**Path:** `/api/v1/admin/reports`  
-**Auth:** دارد  
-**Role:** admin  
-**Use Case:** UC-37
+**`Method`**`` : `GET` ``
 
-### **Query Params**
+**`Path`**`` : `/api/v1/admin/reports` ``
+
+**`Auth`**`: دارد`
+
+**`Role`**`` : `admin` ``
+
+**`Use Case`**`` : `UC-37` ``
+
+**`هدف`**
+
+`نمایش گزارش‌های مدیریتی سیستم.`
+
+## **Query Params**
 
 * `type`  
 * `start_date`  
 * `end_date`
 
-### **مقادیر `type`**
+**`` مقادیر مجاز `type` ``**
 
-* `sales`  
-* `users`  
-* `products`  
-* `visitors`  
-* `inventory`  
-* `price_changes`
+ `sales`
+
+ `users`
+
+ `products`
+
+ `visitors`
+
+ `inventory`
+
+ `price_changes`
+
+**`پاسخ موفق`**
+
+**`Status`**`` : `200 OK` ``
+
+```` ```json ````
+
+`{`
+
+  `"success": true,`
+
+  `"data": {`
+
+    `"sales": {`
+
+      `"total_revenue": 500000000,`
+
+      `"total_orders": 120`
+
+    `},`
+
+    `"users": {`
+
+      `"new_users": 15,`
+
+      `"active_users": 200`
+
+    `},`
+
+    `"inventory": {`
+
+      `"total_products": 45,`
+
+      `"out_of_stock": 3`
+
+    `}`
+
+  `},`
+
+  `"timestamp": "2025-07-06T10:30:00Z"`
+
+`}`
+
+```` ``` ````
+
+`---`
+
+---
+
+## **11-2. داشبورد مدیریتی**
+
+**`Method`**`` : `GET` ``
+
+**`Path`**`` : `/api/v1/admin/dashboard` ``
+
+**`Auth`**`: دارد`
+
+**`Role`**`` : `admin` ``
+
+**`Use Case`**`` : `UC-23` ``
+
+**`هدف`**
+
+`نمایش خلاصه وضعیت سیستم برای مدیر.`
+
+**`پاسخ موفق`**
+
+`` Status: `200 OK` ``
+
+```` ```json ````
+
+`{`
+
+  `"success": true,`
+
+  `"data": {`
+
+    `"summary": {`
+
+      `"total_users": 120,`
+
+      `"active_users": 98,`
+
+      `"total_products": 45,`
+
+      `"out_of_stock_products": 3,`
+
+      `"pending_orders": 12,`
+
+      `"assigned_orders": 8,`
+
+      `"delivered_orders": 260,`
+
+      `"today_revenue": 12500000`
+
+    `}`
+
+  `},`
+
+  `"timestamp": "2025-07-06T10:30:00Z"`
+
+`}`
+
+```` ``` ````
+
+## **نکات**
+
+``این endpoint مخصوص `UC-23` است.``
+
+`` `UC-37` برای گزارش‌های جزئی باقی می‌ماند. ``
+
+`داشبورد می‌تواند از همان داده‌های تجمیعی گزارش‌ها تغذیه شود، اما مسیر جدا دارد.`
+
+ 
 
 ---
 
