@@ -1,0 +1,28 @@
+@startuml
+!include <C4/C4_Context>
+!include <C4/C4_Container>
+
+title High-Level Architecture - Plastic Products App
+
+LAYOUT_LEFT_RIGHT()
+skinparam shadowing false
+skinparam defaultFontName Vazirmatn
+
+Person(user, "کاربر", "خریدار، ادمین، ویزیتور")
+
+System_Boundary(app_boundary, "Plastic Products App") {
+    Container(android_app, "اپلیکیشن اندروید", "Kotlin + Jetpack Compose", "ارسال درخواست‌ها و نمایش داده‌ها")
+    Container(api_backend, "API Backend", "Django REST Framework", "احراز هویت، منطق کسب‌وکار، APIها")
+    ContainerDb(postgres_db, "PostgreSQL", "Database", "ذخیره کاربران، محصولات، سفارش‌ها و تاریخچه")
+}
+
+System_Ext(sms_gateway, "سرویس پیامک", "SMS Gateway", "ارسال OTP و اعلان‌ها")
+System_Ext(cloud_storage, "فضای ذخیره‌سازی تصاویر", "Cloud Storage", "ذخیره و بازیابی تصاویر محصولات")
+
+Rel(user, android_app, "استفاده می‌کند", "HTTPS")
+Rel(android_app, api_backend, "ارسال درخواست و دریافت پاسخ", "HTTPS / JSON")
+Rel(api_backend, postgres_db, "خواندن / نوشتن داده", "SQL")
+Rel(api_backend, sms_gateway, "ارسال پیامک", "HTTP API")
+Rel(api_backend, cloud_storage, "ذخیره / بازیابی تصاویر", "HTTP API")
+
+@enduml
