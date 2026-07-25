@@ -8,13 +8,15 @@ from django.db import transaction
 from .models import Product, PriceHistory, StockHistory
 from .serializers import ProductSerializer, PriceHistorySerializer, StockHistorySerializer
 
+from users.permissions import IsAdminUserRole
+
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.filter(is_active=True)
     serializer_class = ProductSerializer
 
     def get_permissions(self):
-        if self.action in ['create', 'update', 'partial_update', 'destroy']:
-            return [permissions.IsAuthenticated()]
+        if self.action in ['create', 'update', 'partial_update', 'destroy', 'price', 'stock', 'toggle']:
+            return [IsAdminUserRole()] # فقط ادمین حق تغییرات دارد
         return [permissions.AllowAny()]
 
     def perform_create(self, serializer):

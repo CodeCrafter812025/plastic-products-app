@@ -1,16 +1,17 @@
 from django.shortcuts import render
 
 # Create your views here.
+from django.db import transaction
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.db import transaction
+from products.models import Product
 from .models import Order, OrderItem, OrderAssignment, OrderStatusHistory, CartItem
 from .serializers import (
     OrderSerializer, OrderItemSerializer, OrderAssignmentSerializer,
     OrderStatusHistorySerializer, CartItemSerializer, CartItemAddSerializer
 )
-from products.models import Product
 
 class CartViewSet(viewsets.GenericViewSet):
     permission_classes = [permissions.IsAuthenticated]
@@ -30,25 +31,66 @@ class CartViewSet(viewsets.GenericViewSet):
 
     @transaction.atomic
     def create(self, request, *args, **kwargs):
-        serializer = CartItemAddSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        product_id = serializer.validated_data['product_id']
-        quantity = serializer.validated_data['quantity']
+        cart_items = CartItem.objects.filter(user=request.user)
+        if not cart_items.exists():
+            return Response({'error': 'سبد خرید شما خالی است.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        product = Product.objects.get(id=product_id, is_active=True)
-        if product.stock < quantity:
-            return Response({'error': 'موجودی ناکافی'}, status=status.HTTP_400_BAD_REQUEST)
+        # استخراج شناسه‌ی محصولاتی که در سبد خرید کاربر قرار دارند
+        product_ids = cart_items.values_list('product_id', flat=True)
+        
+        # قفل کردن سطر محصولات در دیتابیس (Pessimistic Locking)
+        # تا زمان اتمام این تراکنش، سایر درخواست‌ها برای تغییر این محصولات باید منتظر بمانند
+        locked_products = Product.objects.select_for_update().filter(id__in=product_ids)
+        product_dict = {p.id: p for p in locked_products}
 
-        cart_item, created = CartItem.objects.get_or_create(
+        total_price = 0
+        order_items_to_create = []
+
+        for item in cart_items:
+            product = product_dict.get(item.product_id)
+            
+            if not product or product.stock < item.quantity:
+                return Response(
+                    {'error': f'موجودی محصول {product.title if product else "نامشخص"} کافی نیست.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            unit_price = product.price
+            total_price += unit_price * item.quantity
+            
+            order_items_to_create.append({
+                'product': product,
+                'quantity': item.quantity,
+                'unit_price': unit_price,
+            })
+
+            # کسر ایمن موجودی از محصول قفل‌شده
+            product.stock -= item.quantity
+            product.save(update_fields=['stock'])
+
+        # ایجاد سفارش جدید
+        order = Order.objects.create(
             user=request.user,
-            product=product,
-            defaults={'quantity': quantity}
+            total_price=total_price,
+            status='pending'
         )
-        if not created:
-            cart_item.quantity = quantity
-            cart_item.save()
 
-        return Response({'message': 'محصول به سبد خرید اضافه شد'}, status=status.HTTP_201_CREATED)
+        # ثبت آیتم‌های سفارش
+        for item_data in order_items_to_create:
+            OrderItem.objects.create(
+                order=order,
+                product=item_data['product'],
+                quantity=item_data['quantity'],
+                unit_price=item_data['unit_price']
+            )
+
+        # پاک کردن سبد خرید پس از ثبت موفق سفارش
+        cart_items.delete()
+
+        serializer = self.get_serializer(order)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        
 
     @transaction.atomic
     def destroy(self, request, pk=None):

@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 from pathlib import Path
+from decouple import config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -19,8 +20,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-)q-g1-+o3@4w!f@6iqt(x1#hffp#u0^zj1uxy^gu&7sn@%#f$l'
+# خواندن کلید امنیتی از متغیرهای محیطی با یک مقدار پیش‌فرض امن (اختیاری)
+SECRET_KEY = config('SECRET_KEY')
+
+# همچنین مطمئن شو مقدار DEBUG هم پویا خوانده شود:
+DEBUG = config('DEBUG', default=False, cast=bool)
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True

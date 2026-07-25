@@ -61,23 +61,31 @@ class AuthViewSet(viewsets.GenericViewSet):
         full_name = serializer.validated_data.get('full_name', '')
 
         # بررسی OTP
+        # پیدا کردن رکورد فقط بر اساس شماره موبایل و هدف
         try:
-            otp = OTPCode.objects.get(phone=phone, code=code, purpose=purpose, is_used=False)
+            otp = OTPCode.objects.get(phone=phone, purpose=purpose, is_used=False)
         except OTPCode.DoesNotExist:
-            return Response({'error': 'OTP_INVALID'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'کد معتبری برای این شماره یافت نشد.'}, status=status.HTTP_400_BAD_REQUEST)
 
         if otp.expires_at < timezone.now():
             return Response({'error': 'OTP_EXPIRED'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # قفل شدن پس از ۵ تلاش ناموفق
+        # بررسی قفل بودن
         if otp.attempt_count >= 5:
-            otp.locked_until = timezone.now() + timedelta(minutes=15)
-            otp.save()
             return Response({'error': 'ACCOUNT_LOCKED'}, status=status.HTTP_403_FORBIDDEN)
 
-        # OTP معتبر است
+        # افزایش تعداد تلاش‌ها (صرف‌نظر از درستی یا نادرستی کد)
+        otp.attempt_count += 1
+        otp.save(update_fields=['attempt_count'])
+
+        # حالا بررسی صحت کد وارد شده
+        if otp.code != code:
+            return Response({'error': 'OTP_INVALID'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # موفقیت‌آمیز بودن احراز هویت
         otp.is_used = True
-        otp.save()
+        otp.save(update_fields=['is_used'])
+        # ... ادامه کدهای ساخت توکن JWT
 
         # ایجاد یا بازیابی کاربر
         user, created = User.objects.get_or_create(phone=phone)
@@ -102,6 +110,7 @@ class AuthViewSet(viewsets.GenericViewSet):
             'token': access_token,
             'user': user_serializer.data
         })
+    
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
