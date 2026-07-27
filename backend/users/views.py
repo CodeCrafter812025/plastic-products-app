@@ -1,3 +1,4 @@
+# backend/users/views.py
 from django.shortcuts import render
 
 # Create your views here.
@@ -61,7 +62,6 @@ class AuthViewSet(viewsets.GenericViewSet):
         full_name = serializer.validated_data.get('full_name', '')
 
         # بررسی OTP
-        # پیدا کردن رکورد فقط بر اساس شماره موبایل و هدف
         try:
             otp = OTPCode.objects.get(phone=phone, purpose=purpose, is_used=False)
         except OTPCode.DoesNotExist:
@@ -70,25 +70,50 @@ class AuthViewSet(viewsets.GenericViewSet):
         if otp.expires_at < timezone.now():
             return Response({'error': 'OTP_EXPIRED'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # بررسی قفل بودن
         if otp.attempt_count >= 5:
             return Response({'error': 'ACCOUNT_LOCKED'}, status=status.HTTP_403_FORBIDDEN)
 
-        # افزایش تعداد تلاش‌ها (صرف‌نظر از درستی یا نادرستی کد)
         otp.attempt_count += 1
         otp.save(update_fields=['attempt_count'])
 
-        # حالا بررسی صحت کد وارد شده
         if otp.code != code:
             return Response({'error': 'OTP_INVALID'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # موفقیت‌آمیز بودن احراز هویت
         otp.is_used = True
         otp.save(update_fields=['is_used'])
-        # ... ادامه کدهای ساخت توکن JWT
 
-        # ایجاد یا بازیابی کاربر
-        user, created = User.objects.get_or_create(phone=phone)
+        # Handle 'change_phone' purpose – update the user's phone number
+        if purpose == 'change_phone':
+            # The request must come from an authenticated user; we can get it from the token.
+            # Since this endpoint is public, we need the user to be authenticated.
+            # However, the original design allows this for authenticated users.
+            # We'll assume the request includes the current user's ID or we can extract from the JWT if present.
+            # For simplicity, we'll require that the user is authenticated and we have the user object.
+            # But the viewset has permission_classes = [AllowAny], so we need to check if user is authenticated.
+            if not request.user.is_authenticated:
+                return Response({'error': 'برای تغییر شماره تلفن باید وارد شده باشید.'}, status=status.HTTP_401_UNAUTHORIZED)
+            # Update the logged-in user's phone
+            user = request.user
+            # Ensure the new phone is not already taken by another user
+            if User.objects.filter(phone=phone).exclude(id=user.id).exists():
+                return Response({'error': 'این شماره تلفن قبلاً ثبت شده است.'}, status=status.HTTP_400_BAD_REQUEST)
+            user.phone = phone
+            user.username = phone  # keep username in sync
+            user.save()
+            # Issue a new JWT for the updated user (optional, but recommended)
+            from rest_framework_simplejwt.tokens import RefreshToken
+            refresh = RefreshToken.for_user(user)
+            access_token = str(refresh.access_token)
+            user_serializer = UserSerializer(user)
+            return Response({
+                'token': access_token,
+                'user': user_serializer.data,
+                'message': 'شماره تلفن با موفقیت تغییر یافت.'
+            })
+
+        # ایجاد یا بازیابی کاربر (برای register/login)
+        # Explicitly set username=phone to avoid duplicate empty username
+        user, created = User.objects.get_or_create(phone=phone, defaults={'username': phone})
         if created and purpose == 'register':
             user.full_name = full_name or 'کاربر'
             user.role = 'buyer'  # نقش پیش‌فرض
@@ -110,7 +135,7 @@ class AuthViewSet(viewsets.GenericViewSet):
             'token': access_token,
             'user': user_serializer.data
         })
-    
+
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
@@ -118,11 +143,11 @@ class UserViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        # ادمین همه را می‌بیند، کاربر عادی فقط خودش را
         user = self.request.user
         if user.role == 'admin':
             return User.objects.all()
         return User.objects.filter(id=user.id)
+
 
 class AccountDeletionRequestViewSet(viewsets.ModelViewSet):
     serializer_class = AccountDeletionRequestSerializer

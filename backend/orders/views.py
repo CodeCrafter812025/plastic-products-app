@@ -1,17 +1,17 @@
-from django.shortcuts import render
-
-# Create your views here.
+# backend/orders/views.py
 from django.db import transaction
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from django.db import transaction
+
 from products.models import Product
+from users.models import User  # added for assignment views
 from .models import Order, OrderItem, OrderAssignment, OrderStatusHistory, CartItem
 from .serializers import (
     OrderSerializer, OrderItemSerializer, OrderAssignmentSerializer,
     OrderStatusHistorySerializer, CartItemSerializer, CartItemAddSerializer
 )
+
 
 class CartViewSet(viewsets.GenericViewSet):
     permission_classes = [permissions.IsAuthenticated]
@@ -31,66 +31,70 @@ class CartViewSet(viewsets.GenericViewSet):
 
     @transaction.atomic
     def create(self, request, *args, **kwargs):
-        cart_items = CartItem.objects.filter(user=request.user)
-        if not cart_items.exists():
-            return Response({'error': 'سبد خرید شما خالی است.'}, status=status.HTTP_400_BAD_REQUEST)
+        # Use the dedicated serializer for adding/updating a cart item
+        serializer = CartItemAddSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
-        # استخراج شناسه‌ی محصولاتی که در سبد خرید کاربر قرار دارند
-        product_ids = cart_items.values_list('product_id', flat=True)
-        
-        # قفل کردن سطر محصولات در دیتابیس (Pessimistic Locking)
-        # تا زمان اتمام این تراکنش، سایر درخواست‌ها برای تغییر این محصولات باید منتظر بمانند
-        locked_products = Product.objects.select_for_update().filter(id__in=product_ids)
-        product_dict = {p.id: p for p in locked_products}
+        product_id = serializer.validated_data['product_id']
+        quantity = serializer.validated_data['quantity']
 
-        total_price = 0
-        order_items_to_create = []
-
-        for item in cart_items:
-            product = product_dict.get(item.product_id)
-            
-            if not product or product.stock < item.quantity:
-                return Response(
-                    {'error': f'موجودی محصول {product.title if product else "نامشخص"} کافی نیست.'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-
-            unit_price = product.price
-            total_price += unit_price * item.quantity
-            
-            order_items_to_create.append({
-                'product': product,
-                'quantity': item.quantity,
-                'unit_price': unit_price,
-            })
-
-            # کسر ایمن موجودی از محصول قفل‌شده
-            product.stock -= item.quantity
-            product.save(update_fields=['stock'])
-
-        # ایجاد سفارش جدید
-        order = Order.objects.create(
-            user=request.user,
-            total_price=total_price,
-            status='pending'
-        )
-
-        # ثبت آیتم‌های سفارش
-        for item_data in order_items_to_create:
-            OrderItem.objects.create(
-                order=order,
-                product=item_data['product'],
-                quantity=item_data['quantity'],
-                unit_price=item_data['unit_price']
+        try:
+            product = Product.objects.get(id=product_id, is_active=True)
+        except Product.DoesNotExist:
+            return Response(
+                {'error': 'محصول مورد نظر یافت نشد یا غیرفعال است.'},
+                status=status.HTTP_404_NOT_FOUND
             )
 
-        # پاک کردن سبد خرید پس از ثبت موفق سفارش
-        cart_items.delete()
+        # Optional early stock check – can be skipped but provides better UX
+        if product.stock < quantity:
+            return Response(
+                {'error': f'موجودی محصول {product.title} کافی نیست (موجودی: {product.stock}).'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
-        serializer = self.get_serializer(order)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        # Update quantity if product already in cart, otherwise create new entry
+        cart_item, created = CartItem.objects.get_or_create(
+            user=request.user,
+            product=product,
+            defaults={'quantity': quantity}
+        )
+        if not created:
+            cart_item.quantity = quantity
+            cart_item.save()
 
-        
+        out_serializer = CartItemSerializer(cart_item)
+        return Response(out_serializer.data, status=status.HTTP_201_CREATED)
+
+    def update(self, request, pk=None, *args, **kwargs):
+        # Allow partial update (only quantity)
+        try:
+            cart_item = CartItem.objects.get(id=pk, user=request.user)
+        except CartItem.DoesNotExist:
+            return Response(
+                {'error': 'آیتمی با این شناسه در سبد خرید شما وجود ندارد.'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        serializer = CartItemAddSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        quantity = serializer.validated_data['quantity']
+        product = cart_item.product
+
+        if product.stock < quantity:
+            return Response(
+                {'error': f'موجودی محصول {product.title} کافی نیست (موجودی: {product.stock}).'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        cart_item.quantity = quantity
+        cart_item.save()
+
+        out_serializer = CartItemSerializer(cart_item)
+        return Response(out_serializer.data)
+
+    partial_update = update      # <-- این خط رو اضافه کنید
 
     @transaction.atomic
     def destroy(self, request, pk=None):
@@ -105,6 +109,7 @@ class CartViewSet(viewsets.GenericViewSet):
     def clear(self, request):
         CartItem.objects.filter(user=request.user).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 class OrderViewSet(viewsets.ModelViewSet):
     serializer_class = OrderSerializer
@@ -122,49 +127,63 @@ class OrderViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         cart_items = CartItem.objects.filter(user=request.user)
         if not cart_items.exists():
-            return Response({'error': 'سبد خرید خالی است'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'سبد خرید شما خالی است.'}, status=status.HTTP_400_BAD_REQUEST)
 
+        # Extract product IDs from cart items
+        product_ids = list(cart_items.values_list('product_id', flat=True))
+
+        # Pessimistic locking: lock all product rows involved
+        locked_products = Product.objects.select_for_update().filter(id__in=product_ids)
+        product_dict = {p.id: p for p in locked_products}
+
+        # Validate that all products still exist and have enough stock
         total_price = 0
-        order_items_data = []
+        order_items_to_create = []
 
         for item in cart_items:
-            product = item.product
+            product = product_dict.get(item.product_id)
+            if not product:
+                # This should not happen if cart is consistent, but safeguard
+                return Response(
+                    {'error': f'محصول با شناسه {item.product_id} یافت نشد.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
             if product.stock < item.quantity:
                 return Response(
-                    {'error': f'موجودی {product.title} کافی نیست'},
+                    {'error': f'موجودی محصول {product.title} کافی نیست (موجودی: {product.stock}).'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
             unit_price = product.price
             total_price += unit_price * item.quantity
-            order_items_data.append({
+            order_items_to_create.append({
                 'product': product,
                 'quantity': item.quantity,
                 'unit_price': unit_price,
             })
 
-            # کاهش موجودی
+            # Safe stock decrement on locked product
             product.stock -= item.quantity
-            product.save()
+            product.save(update_fields=['stock'])
 
-        # ایجاد سفارش
+        # Create order
         order = Order.objects.create(
-            buyer=request.user,
+            buyer=request.user,          # corrected field name
             total_price=total_price,
             status='pending'
         )
 
-        # ایجاد آیتم‌های سفارش
-        for data in order_items_data:
+        # Create order items
+        for item_data in order_items_to_create:
             OrderItem.objects.create(
                 order=order,
-                product=data['product'],
-                quantity=data['quantity'],
-                unit_price=data['unit_price'],
-                total_price=data['unit_price'] * data['quantity']
+                product=item_data['product'],
+                quantity=item_data['quantity'],
+                unit_price=item_data['unit_price'],
+                total_price=item_data['unit_price'] * item_data['quantity']  # or let model save compute it
             )
 
-        # ثبت تاریخچه وضعیت
+        # Create status history
         OrderStatusHistory.objects.create(
             order=order,
             old_status=None,
@@ -173,7 +192,7 @@ class OrderViewSet(viewsets.ModelViewSet):
             note='سفارش ایجاد شد'
         )
 
-        # حذف سبد خرید
+        # Clear cart
         cart_items.delete()
 
         return Response({
@@ -192,7 +211,7 @@ class OrderViewSet(viewsets.ModelViewSet):
         order.status = 'cancelled'
         order.save()
 
-        # بازگرداندن موجودی
+        # Restore stock
         for item in order.items.all():
             product = item.product
             product.stock += item.quantity
@@ -206,6 +225,7 @@ class OrderViewSet(viewsets.ModelViewSet):
             note='لغو توسط خریدار'
         )
         return Response({'message': 'سفارش لغو شد'})
+
 
 class OrderAssignmentViewSet(viewsets.ModelViewSet):
     serializer_class = OrderAssignmentSerializer
@@ -237,7 +257,6 @@ class OrderAssignmentViewSet(viewsets.ModelViewSet):
         except User.DoesNotExist:
             return Response({'error': 'ویزیتور نامعتبر است'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # تخصیص
         old_visitor = order.visitor
         assignment = OrderAssignment.objects.create(
             order=order,
@@ -260,6 +279,7 @@ class OrderAssignmentViewSet(viewsets.ModelViewSet):
         )
 
         return Response(OrderAssignmentSerializer(assignment).data, status=status.HTTP_201_CREATED)
+
 
 class VisitorOrderStatusViewSet(viewsets.GenericViewSet):
     permission_classes = [permissions.IsAuthenticated]
