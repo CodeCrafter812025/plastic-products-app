@@ -4,6 +4,7 @@ from django.shortcuts import render
 from rest_framework import viewsets, permissions
 from .models import SystemSetting, Notification
 from .serializers import SystemSettingSerializer, NotificationSerializer
+from users.permissions import IsAdminUserRole
 
 class SystemSettingViewSet(viewsets.ModelViewSet):
     """
@@ -16,7 +17,7 @@ class SystemSettingViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         # فقط ادمین می‌تواند تغییر دهد، همه می‌توانند بخوانند
         if self.action in ['create', 'update', 'partial_update', 'destroy']:
-            return [permissions.IsAuthenticated()]
+            return [IsAdminUserRole()]
         return [permissions.AllowAny()]
 
 class NotificationViewSet(viewsets.ModelViewSet):

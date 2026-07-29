@@ -56,7 +56,7 @@ CREATE TABLE products (
     quality product_quality_enum NOT NULL,
     description TEXT,
     image_urls JSONB NOT NULL DEFAULT '[]'::jsonb,
-    stock INTEGER NOT NULL DEFAULT 0,
+    stock DECIMAL(10,2) NOT NULL DEFAULT 0,      -- changed to DECIMAL
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_by BIGINT NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
@@ -64,6 +64,7 @@ CREATE TABLE products (
 
     CONSTRAINT chk_products_price_nonnegative CHECK (price >= 0),
     CONSTRAINT chk_products_stock_nonnegative CHECK (stock >= 0),
+    CONSTRAINT chk_products_max_5_images CHECK (jsonb_array_length(image_urls) <= 5),  -- added
     CONSTRAINT fk_products_created_by
         FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE RESTRICT
 );
@@ -197,8 +198,8 @@ CREATE TABLE price_histories (
 CREATE TABLE stock_histories (
     id BIGSERIAL PRIMARY KEY,
     product_id BIGINT NOT NULL,
-    old_stock INTEGER,
-    new_stock INTEGER NOT NULL,
+    old_stock DECIMAL(10,2),        -- changed to DECIMAL
+    new_stock DECIMAL(10,2) NOT NULL,  -- changed to DECIMAL
     reason stock_reason_enum NOT NULL,
     changed_by BIGINT NOT NULL,
     changed_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
@@ -410,4 +411,3 @@ CREATE INDEX idx_account_deletion_requests_user_id ON account_deletion_requests(
 CREATE INDEX idx_account_deletion_requests_status ON account_deletion_requests(status);
 
 COMMIT;
-

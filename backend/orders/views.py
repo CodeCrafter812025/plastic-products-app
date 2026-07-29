@@ -1,11 +1,11 @@
-# backend/orders/views.py
 from django.db import transaction
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from products.models import Product
-from users.models import User  # added for assignment views
+from users.models import User
+from users.permissions import IsAdminUserRole  # added for role check
 from .models import Order, OrderItem, OrderAssignment, OrderStatusHistory, CartItem
 from .serializers import (
     OrderSerializer, OrderItemSerializer, OrderAssignmentSerializer,
@@ -31,7 +31,6 @@ class CartViewSet(viewsets.GenericViewSet):
 
     @transaction.atomic
     def create(self, request, *args, **kwargs):
-        # Use the dedicated serializer for adding/updating a cart item
         serializer = CartItemAddSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -46,14 +45,12 @@ class CartViewSet(viewsets.GenericViewSet):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        # Optional early stock check – can be skipped but provides better UX
         if product.stock < quantity:
             return Response(
                 {'error': f'موجودی محصول {product.title} کافی نیست (موجودی: {product.stock}).'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Update quantity if product already in cart, otherwise create new entry
         cart_item, created = CartItem.objects.get_or_create(
             user=request.user,
             product=product,
@@ -67,7 +64,6 @@ class CartViewSet(viewsets.GenericViewSet):
         return Response(out_serializer.data, status=status.HTTP_201_CREATED)
 
     def update(self, request, pk=None, *args, **kwargs):
-        # Allow partial update (only quantity)
         try:
             cart_item = CartItem.objects.get(id=pk, user=request.user)
         except CartItem.DoesNotExist:
@@ -94,7 +90,7 @@ class CartViewSet(viewsets.GenericViewSet):
         out_serializer = CartItemSerializer(cart_item)
         return Response(out_serializer.data)
 
-    partial_update = update      # <-- این خط رو اضافه کنید
+    partial_update = update
 
     @transaction.atomic
     def destroy(self, request, pk=None):
@@ -129,21 +125,16 @@ class OrderViewSet(viewsets.ModelViewSet):
         if not cart_items.exists():
             return Response({'error': 'سبد خرید شما خالی است.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Extract product IDs from cart items
         product_ids = list(cart_items.values_list('product_id', flat=True))
-
-        # Pessimistic locking: lock all product rows involved
         locked_products = Product.objects.select_for_update().filter(id__in=product_ids)
         product_dict = {p.id: p for p in locked_products}
 
-        # Validate that all products still exist and have enough stock
         total_price = 0
         order_items_to_create = []
 
         for item in cart_items:
             product = product_dict.get(item.product_id)
             if not product:
-                # This should not happen if cart is consistent, but safeguard
                 return Response(
                     {'error': f'محصول با شناسه {item.product_id} یافت نشد.'},
                     status=status.HTTP_400_BAD_REQUEST
@@ -162,28 +153,24 @@ class OrderViewSet(viewsets.ModelViewSet):
                 'unit_price': unit_price,
             })
 
-            # Safe stock decrement on locked product
             product.stock -= item.quantity
             product.save(update_fields=['stock'])
 
-        # Create order
         order = Order.objects.create(
-            buyer=request.user,          # corrected field name
+            buyer=request.user,
             total_price=total_price,
             status='pending'
         )
 
-        # Create order items
         for item_data in order_items_to_create:
             OrderItem.objects.create(
                 order=order,
                 product=item_data['product'],
                 quantity=item_data['quantity'],
                 unit_price=item_data['unit_price'],
-                total_price=item_data['unit_price'] * item_data['quantity']  # or let model save compute it
+                total_price=item_data['unit_price'] * item_data['quantity']
             )
 
-        # Create status history
         OrderStatusHistory.objects.create(
             order=order,
             old_status=None,
@@ -192,7 +179,6 @@ class OrderViewSet(viewsets.ModelViewSet):
             note='سفارش ایجاد شد'
         )
 
-        # Clear cart
         cart_items.delete()
 
         return Response({
@@ -211,7 +197,6 @@ class OrderViewSet(viewsets.ModelViewSet):
         order.status = 'cancelled'
         order.save()
 
-        # Restore stock
         for item in order.items.all():
             product = item.product
             product.stock += item.quantity
@@ -238,6 +223,12 @@ class OrderAssignmentViewSet(viewsets.ModelViewSet):
         elif user.role == 'visitor':
             return OrderAssignment.objects.filter(new_visitor=user)
         return OrderAssignment.objects.none()
+
+    def get_permissions(self):
+        # Only admin can create/update/destroy assignments
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            return [IsAdminUserRole()]
+        return [permissions.IsAuthenticated()]
 
     @transaction.atomic
     def create(self, request, *args, **kwargs):

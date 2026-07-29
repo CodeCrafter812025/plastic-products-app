@@ -43,4 +43,4 @@ class AccountDeletionRequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = AccountDeletionRequest
         fields = ['id', 'user', 'status', 'requested_at', 'reviewed_by', 'reviewed_at', 'admin_note']
-        read_only_fields = ['id', 'user', 'requested_at']
+        read_only_fields = ['id', 'user', 'requested_at', 'status', 'reviewed_by', 'reviewed_at']

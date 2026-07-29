@@ -1,4 +1,3 @@
-# backend/users/views.py
 from django.shortcuts import render
 
 # Create your views here.
@@ -15,6 +14,8 @@ from .serializers import (
     UserSerializer, UserRegisterSerializer, OTPRequestSerializer,
     OTPVerifySerializer, AccountDeletionRequestSerializer
 )
+from .permissions import IsAdminUserRole
+from .throttles import OTPRequestThrottle
 
 User = get_user_model()
 
@@ -24,7 +25,7 @@ def generate_otp():
 class AuthViewSet(viewsets.GenericViewSet):
     permission_classes = [AllowAny]
 
-    @action(detail=False, methods=['post'], url_path='otp/request')
+    @action(detail=False, methods=['post'], url_path='otp/request', throttle_classes=[OTPRequestThrottle])
     def request_otp(self, request):
         serializer = OTPRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -82,25 +83,16 @@ class AuthViewSet(viewsets.GenericViewSet):
         otp.is_used = True
         otp.save(update_fields=['is_used'])
 
-        # Handle 'change_phone' purpose – update the user's phone number
+        # Handle 'change_phone' purpose
         if purpose == 'change_phone':
-            # The request must come from an authenticated user; we can get it from the token.
-            # Since this endpoint is public, we need the user to be authenticated.
-            # However, the original design allows this for authenticated users.
-            # We'll assume the request includes the current user's ID or we can extract from the JWT if present.
-            # For simplicity, we'll require that the user is authenticated and we have the user object.
-            # But the viewset has permission_classes = [AllowAny], so we need to check if user is authenticated.
             if not request.user.is_authenticated:
                 return Response({'error': 'برای تغییر شماره تلفن باید وارد شده باشید.'}, status=status.HTTP_401_UNAUTHORIZED)
-            # Update the logged-in user's phone
             user = request.user
-            # Ensure the new phone is not already taken by another user
             if User.objects.filter(phone=phone).exclude(id=user.id).exists():
                 return Response({'error': 'این شماره تلفن قبلاً ثبت شده است.'}, status=status.HTTP_400_BAD_REQUEST)
             user.phone = phone
-            user.username = phone  # keep username in sync
+            user.username = phone
             user.save()
-            # Issue a new JWT for the updated user (optional, but recommended)
             from rest_framework_simplejwt.tokens import RefreshToken
             refresh = RefreshToken.for_user(user)
             access_token = str(refresh.access_token)
@@ -112,20 +104,17 @@ class AuthViewSet(viewsets.GenericViewSet):
             })
 
         # ایجاد یا بازیابی کاربر (برای register/login)
-        # Explicitly set username=phone to avoid duplicate empty username
         user, created = User.objects.get_or_create(phone=phone, defaults={'username': phone})
         if created and purpose == 'register':
             user.full_name = full_name or 'کاربر'
-            user.role = 'buyer'  # نقش پیش‌فرض
+            user.role = 'buyer'
             user.save()
         elif created:
-            # اگر شماره جدید باشد ولی هدف register نباشد، خطا بده
             return Response({'error': 'PHONE_NOT_REGISTERED'}, status=status.HTTP_400_BAD_REQUEST)
 
         if not user.is_active:
             return Response({'error': 'ACCOUNT_INACTIVE'}, status=status.HTTP_403_FORBIDDEN)
 
-        # تولید JWT
         from rest_framework_simplejwt.tokens import RefreshToken
         refresh = RefreshToken.for_user(user)
         access_token = str(refresh.access_token)
@@ -158,3 +147,30 @@ class AccountDeletionRequestViewSet(viewsets.ModelViewSet):
         if user.role == 'admin':
             return AccountDeletionRequest.objects.all()
         return AccountDeletionRequest.objects.filter(user=user)
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAdminUserRole])
+    def review(self, request, pk=None):
+        deletion_request = self.get_object()
+        action_type = request.data.get('action')  # 'approve' or 'reject'
+        admin_note = request.data.get('admin_note', '')
+        if action_type not in ['approve', 'reject']:
+            return Response({'error': 'Invalid action. Must be "approve" or "reject".'}, status=400)
+        
+        if deletion_request.status != 'pending':
+            return Response({'error': 'This request has already been reviewed.'}, status=400)
+        
+        if action_type == 'approve':
+            deletion_request.status = 'approved'
+            # Deactivate user
+            user = deletion_request.user
+            user.is_active = False
+            user.save()
+        else:
+            deletion_request.status = 'rejected'
+        
+        deletion_request.reviewed_by = request.user
+        deletion_request.reviewed_at = timezone.now()
+        deletion_request.admin_note = admin_note
+        deletion_request.save()
+        
+        return Response({'status': deletion_request.status, 'message': 'Request reviewed successfully.'})

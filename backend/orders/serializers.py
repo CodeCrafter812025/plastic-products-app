@@ -21,11 +21,11 @@ class OrderSerializer(serializers.ModelSerializer):
             'id', 'buyer', 'buyer_name', 'visitor', 'visitor_name',
             'total_price', 'status', 'items', 'created_at', 'updated_at'
         ]
-        read_only_fields = ['id', 'buyer', 'total_price', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'buyer', 'total_price', 'created_at', 'updated_at', 'status', 'visitor']
 
 class OrderCreateSerializer(serializers.Serializer):
     # برای ثبت سفارش از سبد خرید فعلی کاربر
-    pass  # بدون نیاز به فیلد خاصی، چون از سبد خرید کاربر استفاده می‌شود
+    pass
 
 class CartItemSerializer(serializers.ModelSerializer):
     product_detail = ProductSerializer(source='product', read_only=True)

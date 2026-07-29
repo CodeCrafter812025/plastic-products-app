@@ -15,6 +15,11 @@ class ProductSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id', 'created_by', 'created_at', 'updated_at']
 
+    def validate_image_urls(self, value):
+        if len(value) > 5:
+            raise serializers.ValidationError("حداکثر ۵ تصویر مجاز است.")
+        return value
+
 class PriceHistorySerializer(serializers.ModelSerializer):
     changed_by_name = serializers.StringRelatedField(source='changed_by', read_only=True)
     
