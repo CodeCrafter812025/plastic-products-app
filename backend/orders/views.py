@@ -11,6 +11,7 @@ from .serializers import (
     OrderSerializer, OrderItemSerializer, OrderAssignmentSerializer,
     OrderStatusHistorySerializer, CartItemSerializer, CartItemAddSerializer
 )
+from core.services.notifications import send_order_status_sms
 
 
 class CartViewSet(viewsets.GenericViewSet):
@@ -90,7 +91,7 @@ class CartViewSet(viewsets.GenericViewSet):
         out_serializer = CartItemSerializer(cart_item)
         return Response(out_serializer.data)
 
-    partial_update = update
+    partial_update = update   # <-- kept as requested
 
     @transaction.atomic
     def destroy(self, request, pk=None):
@@ -211,6 +212,139 @@ class OrderViewSet(viewsets.ModelViewSet):
         )
         return Response({'message': 'سفارش لغو شد'})
 
+    @action(detail=True, methods=['put', 'patch'])
+    @transaction.atomic
+    def edit_items(self, request, pk=None):
+        order = self.get_object()
+        if order.status != 'pending':
+            return Response({'error': 'فقط سفارش‌های در انتظار تخصیص قابل ویرایش هستند.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        items_data = request.data.get('items', [])
+        if not items_data:
+            return Response({'error': 'لیست آیتم‌ها ارسال نشده است.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        current_items = {item.product_id: item for item in order.items.all()}
+
+        product_ids = [item['product_id'] for item in items_data if item.get('quantity', 0) > 0]
+        products = Product.objects.select_for_update().filter(id__in=product_ids, is_active=True)
+        product_dict = {p.id: p for p in products}
+
+        new_items_dict = {}
+        for item_data in items_data:
+            product_id = item_data['product_id']
+            quantity = item_data.get('quantity', 0)
+            if quantity < 0:
+                return Response({'error': 'مقدار نمی‌تواند منفی باشد.'}, status=status.HTTP_400_BAD_REQUEST)
+            if quantity == 0:
+                continue
+            product = product_dict.get(product_id)
+            if not product:
+                return Response({'error': f'محصول با شناسه {product_id} یافت نشد یا غیرفعال است.'}, status=status.HTTP_400_BAD_REQUEST)
+            existing_qty = current_items[product_id].quantity if product_id in current_items else 0
+            available = product.stock + existing_qty
+            if available < quantity:
+                return Response({'error': f'موجودی محصول {product.title} کافی نیست (موجودی قابل‌استفاده: {available}).'}, status=status.HTTP_400_BAD_REQUEST)
+            new_items_dict[product_id] = {'product': product, 'quantity': quantity}
+
+        for product_id, item in current_items.items():
+            if product_id in new_items_dict:
+                new_qty = new_items_dict[product_id]['quantity']
+                if new_qty < item.quantity:
+                    diff = item.quantity - new_qty
+                    product = item.product
+                    product.stock += diff
+                    product.save()
+            else:
+                product = item.product
+                product.stock += item.quantity
+                product.save()
+                item.delete()
+
+        total_price = 0
+        for product_id, data in new_items_dict.items():
+            product = data['product']
+            qty = data['quantity']
+            unit_price = product.price
+            subtotal = qty * unit_price
+            total_price += subtotal
+            if product_id in current_items:
+                item = current_items[product_id]
+                if qty > item.quantity:
+                    product.stock -= (qty - item.quantity)
+                    product.save()
+                item.quantity = qty
+                item.unit_price = unit_price
+                item.total_price = subtotal
+                item.save()
+            else:
+                product.stock -= qty
+                product.save()
+                OrderItem.objects.create(order=order, product=product, quantity=qty, unit_price=unit_price, total_price=subtotal)
+
+        order.total_price = total_price
+        order.save()
+        OrderStatusHistory.objects.create(order=order, old_status=order.status, new_status=order.status, changed_by=request.user, note='ویرایش آیتم‌های سفارش')
+        return Response(OrderSerializer(order).data)
+        
+
+    @action(detail=True, methods=['post'])
+    @transaction.atomic
+    def cancel_admin(self, request, pk=None):
+        """
+        لغو سفارش توسط ادمین (فقط وضعیت‌های assigned یا loading).
+        """
+        if request.user.role != 'admin':
+            return Response(
+                {'error': 'فقط ادمین می‌تواند لغو کند.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        order = self.get_object()
+        if order.status not in ['assigned', 'loading']:
+            return Response(
+                {'error': 'سفارش قابل لغو نیست (فقط سفارش‌های تخصیص داده شده یا بارگیری شده قابل لغو هستند).'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Restore stock
+        for item in order.items.all():
+            product = item.product
+            product.stock += item.quantity
+            product.save()
+
+        old_status = order.status   # این خط رو اضافه کنید، قبل از تغییر status
+        order.status = 'cancelled'
+        order.save()
+
+        OrderStatusHistory.objects.create(
+            order=order,
+            old_status=order.status,  # will be old status
+            new_status='cancelled',
+            changed_by=request.user,
+            note='لغو توسط ادمین'
+        )
+
+        # Send SMS to buyer
+        send_order_status_sms(order, 'cancelled')
+
+        return Response({'message': 'سفارش با موفقیت لغو شد'})
+
+    @action(detail=True, methods=['get'])
+    def status_history(self, request, pk=None):
+        """
+        دریافت تاریخچه وضعیت سفارش (فقط برای خریدار، ویزیتور یا ادمین).
+        """
+        order = self.get_object()
+        user = request.user
+        if not (user == order.buyer or user == order.visitor or user.role == 'admin'):
+            return Response(
+                {'error': 'شما دسترسی به تاریخچه وضعیت این سفارش ندارید.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        history = order.status_histories.all().order_by('changed_at')
+        serializer = OrderStatusHistorySerializer(history, many=True)
+        return Response(serializer.data)
+
 
 class OrderAssignmentViewSet(viewsets.ModelViewSet):
     serializer_class = OrderAssignmentSerializer
@@ -232,11 +366,15 @@ class OrderAssignmentViewSet(viewsets.ModelViewSet):
 
     @transaction.atomic
     def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
         order_id = request.data.get('order_id')
         visitor_id = request.data.get('new_visitor_id')
         reason = request.data.get('reason', '')
+
+        if not order_id or not visitor_id:
+            return Response(
+                {'error': 'order_id و new_visitor_id الزامی هستند.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         try:
             order = Order.objects.get(id=order_id, status='pending')
@@ -269,6 +407,9 @@ class OrderAssignmentViewSet(viewsets.ModelViewSet):
             note=f'تخصیص به {visitor.full_name}'
         )
 
+        # Send SMS notification to buyer
+        send_order_status_sms(order, 'assigned')
+
         return Response(OrderAssignmentSerializer(assignment).data, status=status.HTTP_201_CREATED)
 
 
@@ -297,6 +438,7 @@ class VisitorOrderStatusViewSet(viewsets.GenericViewSet):
                 changed_by=request.user,
                 note='بارگیری شد'
             )
+            send_order_status_sms(order, 'loading')
         elif order.status == 'loading' and new_status == 'delivered':
             order.status = new_status
             order.save()
@@ -307,6 +449,7 @@ class VisitorOrderStatusViewSet(viewsets.GenericViewSet):
                 changed_by=request.user,
                 note='تحویل داده شد'
             )
+            send_order_status_sms(order, 'delivered')
         else:
             return Response({'error': 'تغییر وضعیت مجاز نیست'}, status=status.HTTP_400_BAD_REQUEST)
 
