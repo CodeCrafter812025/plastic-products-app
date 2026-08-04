@@ -11,10 +11,16 @@ from .serializers import SystemSettingSerializer, NotificationSerializer
 from users.permissions import IsAdminUserRole
 
 # P2-3 imports
-from django.db.models import Count, Q, Subquery, OuterRef, Value, Avg, ExpressionWrapper, F, fields
-from django.db.models.functions import Extract, Coalesce
+
+
+
+from django.db.models import Count, Q, Subquery, OuterRef, Value, Avg, ExpressionWrapper, F, fields, Sum
+from django.db.models.functions import Extract, Coalesce, TruncDate, TruncWeek
 from users.models import User
-from orders.models import Order, OrderAssignment, OrderStatusHistory
+from orders.models import Order, OrderAssignment, OrderStatusHistory, OrderItem
+from products.models import Product
+from datetime import datetime, timedelta
+from django.utils import timezone
 
 
 class SystemSettingViewSet(viewsets.ModelViewSet):
@@ -151,3 +157,92 @@ class AdminReportsViewSet(viewsets.GenericViewSet):
             })
 
         return Response(data)
+
+    @action(detail=False, methods=['get'], url_path='order-counts')
+    def order_counts(self, request):
+        counts = Order.objects.values('status').annotate(count=Count('id'))
+        result = {item['status']: item['count'] for item in counts}
+        status_choices = dict(Order.STATUS_CHOICES)
+        for status_code, _ in status_choices.items():
+            if status_code not in result:
+                result[status_code] = 0
+        return Response(result)
+
+    @action(detail=False, methods=['get'], url_path='revenue')
+    def revenue(self, request):
+        from_date = request.query_params.get('from')
+        to_date = request.query_params.get('to')
+
+        if not from_date or not to_date:
+            return Response(
+                {'error': 'لطفاً پارامترهای "from" و "to" را به فرمت YYYY-MM-DD وارد کنید.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            from_dt = timezone.make_aware(datetime.strptime(from_date, '%Y-%m-%d'))
+            to_dt = timezone.make_aware(datetime.strptime(to_date, '%Y-%m-%d')) + timedelta(days=1)
+        except ValueError:
+            return Response(
+                {'error': 'فرمت تاریخ نامعتبر است. از YYYY-MM-DD استفاده کنید.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        orders = Order.objects.filter(
+            status='delivered',
+            created_at__gte=from_dt,
+            created_at__lt=to_dt
+        )
+        total_revenue = orders.aggregate(total=Sum('total_price'))['total'] or 0
+
+        return Response({'from': from_date, 'to': to_date, 'total_revenue': total_revenue})
+
+    @action(detail=False, methods=['get'], url_path='top-products')
+    def top_products(self, request):
+        try:
+            limit = int(request.query_params.get('limit', 10))
+        except ValueError:
+            return Response({'error': 'limit باید عدد باشد.'}, status=status.HTTP_400_BAD_REQUEST)
+        if limit <= 0:
+            limit = 10
+
+        top_items = OrderItem.objects.filter(
+            order__status__in=['pending', 'assigned', 'loading', 'delivered']
+        ).values('product').annotate(total_quantity=Sum('quantity')).order_by('-total_quantity')[:limit]
+
+        product_ids = [item['product'] for item in top_items]
+        products = Product.objects.filter(id__in=product_ids).only('id', 'title')
+        product_map = {p.id: p.title for p in products}
+
+        return Response([
+            {'product_id': item['product'], 'product_title': product_map.get(item['product'], 'نامشخص'), 'total_quantity_sold': item['total_quantity']}
+            for item in top_items
+        ])
+
+    @action(detail=False, methods=['get'], url_path='low-stock')
+    def low_stock(self, request):
+        try:
+            threshold = int(request.query_params.get('threshold', 10))
+        except ValueError:
+            return Response({'error': 'threshold باید عدد باشد.'}, status=status.HTTP_400_BAD_REQUEST)
+        if threshold < 0:
+            threshold = 10
+
+        products = Product.objects.filter(stock__lt=threshold, is_active=True).values('id', 'title', 'stock').order_by('stock')
+        return Response(list(products))
+
+    @action(detail=False, methods=['get'], url_path='signups')
+    def signups(self, request):
+        period = request.query_params.get('period', 'day')
+        if period not in ['day', 'week']:
+            period = 'day'
+
+        queryset = User.objects.filter(role='buyer')
+        truncated = TruncDate('created_at') if period == 'day' else TruncWeek('created_at')
+
+        signups = queryset.annotate(period_start=truncated).values('period_start').annotate(count=Count('id')).order_by('period_start')
+
+        return Response([
+            {'period': item['period_start'].isoformat() if item['period_start'] else None, 'count': item['count']}
+            for item in signups
+        ])
