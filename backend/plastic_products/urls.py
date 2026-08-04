@@ -7,7 +7,7 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from users.views import AuthViewSet, UserViewSet, AccountDeletionRequestViewSet
 from products.views import ProductViewSet, PriceHistoryViewSet, StockHistoryViewSet
 from orders.views import CartViewSet, OrderViewSet, OrderAssignmentViewSet, VisitorOrderStatusViewSet
-from core.views import SystemSettingViewSet, NotificationViewSet
+from core.views import SystemSettingViewSet, NotificationViewSet, AdminReportsViewSet
 
 router = DefaultRouter()
 
@@ -30,6 +30,7 @@ router.register(r'visitor/orders', VisitorOrderStatusViewSet, basename='visitor-
 # Core
 router.register(r'system-settings', SystemSettingViewSet)
 router.register(r'notifications', NotificationViewSet, basename='notification')
+router.register(r'admin-reports', AdminReportsViewSet, basename='admin-reports')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
