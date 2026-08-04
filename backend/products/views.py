@@ -10,13 +10,20 @@ from .serializers import ProductSerializer, PriceHistorySerializer, StockHistory
 
 from users.permissions import IsAdminUserRole
 
+# P2-6 imports
+from django.core.files.storage import FileSystemStorage
+from django.conf import settings
+from django.utils import timezone
+import os
+
+
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.filter(is_active=True)
     serializer_class = ProductSerializer
 
     def get_permissions(self):
-        if self.action in ['create', 'update', 'partial_update', 'destroy', 'price', 'stock', 'toggle']:
-            return [IsAdminUserRole()] # فقط ادمین حق تغییرات دارد
+        if self.action in ['create', 'update', 'partial_update', 'destroy', 'price', 'stock', 'toggle', 'upload_image']:
+            return [IsAdminUserRole()]  # فقط ادمین حق تغییرات دارد
         return [permissions.AllowAny()]
 
     def get_queryset(self):
@@ -33,12 +40,9 @@ class ProductViewSet(viewsets.ModelViewSet):
         # فیلتر کیفیت
         quality = self.request.query_params.get('quality')
         if quality:
-            # اعتبارسنجی ساده: فقط دو مقدار مجاز هستند
             if quality in ['اولیه', 'بازیافتی']:
                 queryset = queryset.filter(quality=quality)
-            else:
-                # در صورت invalid، می‌توانیم خالی برگردانیم یا نادیده بگیریم – نادیده گرفتن
-                pass
+            # در غیر این صورت نادیده گرفته شود
 
         # فیلتر رنگ (جستجوی جزئی)
         color = self.request.query_params.get('color')
@@ -65,12 +69,10 @@ class ProductViewSet(viewsets.ModelViewSet):
         # فیلتر موجودی
         in_stock = self.request.query_params.get('in_stock')
         if in_stock is not None:
-            # تبدیل به boolean
             if in_stock.lower() in ['true', '1', 'yes']:
                 queryset = queryset.filter(stock__gt=0)
             elif in_stock.lower() in ['false', '0', 'no']:
                 queryset = queryset.filter(stock=0)
-            # در غیر این صورت نادیده گرفته شود
 
         return queryset
 
@@ -124,10 +126,63 @@ class ProductViewSet(viewsets.ModelViewSet):
         product.save()
         return Response({'is_active': product.is_active})
 
+    @action(detail=True, methods=['post'])
+    def upload_image(self, request, pk=None):
+        """
+        بارگذاری یک تصویر برای محصول (فقط ادمین)
+        - فرمت‌های مجاز: jpg, jpeg, png, gif, webp
+        - حداکثر ۵ تصویر
+        """
+        product = self.get_object()
+
+        # بررسی تعداد تصاویر موجود
+        if len(product.image_urls) >= 5:
+            return Response(
+                {'error': 'حداکثر ۵ تصویر مجاز است.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # بررسی وجود فایل
+        if 'image' not in request.FILES:
+            return Response(
+                {'error': 'فایل تصویر ارسال نشده است.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        image_file = request.FILES['image']
+
+        # اعتبارسنجی پسوند فایل (بدون نیاز به Pillow)
+        ext = os.path.splitext(image_file.name)[1].lower()
+        allowed_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
+        if ext not in allowed_extensions:
+            return Response(
+                {'error': 'فرمت فایل پشتیبانی نمی‌شود. فرمت‌های مجاز: jpg, jpeg, png, gif, webp'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # ذخیره فایل با FileSystemStorage
+        fs = FileSystemStorage()
+        # ایجاد نام یکتا با استفاده از ID محصول و زمان
+        filename = f"product_{product.id}_{timezone.now().strftime('%Y%m%d%H%M%S')}{ext}"
+        saved_path = fs.save(filename, image_file)
+        url = fs.url(saved_path)
+
+        # اضافه کردن URL به لیست تصاویر
+        product.image_urls.append(url)
+        product.save()
+
+        return Response({
+            'message': 'تصویر با موفقیت بارگذاری شد.',
+            'url': url,
+            'image_urls': product.image_urls
+        })
+
+
 class PriceHistoryViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = PriceHistory.objects.all()
     serializer_class = PriceHistorySerializer
     permission_classes = [permissions.IsAuthenticated]
+
 
 class StockHistoryViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = StockHistory.objects.all()

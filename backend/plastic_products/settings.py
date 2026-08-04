@@ -106,6 +106,10 @@ DATABASES = {
     }
 }
 
+# تنظیمات رسانه (Media) برای آپلود تصاویر
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
@@ -188,3 +192,9 @@ SPECTACULAR_SETTINGS = {
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
 }
+
+# ===== SMS Gateway Configuration =====
+MELIPAYAMAK_USERNAME = config('MELIPAYAMAK_USERNAME', default='')
+MELIPAYAMAK_PASSWORD = config('MELIPAYAMAK_PASSWORD', default='')
+MELIPAYAMAK_SENDER_NUMBER = config('MELIPAYAMAK_SENDER_NUMBER', default='')
+

@@ -9,6 +9,10 @@ from products.views import ProductViewSet, PriceHistoryViewSet, StockHistoryView
 from orders.views import CartViewSet, OrderViewSet, OrderAssignmentViewSet, VisitorOrderStatusViewSet
 from core.views import SystemSettingViewSet, NotificationViewSet, AdminReportsViewSet
 
+# P2-6: برای سرویس فایل‌های رسانه در محیط توسعه
+from django.conf import settings
+from django.conf.urls.static import static
+
 router = DefaultRouter()
 
 # Users
@@ -39,3 +43,7 @@ urlpatterns = [
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
 ]
+
+# P2-6: اضافه کردن مسیرهای رسانه در حالت توسعه
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
