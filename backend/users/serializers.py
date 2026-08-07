@@ -44,3 +44,17 @@ class AccountDeletionRequestSerializer(serializers.ModelSerializer):
         model = AccountDeletionRequest
         fields = ['id', 'user', 'status', 'requested_at', 'reviewed_by', 'reviewed_at', 'admin_note']
         read_only_fields = ['id', 'user', 'requested_at', 'status', 'reviewed_by', 'reviewed_at']
+
+class VisitorCreateSerializer(serializers.Serializer):
+    phone = serializers.CharField(max_length=11)
+    full_name = serializers.CharField(max_length=100)
+
+    def create(self, validated_data):
+        user = User.objects.create(
+            phone=validated_data['phone'],
+            username=validated_data['phone'],
+            full_name=validated_data['full_name'],
+            role='visitor',
+            is_active=True
+        )
+        return user

@@ -12,7 +12,8 @@ import random
 from .models import OTPCode, AccountDeletionRequest
 from .serializers import (
     UserSerializer, UserRegisterSerializer, OTPRequestSerializer,
-    OTPVerifySerializer, AccountDeletionRequestSerializer
+    OTPVerifySerializer, AccountDeletionRequestSerializer,
+    VisitorCreateSerializer
 )
 from .permissions import IsAdminUserRole
 from .throttles import OTPRequestThrottle
@@ -131,11 +132,37 @@ class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
 
+    def get_permissions(self):
+        if self.action in ['toggle_active', 'create_visitor']:
+            return [IsAdminUserRole()]
+        return [IsAuthenticated()]
+
     def get_queryset(self):
         user = self.request.user
         if user.role == 'admin':
             return User.objects.all()
         return User.objects.filter(id=user.id)
+
+    @action(detail=True, methods=['post'], url_path='toggle')
+    def toggle_active(self, request, pk=None):
+        """
+        Admin-only action to toggle the is_active status of a user.
+        """
+        user = self.get_object()
+        user.is_active = not user.is_active
+        user.save()
+        return Response({'is_active': user.is_active})
+
+    @action(detail=False, methods=['post'], url_path='create_visitor')
+    def create_visitor(self, request):
+        """
+        Admin-only action to create a new visitor user.
+        Accepts phone and full_name; sets role='visitor' and is_active=True.
+        """
+        serializer = VisitorCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        return Response(UserSerializer(user).data, status=status.HTTP_201_CREATED)
 
 
 class AccountDeletionRequestViewSet(viewsets.ModelViewSet):
