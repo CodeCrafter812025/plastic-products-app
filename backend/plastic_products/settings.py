@@ -176,6 +176,13 @@ REST_FRAMEWORK = {
         'user': '1000/day',
         'otp_request': '3/hour',   # scope for OTP request
     },
+        # ... existing settings ...
+    'DEFAULT_RENDERER_CLASSES': (
+        'core.renderers.CustomJSONRenderer',
+        'rest_framework.renderers.BrowsableAPIRenderer',
+    ),
+    'EXCEPTION_HANDLER': 'core.exception_handlers.custom_exception_handler',
+    # ... keep all other keys (throttling, etc.) ...
 }
 
 from datetime import timedelta
