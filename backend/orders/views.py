@@ -318,7 +318,7 @@ class OrderViewSet(viewsets.ModelViewSet):
 
         OrderStatusHistory.objects.create(
             order=order,
-            old_status=order.status,  # will be old status
+            old_status=old_status,  # will be old status
             new_status='cancelled',
             changed_by=request.user,
             note='لغو توسط ادمین'

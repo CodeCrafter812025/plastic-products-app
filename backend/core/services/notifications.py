@@ -55,7 +55,7 @@ def send_order_status_sms(order, event):
             success = True
         else:
             logger.error(f"Melipayamak send failed for order {order.id}: {result}")
-    except requests.exceptions.RequestException as e:
+    except Exception as e:
         logger.error(f"SMS send error for order {order.id}: {e}")
 
     note = message if success else f"{message} (ارسال ناموفق)"
