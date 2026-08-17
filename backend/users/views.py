@@ -201,3 +201,6 @@ class AccountDeletionRequestViewSet(viewsets.ModelViewSet):
         deletion_request.save()
         
         return Response({'status': deletion_request.status, 'message': 'Request reviewed successfully.'})
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
