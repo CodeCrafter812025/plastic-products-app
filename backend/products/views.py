@@ -18,7 +18,8 @@ import os
 
 
 class ProductViewSet(viewsets.ModelViewSet):
-    queryset = Product.objects.filter(is_active=True)
+    # Base queryset is all products (no is_active filter)
+    queryset = Product.objects.all()
     serializer_class = ProductSerializer
 
     def get_permissions(self):
@@ -28,53 +29,49 @@ class ProductViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """
-        فیلتر کردن محصولات بر اساس پارامترهای query:
-        - quality: دقیقاً مطابق با یکی از دو مقدار 'اولیه' یا 'بازیافتی'
-        - color: جستجوی جزئی (icontains) در فیلد color
-        - min_price: قیمت حداقل
-        - max_price: قیمت حداکثر
-        - in_stock: اگر مقدار true یا 1 باشد، فقط محصولات با stock > 0
+        For list: only active products, with optional filters (public).
+        For other actions: admins can reach inactive products too (e.g. to
+        reactivate them); everyone else still only sees active ones.
         """
-        queryset = super().get_queryset()  # در ابتدا is_active=True اعمال شده است
+        if self.action == 'list':
+            queryset = Product.objects.filter(is_active=True)
 
-        # فیلتر کیفیت
-        quality = self.request.query_params.get('quality')
-        if quality:
-            if quality in ['اولیه', 'بازیافتی']:
-                queryset = queryset.filter(quality=quality)
-            # در غیر این صورت نادیده گرفته شود
+            quality = self.request.query_params.get('quality')
+            if quality:
+                if quality in ['اولیه', 'بازیافتی']:
+                    queryset = queryset.filter(quality=quality)
 
-        # فیلتر رنگ (جستجوی جزئی)
-        color = self.request.query_params.get('color')
-        if color:
-            queryset = queryset.filter(color__icontains=color)
+            color = self.request.query_params.get('color')
+            if color:
+                queryset = queryset.filter(color__icontains=color)
 
-        # فیلتر قیمت
-        min_price = self.request.query_params.get('min_price')
-        if min_price:
-            try:
-                min_price = float(min_price)
-                queryset = queryset.filter(price__gte=min_price)
-            except ValueError:
-                pass
+            min_price = self.request.query_params.get('min_price')
+            if min_price:
+                try:
+                    queryset = queryset.filter(price__gte=float(min_price))
+                except ValueError:
+                    pass
 
-        max_price = self.request.query_params.get('max_price')
-        if max_price:
-            try:
-                max_price = float(max_price)
-                queryset = queryset.filter(price__lte=max_price)
-            except ValueError:
-                pass
+            max_price = self.request.query_params.get('max_price')
+            if max_price:
+                try:
+                    queryset = queryset.filter(price__lte=float(max_price))
+                except ValueError:
+                    pass
 
-        # فیلتر موجودی
-        in_stock = self.request.query_params.get('in_stock')
-        if in_stock is not None:
-            if in_stock.lower() in ['true', '1', 'yes']:
-                queryset = queryset.filter(stock__gt=0)
-            elif in_stock.lower() in ['false', '0', 'no']:
-                queryset = queryset.filter(stock=0)
+            in_stock = self.request.query_params.get('in_stock')
+            if in_stock is not None:
+                if in_stock.lower() in ['true', '1', 'yes']:
+                    queryset = queryset.filter(stock__gt=0)
+                elif in_stock.lower() in ['false', '0', 'no']:
+                    queryset = queryset.filter(stock=0)
 
-        return queryset
+            return queryset
+
+        user = self.request.user
+        if user.is_authenticated and getattr(user, 'role', None) == 'admin':
+            return Product.objects.all()
+        return Product.objects.filter(is_active=True)
 
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
