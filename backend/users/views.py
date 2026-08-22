@@ -16,7 +16,7 @@ from .serializers import (
     VisitorCreateSerializer
 )
 from .permissions import IsAdminUserRole
-from .throttles import OTPRequestThrottle
+from .throttles import OTPRequestThrottle, OTPPhoneThrottle
 
 User = get_user_model()
 
@@ -26,7 +26,7 @@ def generate_otp():
 class AuthViewSet(viewsets.GenericViewSet):
     permission_classes = [AllowAny]
 
-    @action(detail=False, methods=['post'], url_path='otp/request', throttle_classes=[OTPRequestThrottle])
+    @action(detail=False, methods=['post'], url_path='otp/request', throttle_classes=[OTPRequestThrottle, OTPPhoneThrottle])
     def request_otp(self, request):
         serializer = OTPRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)

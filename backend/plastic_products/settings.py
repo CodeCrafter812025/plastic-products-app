@@ -174,7 +174,8 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_RATES': {
         'anon': '100/day',
         'user': '1000/day',
-        'otp_request': '3/hour',   # scope for OTP request
+        'otp_request': '3/hour',      # scope for OTP request by IP
+        'otp_request_phone': '3/hour', # scope for OTP request by phone number
     },
         # ... existing settings ...
     'DEFAULT_RENDERER_CLASSES': (
@@ -204,4 +205,3 @@ SPECTACULAR_SETTINGS = {
 MELIPAYAMAK_USERNAME = config('MELIPAYAMAK_USERNAME', default='')
 MELIPAYAMAK_PASSWORD = config('MELIPAYAMAK_PASSWORD', default='')
 MELIPAYAMAK_SENDER_NUMBER = config('MELIPAYAMAK_SENDER_NUMBER', default='')
-
