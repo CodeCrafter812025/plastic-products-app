@@ -1,11 +1,12 @@
 # tests.py
+import threading
 from decimal import Decimal
 from unittest.mock import patch, MagicMock
 from datetime import timedelta
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from django.urls import reverse
-from rest_framework.test import APITestCase, APIClient
+from rest_framework.test import APITestCase, APITransactionTestCase, APIClient
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 
@@ -369,7 +370,17 @@ class PermissionTests(APITestCase):
 
 
 @override_settings(MELIPAYAMAK_USERNAME='testuser', MELIPAYAMAK_PASSWORD='testpass', MELIPAYAMAK_SENDER_NUMBER='10001234')
-class SMSNotificationTests(APITestCase):
+class SMSNotificationTests(APITransactionTestCase):
+    def _call_and_wait_for_sms(self, func, *args, **kwargs):
+        # send_order_status_sms() now fires in a background thread; wait for
+        # any threads it spawns during this call to finish before asserting.
+        before = set(threading.enumerate())
+        result = func(*args, **kwargs)
+        for t in threading.enumerate():
+            if t not in before:
+                t.join(timeout=5)
+        return result
+
     def setUp(self):
         self.buyer = User.objects.create(phone='09121234567', username='09121234567', full_name='Buyer', role='buyer')
         self.admin = User.objects.create(phone='09120000000', username='09120000000', full_name='Admin', role='admin', is_staff=True)
@@ -398,7 +409,10 @@ class SMSNotificationTests(APITestCase):
         mock_post.return_value = MagicMock(status_code=200, json=lambda: {'RetStatus': 1})
         # Assign visitor
         assign_url = reverse('order-assignment-list')
-        self.client_admin.post(assign_url, {'order_id': self.order.id, 'new_visitor_id': self.visitor.id})
+        self._call_and_wait_for_sms(
+            self.client_admin.post, assign_url,
+            {'order_id': self.order.id, 'new_visitor_id': self.visitor.id}
+        )
         # Check SMS called for assignment
         self.assertTrue(mock_post.called)
         self.assertIn('سفارش شما با شماره', mock_post.call_args[1]['data']['text'])
@@ -409,13 +423,13 @@ class SMSNotificationTests(APITestCase):
         refresh_visitor = RefreshToken.for_user(self.visitor)
         client_visitor.credentials(HTTP_AUTHORIZATION=f'Bearer {refresh_visitor.access_token}')
         status_url = reverse('visitor-order-status', args=[self.order.id])
-        client_visitor.patch(status_url, {'status': 'loading'})
+        self._call_and_wait_for_sms(client_visitor.patch, status_url, {'status': 'loading'})
         self.assertTrue(mock_post.called)
         self.assertIn('بارگیری شد', mock_post.call_args[1]['data']['text'])
         mock_post.reset_mock()
 
         # Visitor updates to delivered
-        client_visitor.patch(status_url, {'status': 'delivered'})
+        self._call_and_wait_for_sms(client_visitor.patch, status_url, {'status': 'delivered'})
         self.assertTrue(mock_post.called)
         self.assertIn('تحویل داده شد', mock_post.call_args[1]['data']['text'])
 
@@ -424,7 +438,10 @@ class SMSNotificationTests(APITestCase):
         # Simulate failure
         mock_post.side_effect = Exception('Network error')
         assign_url = reverse('order-assignment-list')
-        self.client_admin.post(assign_url, {'order_id': self.order.id, 'new_visitor_id': self.visitor.id})
+        self._call_and_wait_for_sms(
+            self.client_admin.post, assign_url,
+            {'order_id': self.order.id, 'new_visitor_id': self.visitor.id}
+        )
         # Notification should be created with failure note
         note = Notification.objects.filter(user=self.buyer, related_type='order', related_id=self.order.id)
         self.assertTrue(note.exists())
