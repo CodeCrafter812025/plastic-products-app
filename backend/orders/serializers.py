@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Order, OrderItem, OrderAssignment, OrderStatusHistory, CartItem
+from .models import Order, OrderItem, OrderAssignment, OrderStatusHistory, CartItem, Invoice
 from products.serializers import ProductSerializer
 
 class OrderItemSerializer(serializers.ModelSerializer):
@@ -64,3 +64,11 @@ class OrderStatusHistorySerializer(serializers.ModelSerializer):
         model = OrderStatusHistory
         fields = ['id', 'order', 'old_status', 'new_status', 'changed_by', 'changed_by_name', 'note', 'changed_at']
         read_only_fields = ['id', 'changed_at']
+
+class InvoiceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Invoice
+        fields = [
+            'id', 'order', 'invoice_number', 'buyer_name', 'buyer_phone',
+            'items_snapshot', 'total_price', 'issued_at'
+        ]

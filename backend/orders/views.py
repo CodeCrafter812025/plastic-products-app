@@ -2,16 +2,37 @@ from django.db import transaction
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from django.http import HttpResponse
+from reportlab.lib.pagesizes import A4
+from reportlab.lib import colors
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import cm
+from reportlab.pdfgen import canvas
 
 from products.models import Product
 from users.models import User
-from users.permissions import IsAdminUserRole  # added for role check
-from .models import Order, OrderItem, OrderAssignment, OrderStatusHistory, CartItem
+from users.permissions import IsAdminUserRole
+from .models import Order, OrderItem, OrderAssignment, OrderStatusHistory, CartItem, Invoice
 from .serializers import (
     OrderSerializer, OrderItemSerializer, OrderAssignmentSerializer,
-    OrderStatusHistorySerializer, CartItemSerializer, CartItemAddSerializer
+    OrderStatusHistorySerializer, CartItemSerializer, CartItemAddSerializer,
+    InvoiceSerializer
 )
 from core.services.notifications import send_order_status_sms
+
+import os
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+import arabic_reshaper
+from bidi.algorithm import get_display
+from django.conf import settings
+
+pdfmetrics.registerFont(TTFont('Vazirmatn', os.path.join(settings.BASE_DIR, 'static', 'fonts', 'Vazirmatn-Regular.ttf')))
+
+def fa(text):
+    """آماده‌سازی متن فارسی برای نمایش درست در ReportLab (اتصال حروف + راست‌به‌چپ)."""
+    return get_display(arabic_reshaper.reshape(str(text)))
 
 
 class CartViewSet(viewsets.GenericViewSet):
@@ -345,6 +366,120 @@ class OrderViewSet(viewsets.ModelViewSet):
         serializer = OrderStatusHistorySerializer(history, many=True)
         return Response(serializer.data)
 
+    @action(detail=True, methods=['get'])
+    def invoice(self, request, pk=None):
+        """
+        دریافت فاکتور رسمی سفارش (JSON).
+        دسترسی: خریدار، ویزیتور یا ادمین.
+        """
+        order = self.get_object()
+        user = request.user
+        if not (user == order.buyer or user == order.visitor or user.role == 'admin'):
+            return Response(
+                {'error': 'شما دسترسی به فاکتور این سفارش ندارید.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        try:
+            invoice = order.invoice
+        except Invoice.DoesNotExist:
+            return Response(
+                {'error': 'فاکتوری برای این سفارش صادر نشده است.'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        serializer = InvoiceSerializer(invoice)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['get'])
+    def invoice_pdf(self, request, pk=None):
+        """
+        دریافت فاکتور رسمی سفارش به صورت PDF.
+        دسترسی: خریدار، ویزیتور یا ادمین.
+        """
+        order = self.get_object()
+        user = request.user
+        if not (user == order.buyer or user == order.visitor or user.role == 'admin'):
+            return Response(
+                {'error': 'شما دسترسی به فاکتور این سفارش ندارید.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        try:
+            invoice = order.invoice
+        except Invoice.DoesNotExist:
+            return Response(
+                {'error': 'فاکتوری برای این سفارش صادر نشده است.'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Create PDF
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="invoice_{invoice.invoice_number}.pdf"'
+
+        doc = SimpleDocTemplate(response, pagesize=A4,
+                                rightMargin=1*cm, leftMargin=1*cm,
+                                topMargin=1*cm, bottomMargin=1*cm)
+        styles = getSampleStyleSheet()
+        title_style = styles['Title']
+        heading_style = styles['Heading2']
+        normal_style = styles['Normal']
+        title_style.fontName = 'Vazirmatn'
+        heading_style.fontName = 'Vazirmatn'
+        normal_style.fontName = 'Vazirmatn'
+
+        # Build content
+        elements = []
+
+        # Title
+        elements.append(Paragraph(fa("فاکتور رسمی"), title_style))
+        elements.append(Spacer(1, 0.5*cm))
+
+        # Invoice details
+        elements.append(Paragraph(fa(f"شماره فاکتور: {invoice.invoice_number}"), normal_style))
+        elements.append(Paragraph(fa(f"تاریخ صدور: {invoice.issued_at.strftime('%Y-%m-%d %H:%M')}"), normal_style))
+        elements.append(Spacer(1, 0.5*cm))
+
+        elements.append(Paragraph(fa("اطلاعات خریدار:"), heading_style))
+        elements.append(Paragraph(fa(f"نام: {invoice.buyer_name}"), normal_style))
+        elements.append(Paragraph(fa(f"تلفن: {invoice.buyer_phone}"), normal_style))
+        elements.append(Spacer(1, 0.5*cm))
+
+        # Items table
+        elements.append(Paragraph(fa("جزئیات سفارش:"), heading_style))
+        table_data = [[fa('ردیف'), fa('محصول'), fa('کیفیت'), fa('وزن (کیلوگرم)'), fa('تعداد'), fa('قیمت واحد'), fa('جمع')]]
+        for idx, item in enumerate(invoice.items_snapshot, start=1):
+            row = [
+                str(idx),
+                fa(item.get('title', '')),
+                fa(item.get('quality', '')),
+                fa(str(item.get('weight', ''))),
+                fa(str(item.get('quantity', ''))),
+                f"{float(item.get('unit_price', 0)):,.0f}",
+                f"{float(item.get('line_total', 0)):,.0f}"
+            ]
+            table_data.append(row)
+
+        # Add total row
+        table_data.append([fa(''),fa(''),fa(''),fa(''),fa(''),fa('جمع کل'), f"{float(invoice.total_price):,.0f}"])
+
+        table = Table(table_data, colWidths=[1*cm, 4*cm, 2*cm, 2*cm, 2*cm, 2.5*cm, 2.5*cm])
+        table.setStyle(TableStyle([
+            ('FONTNAME', (0, 0), (-1, -1), 'Vazirmatn'),
+            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTSIZE', (0, 0), (-1, 0), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+            ('BACKGROUND', (0, 1), (-1, -2), colors.beige),
+            ('GRID', (0, 0), (-1, -2), 1, colors.black),
+            ('SPAN', (0, -1), (5, -1)),  # Merge cells for total label
+            ('ALIGN', (0, -1), (-1, -1), 'RIGHT'),
+            ('BACKGROUND', (0, -1), (-1, -1), colors.lightgrey),
+        ]))
+        elements.append(table)
+
+        # Build PDF
+        doc.build(elements)
+        return response
+
 
 class OrderAssignmentViewSet(viewsets.ModelViewSet):
     serializer_class = OrderAssignmentSerializer
@@ -418,6 +553,7 @@ class VisitorOrderStatusViewSet(viewsets.GenericViewSet):
     serializer_class = OrderSerializer
 
     @action(detail=True, methods=['patch'])
+    @transaction.atomic
     def status(self, request, pk=None):
         try:
             order = Order.objects.get(id=pk, visitor=request.user)
@@ -440,6 +576,33 @@ class VisitorOrderStatusViewSet(viewsets.GenericViewSet):
             )
             send_order_status_sms(order, 'loading')
         elif order.status == 'loading' and new_status == 'delivered':
+            # Create invoice snapshot before status change
+            # Ensure no invoice exists yet
+            if hasattr(order, 'invoice'):
+                return Response({'error': 'فاکتور قبلاً برای این سفارش صادر شده است.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Build snapshot
+            items_snapshot = []
+            for item in order.items.all():
+                product = item.product
+                items_snapshot.append({
+                    'title': product.title,
+                    'quality': getattr(product, 'quality', ''),
+                    'weight': getattr(product, 'weight', ''),
+                    'quantity': item.quantity,
+                    'unit_price': item.unit_price,
+                    'line_total': item.total_price,
+                })
+
+            invoice = Invoice.objects.create(
+                order=order,
+                invoice_number=f"INV-{order.id:06d}",
+                buyer_name=order.buyer.full_name,
+                buyer_phone=order.buyer.phone,
+                items_snapshot=items_snapshot,
+                total_price=order.total_price,
+            )
+
             order.status = new_status
             order.save()
             OrderStatusHistory.objects.create(
