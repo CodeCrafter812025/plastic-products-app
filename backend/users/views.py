@@ -149,6 +149,12 @@ class UserViewSet(viewsets.ModelViewSet):
         Admin-only action to toggle the is_active status of a user.
         """
         user = self.get_object()
+        # Prevent admin from deactivating their own account
+        if user.id == request.user.id:
+            return Response(
+                {'error': 'شما نمی‌توانید حساب خودتان را غیرفعال کنید.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         user.is_active = not user.is_active
         user.save()
         return Response({'is_active': user.is_active})
