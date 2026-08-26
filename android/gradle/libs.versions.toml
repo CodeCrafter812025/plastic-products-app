@@ -13,6 +13,10 @@ retrofit = "2.11.0"
 retrofitKotlinxSerializationConverter = "2.11.0"
 okhttp = "4.12.0"
 kotlinxSerializationJson = "1.7.3"
+kotlinxCoroutines = "1.9.0"
+# androidx.security:security-crypto has been at this alpha for a long time; check
+# for a stable 1.1.0 release when building locally and bump if one exists.
+securityCrypto = "1.1.0-alpha06"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -30,6 +34,8 @@ retrofit-kotlinx-serialization-converter = { group = "com.squareup.retrofit2", n
 okhttp-core = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
 okhttp-logging-interceptor = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "okhttp" }
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
+kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
+androidx-security-crypto = { group = "androidx.security", name = "security-crypto", version.ref = "securityCrypto" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

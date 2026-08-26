@@ -5,6 +5,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import ir.codecrafter.plasticproducts.BuildConfig
+import ir.codecrafter.plasticproducts.data.local.TokenManager
 import kotlinx.serialization.json.Json
 import okhttp3.Interceptor
 import okhttp3.MediaType.Companion.toMediaType
@@ -20,16 +21,34 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideAuthInterceptor(): Interceptor = Interceptor { chain ->
-        // TODO(phase-1): attach "Authorization: Bearer <token>" once the token store exists.
-        chain.proceed(chain.request())
+    fun provideJson(): Json = Json {
+        ignoreUnknownKeys = true
+        isLenient = true
     }
 
     @Provides
     @Singleton
-    fun provideOkHttpClient(authInterceptor: Interceptor): OkHttpClient =
+    fun provideAuthInterceptor(tokenManager: TokenManager): Interceptor = Interceptor { chain ->
+        val accessToken = tokenManager.accessToken
+        val request = if (accessToken != null) {
+            chain.request().newBuilder()
+                .header("Authorization", "Bearer $accessToken")
+                .build()
+        } else {
+            chain.request()
+        }
+        chain.proceed(request)
+    }
+
+    @Provides
+    @Singleton
+    fun provideOkHttpClient(
+        authInterceptor: Interceptor,
+        tokenAuthenticator: TokenAuthenticator,
+    ): OkHttpClient =
         OkHttpClient.Builder()
             .addInterceptor(authInterceptor)
+            .authenticator(tokenAuthenticator)
             .apply {
                 if (BuildConfig.DEBUG) {
                     addInterceptor(
@@ -41,17 +60,14 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideJson(): Json = Json {
-        ignoreUnknownKeys = true
-        isLenient = true
-    }
-
-    @Provides
-    @Singleton
     fun provideRetrofit(okHttpClient: OkHttpClient, json: Json): Retrofit =
         Retrofit.Builder()
             .baseUrl(BuildConfig.BASE_URL)
             .client(okHttpClient)
             .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
             .build()
+
+    @Provides
+    @Singleton
+    fun provideAuthApi(retrofit: Retrofit): AuthApi = retrofit.create(AuthApi::class.java)
 }
