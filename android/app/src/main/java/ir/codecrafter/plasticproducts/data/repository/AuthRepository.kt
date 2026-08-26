@@ -53,12 +53,9 @@ class AuthRepository @Inject constructor(
         }
         if (result is AuthResult.Success) {
             val auth = result.data
-            // verify_otp() in backend/users/views.py never returns a refresh token
-            // (only str(refresh.access_token)), so refreshToken is explicitly null
-            // here rather than carried over from a previous session.
             tokenManager.saveSession(
                 accessToken = auth.token,
-                refreshToken = null,
+                refreshToken = auth.refreshToken,
                 userId = auth.user.id,
                 role = auth.user.role,
             )
