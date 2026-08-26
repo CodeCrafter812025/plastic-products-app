@@ -36,3 +36,13 @@ captures/
 *.tmp
 *.swp
 *.bak
+
+# Django specific
+*.log
+db.sqlite3
+media/
+staticfiles/
+coverage/
+htmlcov/
+.pytest_cache/
+.tox/
