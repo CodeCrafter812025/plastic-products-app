@@ -21,7 +21,9 @@ android {
 
     buildTypes {
         debug {
-            buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:8000/api/v1/\"")
+            // Temporarily pointed at a physical device via `adb reverse` instead of
+            // the emulator's 10.0.2.2 host alias.
+            buildConfigField("String", "BASE_URL", "\"http://127.0.0.1:8000/api/v1/\"")
         }
         release {
             isMinifyEnabled = false
