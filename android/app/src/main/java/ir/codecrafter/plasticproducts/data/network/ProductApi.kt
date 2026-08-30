@@ -15,6 +15,7 @@ interface ProductApi {
      */
     @GET("products/")
     suspend fun getProducts(
+        @Query("search") search: String? = null,
         @Query("quality") quality: String? = null,
         @Query("color") color: String? = null,
         @Query("min_price") minPrice: String? = null,

@@ -23,6 +23,7 @@ class ProductRepository @Inject constructor(
     suspend fun getProducts(filter: ProductFilter = ProductFilter()): AuthResult<List<Product>> =
         safeCall {
             productApi.getProducts(
+                search = filter.search,
                 quality = filter.quality,
                 color = filter.color,
                 minPrice = filter.minPrice,
