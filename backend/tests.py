@@ -131,6 +131,52 @@ class OTPFlowTests(APITestCase):
         self.assertEqual(user.full_name, 'Old')  # not changed
         self.assertEqual(user.role, 'buyer')
 
+    def test_otp_stale_unused_code_does_not_break_new_request(self):
+        """
+        Regression test. request_otp()'s old cleanup only deleted *unexpired*
+        unused rows (OTPCode.objects.filter(..., expires_at__gt=timezone.now()).delete()),
+        so an unused OTP that had already expired (e.g. the user waited past the
+        5-minute window, then hit "resend") survived untouched. That left two
+        is_used=False rows for the same phone/purpose once a fresh one was created,
+        and verify_otp()'s old .get(..., is_used=False) raised
+        MultipleObjectsReturned (500) instead of validating the fresh code.
+        """
+        stale_otp = OTPCode.objects.create(
+            phone=self.phone, code='11111', purpose='register',
+            expires_at=timezone.now() - timedelta(minutes=1), is_used=False,
+        )
+
+        response = self.client.post(self.request_url, {'phone': self.phone, 'purpose': 'register'})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        fresh_code = response.data['code']
+
+        # The fix invalidates old unused rows outright, not just expired ones.
+        stale_otp.refresh_from_db()
+        self.assertTrue(stale_otp.is_used)
+
+        payload = {'phone': self.phone, 'code': fresh_code, 'purpose': 'register', 'full_name': 'Test User'}
+        response = self.client.post(self.verify_url, payload)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_otp_stale_unused_code_after_new_request_gives_invalid_not_crash(self):
+        """
+        Companion to the test above: verifying with the *stale* (now-invalidated)
+        code after a fresh one was requested must give a normal OTP_INVALID, not
+        crash — this is the defensive second layer in verify_otp()
+        (.filter(...).order_by('-id').first() instead of .get()).
+        """
+        OTPCode.objects.create(
+            phone=self.phone, code='11111', purpose='login',
+            expires_at=timezone.now() - timedelta(minutes=1), is_used=False,
+        )
+        response = self.client.post(self.request_url, {'phone': self.phone, 'purpose': 'login'})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        payload = {'phone': self.phone, 'code': '11111', 'purpose': 'login'}
+        response = self.client.post(self.verify_url, payload)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['error'], 'OTP_INVALID')
+
 
 class CartOrderTests(APITestCase):
     def setUp(self):

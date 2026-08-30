@@ -33,8 +33,10 @@ class AuthViewSet(viewsets.GenericViewSet):
         phone = serializer.validated_data['phone']
         purpose = serializer.validated_data['purpose']
 
-        # حذف کدهای قبلی منقضی‌نشده (اختیاری)
-        OTPCode.objects.filter(phone=phone, is_used=False, expires_at__gt=timezone.now()).delete()
+        # باطل کردن (نه حذف) تمام کدهای استفاده‌نشده‌ی قبلی برای همین شماره و هدف،
+        # تا در verify_otp با بیش از یک رکورد is_used=False برای این phone/purpose
+        # مواجه نشویم (که باعث خطای MultipleObjectsReturned می‌شد).
+        OTPCode.objects.filter(phone=phone, purpose=purpose, is_used=False).update(is_used=True)
 
         # تولید و ذخیره کد جدید
         code = generate_otp()
@@ -64,9 +66,11 @@ class AuthViewSet(viewsets.GenericViewSet):
         full_name = serializer.validated_data.get('full_name', '')
 
         # بررسی OTP
-        try:
-            otp = OTPCode.objects.get(phone=phone, purpose=purpose, is_used=False)
-        except OTPCode.DoesNotExist:
+        # لایه‌ی دفاعی دوم (نه جایگزین فیکس request_otp): حتی اگر به هر دلیلی بیش
+        # از یک رکورد is_used=False برای این phone/purpose باقی مانده باشد، آخرین
+        # کد صادرشده در نظر گرفته می‌شود، نه کرش با MultipleObjectsReturned.
+        otp = OTPCode.objects.filter(phone=phone, purpose=purpose, is_used=False).order_by('-id').first()
+        if otp is None:
             return Response({'error': 'کد معتبری برای این شماره یافت نشد.'}, status=status.HTTP_400_BAD_REQUEST)
 
         if otp.expires_at < timezone.now():
