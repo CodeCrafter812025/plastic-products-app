@@ -123,10 +123,12 @@ class AuthViewSet(viewsets.GenericViewSet):
         from rest_framework_simplejwt.tokens import RefreshToken
         refresh = RefreshToken.for_user(user)
         access_token = str(refresh.access_token)
+        refresh_token = str(refresh)
 
         user_serializer = UserSerializer(user)
         return Response({
             'token': access_token,
+            'refresh_token': refresh_token,
             'user': user_serializer.data
         })
 
