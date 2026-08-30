@@ -5,6 +5,7 @@ from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.db import transaction
+from django.db.models import Q
 from .models import Product, PriceHistory, StockHistory
 from .serializers import ProductSerializer, PriceHistorySerializer, StockHistorySerializer
 
@@ -35,6 +36,12 @@ class ProductViewSet(viewsets.ModelViewSet):
         """
         if self.action == 'list':
             queryset = Product.objects.filter(is_active=True)
+
+            search = self.request.query_params.get('search')
+            if search:
+                queryset = queryset.filter(
+                    Q(title__icontains=search) | Q(description__icontains=search)
+                )
 
             quality = self.request.query_params.get('quality')
             if quality:
