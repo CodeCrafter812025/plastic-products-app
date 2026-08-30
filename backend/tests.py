@@ -50,6 +50,7 @@ class OTPFlowTests(APITestCase):
         response = self.client.post(self.verify_url, payload)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn('token', response.data)
+        self.assertIn('refresh_token', response.data)
         self.assertIn('user', response.data)
         user = User.objects.get(phone=self.phone)
         self.assertEqual(user.full_name, 'Test User')
@@ -63,6 +64,7 @@ class OTPFlowTests(APITestCase):
         payload = {'phone': self.phone, 'code': code, 'purpose': 'login'}
         response = self.client.post(self.verify_url, payload)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('refresh_token', response.data)
         self.assertEqual(response.data['user']['id'], user.id)
 
     def test_otp_wrong_code(self):
