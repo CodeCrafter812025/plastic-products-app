@@ -14,6 +14,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import ir.codecrafter.plasticproducts.ui.products.ProductListScreen
 import ir.codecrafter.plasticproducts.ui.profile.ProfileScreen
 
 /** Root destinations the auth graph hands off to once a user is authenticated. */
@@ -27,11 +28,11 @@ object RootRoutes {
 /**
  * Top level of the app: the auth graph plus one root destination per role's own
  * (not-yet-built) graph, so authGraph's onAuthenticated has somewhere real to
- * navigate. BuyerRootPlaceholder/VisitorRootPlaceholder/AdminRootPlaceholder below
- * are deliberately minimal stand-ins — out of scope for this task — meant to be
- * replaced by each role's actual nav graph when that's built. Their "پروفایل"
- * button is a temporary way to reach ProfileScreen for testing this phase; it
- * goes away once each role gets its own real navigation.
+ * navigate. buyer_root now shows the real ProductListScreen; VisitorRootPlaceholder/
+ * AdminRootPlaceholder are still deliberately minimal stand-ins — out of scope for
+ * this task — meant to be replaced by each role's actual nav graph when that's
+ * built. Their "پروفایل" button is a temporary way to reach ProfileScreen for
+ * testing; it goes away once each role gets its own real navigation.
  */
 @Composable
 fun AppNavHost(navController: NavHostController = rememberNavController()) {
@@ -52,9 +53,7 @@ fun AppNavHost(navController: NavHostController = rememberNavController()) {
             },
         )
 
-        composable(RootRoutes.BUYER_ROOT) {
-            RolePlaceholder("خریدار") { navController.navigate(RootRoutes.PROFILE) }
-        }
+        composable(RootRoutes.BUYER_ROOT) { ProductListScreen() }
         composable(RootRoutes.VISITOR_ROOT) {
             RolePlaceholder("ویزیتور") { navController.navigate(RootRoutes.PROFILE) }
         }
