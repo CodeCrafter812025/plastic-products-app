@@ -18,8 +18,10 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import ir.codecrafter.plasticproducts.R
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -55,7 +57,7 @@ fun OtpVerifyScreen(
                 .padding(24.dp),
         ) {
             Text(
-                text = "کد تأیید ارسال‌شده به ${state.phone} را وارد کنید",
+                text = stringResource(R.string.otp_sent_to_phone_message, state.phone),
                 style = MaterialTheme.typography.bodyLarge,
             )
 
@@ -64,7 +66,7 @@ fun OtpVerifyScreen(
                 onValueChange = { value ->
                     if (value.length <= OTP_CODE_LENGTH) onCodeChange(value)
                 },
-                label = { Text("کد تأیید") },
+                label = { Text(stringResource(R.string.label_otp_code)) },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
                 isError = state.otpError != null,
@@ -80,7 +82,7 @@ fun OtpVerifyScreen(
                 OutlinedTextField(
                     value = state.fullName,
                     onValueChange = onFullNameChange,
-                    label = { Text("نام کامل") },
+                    label = { Text(stringResource(R.string.label_full_name)) },
                     singleLine = true,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -95,9 +97,9 @@ fun OtpVerifyScreen(
             ) {
                 Text(
                     if (state.resendCooldownSecondsRemaining > 0) {
-                        "ارسال مجدد کد (${state.resendCooldownSecondsRemaining} ثانیه)"
+                        stringResource(R.string.btn_resend_code_cooldown, state.resendCooldownSecondsRemaining)
                     } else {
-                        "ارسال مجدد کد"
+                        stringResource(R.string.btn_resend_code)
                     }
                 )
             }
@@ -117,7 +119,7 @@ fun OtpVerifyScreen(
                         color = MaterialTheme.colorScheme.onPrimary,
                     )
                 } else {
-                    Text("تأیید")
+                    Text(stringResource(R.string.btn_verify))
                 }
             }
         }

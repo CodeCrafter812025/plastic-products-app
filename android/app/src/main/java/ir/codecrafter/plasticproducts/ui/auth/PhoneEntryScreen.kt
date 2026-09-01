@@ -16,8 +16,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.layout.size
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import ir.codecrafter.plasticproducts.R
 
 @Composable
 fun PhoneEntryScreen(
@@ -33,14 +35,18 @@ fun PhoneEntryScreen(
                 .padding(24.dp),
         ) {
             Text(
-                text = if (state.purpose == AuthPurpose.REGISTER) "ثبت‌نام" else "ورود",
+                text = if (state.purpose == AuthPurpose.REGISTER) {
+                    stringResource(R.string.title_register)
+                } else {
+                    stringResource(R.string.title_login)
+                },
                 style = MaterialTheme.typography.headlineSmall,
             )
 
             OutlinedTextField(
                 value = state.phone,
                 onValueChange = onPhoneChange,
-                label = { Text("شماره موبایل") },
+                label = { Text(stringResource(R.string.label_phone_number)) },
                 placeholder = { Text("09xxxxxxxxx") },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
@@ -82,7 +88,7 @@ fun PhoneEntryScreen(
                         color = MaterialTheme.colorScheme.onPrimary,
                     )
                 } else {
-                    Text("ارسال کد")
+                    Text(stringResource(R.string.btn_send_code))
                 }
             }
         }

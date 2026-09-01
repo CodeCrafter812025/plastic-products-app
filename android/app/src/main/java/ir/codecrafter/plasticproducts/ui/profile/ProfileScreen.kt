@@ -18,9 +18,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import ir.codecrafter.plasticproducts.R
 
 @Composable
 fun ProfileScreen(
@@ -48,14 +50,14 @@ fun ProfileScreen(
                 .padding(24.dp),
         ) {
             Text(
-                text = "پروفایل",
+                text = stringResource(R.string.title_profile),
                 style = MaterialTheme.typography.headlineSmall,
             )
 
             OutlinedTextField(
                 value = state.phone,
                 onValueChange = {},
-                label = { Text("شماره موبایل") },
+                label = { Text(stringResource(R.string.label_phone_number)) },
                 enabled = false,
                 singleLine = true,
                 modifier = Modifier
@@ -66,7 +68,7 @@ fun ProfileScreen(
             OutlinedTextField(
                 value = state.fullName,
                 onValueChange = viewModel::onFullNameChange,
-                label = { Text("نام کامل") },
+                label = { Text(stringResource(R.string.label_full_name)) },
                 singleLine = true,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -76,7 +78,7 @@ fun ProfileScreen(
             OutlinedTextField(
                 value = state.address,
                 onValueChange = viewModel::onAddressChange,
-                label = { Text("آدرس") },
+                label = { Text(stringResource(R.string.label_address)) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 16.dp),
@@ -111,7 +113,7 @@ fun ProfileScreen(
                         color = MaterialTheme.colorScheme.onPrimary,
                     )
                 } else {
-                    Text("ذخیره")
+                    Text(stringResource(R.string.btn_save))
                 }
             }
         }

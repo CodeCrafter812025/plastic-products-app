@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- ui/auth/AuthChoiceScreen.kt -->
+    <string name="auth_welcome_title">به فروشگاه محصولات پلاستیکی خوش آمدید</string>
+    <string name="btn_login">ورود</string>
+    <string name="btn_register">ثبت‌نام</string>
+
+    <!-- ui/auth/PhoneEntryScreen.kt -->
+    <string name="title_login">ورود</string>
+    <string name="title_register">ثبت‌نام</string>
+    <string name="label_phone_number">شماره موبایل</string>
+    <string name="btn_send_code">ارسال کد</string>
+
+    <!-- ui/auth/OtpVerifyScreen.kt -->
+    <string name="otp_sent_to_phone_message">کد تأیید ارسال‌شده به %1$s را وارد کنید</string>
+    <string name="label_otp_code">کد تأیید</string>
+    <string name="label_full_name">نام کامل</string>
+    <string name="btn_resend_code_cooldown">ارسال مجدد کد (%1$d ثانیه)</string>
+    <string name="btn_resend_code">ارسال مجدد کد</string>
+    <string name="btn_verify">تأیید</string>
+
+    <!-- ui/profile/ProfileScreen.kt -->
+    <string name="title_profile">پروفایل</string>
+    <string name="label_address">آدرس</string>
+    <string name="btn_save">ذخیره</string>
+
+    <!-- ui/products/ProductListScreen.kt -->
+    <string name="label_product_search">جستجوی محصول</string>
+    <string name="filter_quality_all">همه</string>
+    <string name="filter_quality_primary">اولیه</string>
+    <string name="filter_quality_recycled">بازیافتی</string>
+    <string name="filter_in_stock_only">فقط کالاهای موجود</string>
+    <string name="btn_more_filters">فیلتر بیشتر</string>
+    <string name="btn_close_more_filters">بستن فیلتر بیشتر</string>
+    <string name="label_min_price">حداقل قیمت</string>
+    <string name="label_max_price">حداکثر قیمت</string>
+    <string name="empty_products_list">محصولی یافت نشد</string>
+    <string name="product_price_toman">%1$s تومان</string>
+
+    <!-- ui/navigation/AppNavHost.kt -->
+    <string name="role_label_visitor">ویزیتور</string>
+    <string name="role_label_admin">ادمین</string>
+    <string name="placeholder_role_not_built_message">ورود موفق (%1$s) — این بخش هنوز ساخته نشده</string>
+    <string name="btn_profile">پروفایل</string>
+
+</resources>

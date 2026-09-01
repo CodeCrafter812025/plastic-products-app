@@ -15,7 +15,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import ir.codecrafter.plasticproducts.R
 
 @Composable
 fun AuthChoiceScreen(
@@ -31,7 +33,7 @@ fun AuthChoiceScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
-                text = "به فروشگاه محصولات پلاستیکی خوش آمدید",
+                text = stringResource(R.string.auth_welcome_title),
                 style = MaterialTheme.typography.headlineSmall,
             )
 
@@ -47,7 +49,7 @@ fun AuthChoiceScreen(
                         .fillMaxWidth()
                         .height(56.dp),
                 ) {
-                    Text("ورود")
+                    Text(stringResource(R.string.btn_login))
                 }
 
                 OutlinedButton(
@@ -56,7 +58,7 @@ fun AuthChoiceScreen(
                         .fillMaxWidth()
                         .height(56.dp),
                 ) {
-                    Text("ثبت‌نام")
+                    Text(stringResource(R.string.btn_register))
                 }
             }
         }

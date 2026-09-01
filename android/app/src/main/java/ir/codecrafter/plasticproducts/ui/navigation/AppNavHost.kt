@@ -9,11 +9,13 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import ir.codecrafter.plasticproducts.R
 import ir.codecrafter.plasticproducts.ui.products.ProductListScreen
 import ir.codecrafter.plasticproducts.ui.profile.ProfileScreen
 
@@ -55,10 +57,10 @@ fun AppNavHost(navController: NavHostController = rememberNavController()) {
 
         composable(RootRoutes.BUYER_ROOT) { ProductListScreen() }
         composable(RootRoutes.VISITOR_ROOT) {
-            RolePlaceholder("ویزیتور") { navController.navigate(RootRoutes.PROFILE) }
+            RolePlaceholder(stringResource(R.string.role_label_visitor)) { navController.navigate(RootRoutes.PROFILE) }
         }
         composable(RootRoutes.ADMIN_ROOT) {
-            RolePlaceholder("ادمین") { navController.navigate(RootRoutes.PROFILE) }
+            RolePlaceholder(stringResource(R.string.role_label_admin)) { navController.navigate(RootRoutes.PROFILE) }
         }
         composable(RootRoutes.PROFILE) { ProfileScreen() }
     }
@@ -74,12 +76,12 @@ private fun RolePlaceholder(roleLabel: String, onProfileClick: () -> Unit) {
                 .padding(24.dp),
         ) {
             Text(
-                text = "ورود موفق ($roleLabel) — این بخش هنوز ساخته نشده",
+                text = stringResource(R.string.placeholder_role_not_built_message, roleLabel),
                 style = MaterialTheme.typography.bodyLarge,
             )
             // Temporary, for testing ProfileScreen this phase only.
             Button(onClick = onProfileClick, modifier = Modifier.padding(top = 16.dp)) {
-                Text("پروفایل")
+                Text(stringResource(R.string.btn_profile))
             }
         }
     }

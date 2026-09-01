@@ -34,11 +34,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
+import ir.codecrafter.plasticproducts.R
 import ir.codecrafter.plasticproducts.data.model.Product
 import ir.codecrafter.plasticproducts.data.model.ProductQuality
 
@@ -59,7 +61,7 @@ fun ProductListScreen(
             OutlinedTextField(
                 value = state.searchText,
                 onValueChange = viewModel::onSearchTextChange,
-                label = { Text("جستجوی محصول") },
+                label = { Text(stringResource(R.string.label_product_search)) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -71,17 +73,17 @@ fun ProductListScreen(
                 FilterChip(
                     selected = state.filter.quality == null,
                     onClick = { viewModel.onQualityChange(null) },
-                    label = { Text("همه") },
+                    label = { Text(stringResource(R.string.filter_quality_all)) },
                 )
                 FilterChip(
                     selected = state.filter.quality == ProductQuality.PRIMARY,
                     onClick = { viewModel.onQualityChange(ProductQuality.PRIMARY) },
-                    label = { Text("اولیه") },
+                    label = { Text(stringResource(R.string.filter_quality_primary)) },
                 )
                 FilterChip(
                     selected = state.filter.quality == ProductQuality.RECYCLED,
                     onClick = { viewModel.onQualityChange(ProductQuality.RECYCLED) },
-                    label = { Text("بازیافتی") },
+                    label = { Text(stringResource(R.string.filter_quality_recycled)) },
                 )
             }
 
@@ -91,7 +93,7 @@ fun ProductListScreen(
                     .padding(top = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text("فقط کالاهای موجود", modifier = Modifier.weight(1f))
+                Text(stringResource(R.string.filter_in_stock_only), modifier = Modifier.weight(1f))
                 Switch(
                     checked = state.filter.inStock == true,
                     onCheckedChange = viewModel::onInStockOnlyChange,
@@ -99,7 +101,13 @@ fun ProductListScreen(
             }
 
             TextButton(onClick = { showMoreFilters = !showMoreFilters }) {
-                Text(if (showMoreFilters) "بستن فیلتر بیشتر" else "فیلتر بیشتر")
+                Text(
+                    if (showMoreFilters) {
+                        stringResource(R.string.btn_close_more_filters)
+                    } else {
+                        stringResource(R.string.btn_more_filters)
+                    }
+                )
             }
 
             if (showMoreFilters) {
@@ -110,7 +118,7 @@ fun ProductListScreen(
                     OutlinedTextField(
                         value = state.filter.minPrice.orEmpty(),
                         onValueChange = viewModel::onMinPriceChange,
-                        label = { Text("حداقل قیمت") },
+                        label = { Text(stringResource(R.string.label_min_price)) },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.weight(1f),
@@ -118,7 +126,7 @@ fun ProductListScreen(
                     OutlinedTextField(
                         value = state.filter.maxPrice.orEmpty(),
                         onValueChange = viewModel::onMaxPriceChange,
-                        label = { Text("حداکثر قیمت") },
+                        label = { Text(stringResource(R.string.label_max_price)) },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.weight(1f),
@@ -146,7 +154,7 @@ fun ProductListScreen(
 
                     state.products.isEmpty() ->
                         Text(
-                            text = "محصولی یافت نشد",
+                            text = stringResource(R.string.empty_products_list),
                             modifier = Modifier.align(Alignment.Center),
                         )
 
@@ -198,7 +206,10 @@ private fun ProductCard(product: Product) {
             ) {
                 Text(text = product.title, style = MaterialTheme.typography.titleMedium)
                 Text(text = product.quality, style = MaterialTheme.typography.bodySmall)
-                Text(text = "${product.price} تومان", style = MaterialTheme.typography.bodyMedium)
+                Text(
+                    text = stringResource(R.string.product_price_toman, product.price),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
             }
         }
     }
