@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -59,7 +58,7 @@ fun ProductListScreen(
             OutlinedTextField(
                 value = state.searchText,
                 onValueChange = viewModel::onSearchTextChange,
-                label = { Text("جستجوی محصول") },
+                label = { Text("Ø¬Ø³ØªØ¬ÙˆÛŒ Ù…Ø­ØµÙˆÙ„") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -71,17 +70,17 @@ fun ProductListScreen(
                 FilterChip(
                     selected = state.filter.quality == null,
                     onClick = { viewModel.onQualityChange(null) },
-                    label = { Text("همه") },
+                    label = { Text("Ù‡Ù…Ù‡") },
                 )
                 FilterChip(
                     selected = state.filter.quality == ProductQuality.PRIMARY,
                     onClick = { viewModel.onQualityChange(ProductQuality.PRIMARY) },
-                    label = { Text("اولیه") },
+                    label = { Text("Ø§ÙˆÙ„ÛŒÙ‡") },
                 )
                 FilterChip(
                     selected = state.filter.quality == ProductQuality.RECYCLED,
                     onClick = { viewModel.onQualityChange(ProductQuality.RECYCLED) },
-                    label = { Text("بازیافتی") },
+                    label = { Text("Ø¨Ø§Ø²ÛŒØ§ÙØªÛŒ") },
                 )
             }
 
@@ -91,7 +90,7 @@ fun ProductListScreen(
                     .padding(top = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text("فقط کالاهای موجود", modifier = Modifier.weight(1f))
+                Text("ÙÙ‚Ø· Ú©Ø§Ù„Ø§Ù‡Ø§ÛŒ Ù…ÙˆØ¬ÙˆØ¯", modifier = Modifier.weight(1f))
                 Switch(
                     checked = state.filter.inStock == true,
                     onCheckedChange = viewModel::onInStockOnlyChange,
@@ -99,7 +98,7 @@ fun ProductListScreen(
             }
 
             TextButton(onClick = { showMoreFilters = !showMoreFilters }) {
-                Text(if (showMoreFilters) "بستن فیلتر بیشتر" else "فیلتر بیشتر")
+                Text(if (showMoreFilters) "Ø¨Ø³ØªÙ† ÙÛŒÙ„ØªØ± Ø¨ÛŒØ´ØªØ±" else "ÙÛŒÙ„ØªØ± Ø¨ÛŒØ´ØªØ±")
             }
 
             if (showMoreFilters) {
@@ -110,7 +109,7 @@ fun ProductListScreen(
                     OutlinedTextField(
                         value = state.filter.minPrice.orEmpty(),
                         onValueChange = viewModel::onMinPriceChange,
-                        label = { Text("حداقل قیمت") },
+                        label = { Text("Ø­Ø¯Ø§Ù‚Ù„ Ù‚ÛŒÙ…Øª") },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.weight(1f),
@@ -118,7 +117,7 @@ fun ProductListScreen(
                     OutlinedTextField(
                         value = state.filter.maxPrice.orEmpty(),
                         onValueChange = viewModel::onMaxPriceChange,
-                        label = { Text("حداکثر قیمت") },
+                        label = { Text("Ø­Ø¯Ø§Ú©Ø«Ø± Ù‚ÛŒÙ…Øª") },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.weight(1f),
@@ -146,7 +145,7 @@ fun ProductListScreen(
 
                     state.products.isEmpty() ->
                         Text(
-                            text = "محصولی یافت نشد",
+                            text = "Ù…Ø­ØµÙˆÙ„ÛŒ ÛŒØ§ÙØª Ù†Ø´Ø¯",
                             modifier = Modifier.align(Alignment.Center),
                         )
 
@@ -198,7 +197,7 @@ private fun ProductCard(product: Product) {
             ) {
                 Text(text = product.title, style = MaterialTheme.typography.titleMedium)
                 Text(text = product.quality, style = MaterialTheme.typography.bodySmall)
-                Text(text = "${product.price} تومان", style = MaterialTheme.typography.bodyMedium)
+                Text(text = "${product.price} ØªÙˆÙ…Ø§Ù†", style = MaterialTheme.typography.bodyMedium)
             }
         }
     }
