@@ -82,7 +82,7 @@ class ProfileViewModel @Inject constructor(
                         isSaving = false,
                         fullName = profile.fullName.orEmpty(),
                         address = profile.address.orEmpty(),
-                        saveSuccessMessage = "تغییرات ذخیره شد",
+                        saveSuccessMessage = context.getString(R.string.msg_profile_saved),
                     )
                 }
                 else -> _uiState.value = _uiState.value.copy(

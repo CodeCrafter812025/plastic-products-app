@@ -25,6 +25,9 @@
     <string name="label_address">آدرس</string>
     <string name="btn_save">ذخیره</string>
 
+    <!-- ui/profile/ProfileViewModel.kt -->
+    <string name="msg_profile_saved">تغییرات ذخیره شد</string>
+
     <!-- ui/products/ProductListScreen.kt -->
     <string name="label_product_search">جستجوی محصول</string>
     <string name="filter_quality_all">همه</string>
