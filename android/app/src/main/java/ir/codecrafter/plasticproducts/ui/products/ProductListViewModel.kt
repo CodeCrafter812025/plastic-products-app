@@ -1,8 +1,11 @@
 package ir.codecrafter.plasticproducts.ui.products
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import ir.codecrafter.plasticproducts.R
 import ir.codecrafter.plasticproducts.data.model.Product
 import ir.codecrafter.plasticproducts.data.model.ProductFilter
 import ir.codecrafter.plasticproducts.data.network.ErrorMessage
@@ -30,6 +33,7 @@ data class ProductListUiState(
 @HiltViewModel
 class ProductListViewModel @Inject constructor(
     private val productRepository: ProductRepository,
+    @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ProductListUiState())
@@ -83,27 +87,25 @@ class ProductListViewModel @Inject constructor(
         when (val result = productRepository.getProducts(_uiState.value.filter)) {
             is AuthResult.Success -> _uiState.update { it.copy(isLoading = false, products = result.data) }
             is AuthResult.RateLimited -> _uiState.update {
-                it.copy(isLoading = false, errorMessage = result.message ?: RATE_LIMIT_MESSAGE)
+                it.copy(isLoading = false, errorMessage = result.message ?: context.getString(R.string.error_rate_limited))
             }
             is AuthResult.Error -> _uiState.update {
                 it.copy(isLoading = false, errorMessage = describeError(result))
             }
             AuthResult.NetworkError -> _uiState.update {
-                it.copy(isLoading = false, errorMessage = NETWORK_ERROR_MESSAGE)
+                it.copy(isLoading = false, errorMessage = context.getString(R.string.error_network))
             }
         }
     }
 
     private fun describeError(error: AuthResult.Error): String = when (val message = error.message) {
         is ErrorMessage.StringMessage -> message.value
-        is ErrorMessage.FieldErrors -> message.fields.values.flatten().firstOrNull() ?: GENERIC_ERROR_MESSAGE
-        null -> GENERIC_ERROR_MESSAGE
+        is ErrorMessage.FieldErrors ->
+            message.fields.values.flatten().firstOrNull() ?: context.getString(R.string.error_generic)
+        null -> context.getString(R.string.error_generic)
     }
 
     private companion object {
         const val SEARCH_DEBOUNCE_MS = 400L
-        const val RATE_LIMIT_MESSAGE = "تعداد درخواست‌ها بیش از حد مجاز است، کمی بعد امتحان کنید"
-        const val NETWORK_ERROR_MESSAGE = "خطا در اتصال به اینترنت. دوباره تلاش کنید."
-        const val GENERIC_ERROR_MESSAGE = "خطایی رخ داد. دوباره تلاش کنید."
     }
 }
