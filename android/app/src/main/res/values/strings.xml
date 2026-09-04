@@ -44,4 +44,18 @@
     <string name="placeholder_role_not_built_message">ورود موفق (%1$s) — این بخش هنوز ساخته نشده</string>
     <string name="btn_profile">پروفایل</string>
 
+    <!-- ui/products/ProductDetailScreen.kt -->
+    <string name="btn_back_to_list">بازگشت به لیست</string>
+    <string name="label_color_value">رنگ: %1$s</string>
+    <string name="label_weight_value">وزن: %1$s</string>
+    <string name="label_stock_status_value">وضعیت موجودی: %1$s</string>
+    <string name="stock_status_available">موجود</string>
+    <string name="stock_status_unavailable">ناموجود</string>
+    <string name="label_description">توضیحات</string>
+
+    <!-- ui/products/ProductDetailViewModel.kt -->
+    <string name="error_rate_limited">تعداد درخواست‌ها بیش از حد مجاز است، کمی بعد امتحان کنید</string>
+    <string name="error_network">خطا در اتصال به اینترنت. دوباره تلاش کنید.</string>
+    <string name="error_generic">خطایی رخ داد. دوباره تلاش کنید.</string>
+
 </resources>

@@ -12,10 +12,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import ir.codecrafter.plasticproducts.R
+import ir.codecrafter.plasticproducts.ui.products.ProductDetailScreen
 import ir.codecrafter.plasticproducts.ui.products.ProductListScreen
 import ir.codecrafter.plasticproducts.ui.profile.ProfileScreen
 
@@ -25,6 +28,14 @@ object RootRoutes {
     const val VISITOR_ROOT = "visitor_root"
     const val ADMIN_ROOT = "admin_root"
     const val PROFILE = "profile"
+}
+
+/** Product detail destination, reached from ProductListScreen's cards. */
+object ProductRoutes {
+    const val PRODUCT_ID_ARG = "productId"
+    const val DETAIL_PATTERN = "product_detail/{$PRODUCT_ID_ARG}"
+
+    fun detail(productId: Int) = "product_detail/$productId"
 }
 
 /**
@@ -55,7 +66,17 @@ fun AppNavHost(navController: NavHostController = rememberNavController()) {
             },
         )
 
-        composable(RootRoutes.BUYER_ROOT) { ProductListScreen() }
+        composable(RootRoutes.BUYER_ROOT) {
+            ProductListScreen(
+                onProductClick = { productId -> navController.navigate(ProductRoutes.detail(productId)) },
+            )
+        }
+        composable(
+            route = ProductRoutes.DETAIL_PATTERN,
+            arguments = listOf(navArgument(ProductRoutes.PRODUCT_ID_ARG) { type = NavType.IntType }),
+        ) {
+            ProductDetailScreen(onBackToList = { navController.popBackStack() })
+        }
         composable(RootRoutes.VISITOR_ROOT) {
             RolePlaceholder(stringResource(R.string.role_label_visitor)) { navController.navigate(RootRoutes.PROFILE) }
         }

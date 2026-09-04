@@ -45,6 +45,7 @@ import ir.codecrafter.plasticproducts.data.model.ProductQuality
 
 @Composable
 fun ProductListScreen(
+    onProductClick: (Int) -> Unit,
     viewModel: ProductListViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -159,7 +160,7 @@ fun ProductListScreen(
 
                     else -> LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         items(state.products, key = { it.id }) { product ->
-                            ProductCard(product)
+                            ProductCard(product, onClick = { onProductClick(product.id) })
                         }
                     }
                 }
@@ -169,13 +170,11 @@ fun ProductListScreen(
 }
 
 @Composable
-private fun ProductCard(product: Product) {
+private fun ProductCard(product: Product, onClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable {
-                // TODO: navigate to a product detail screen once it exists.
-            },
+            .clickable(onClick = onClick),
     ) {
         Row(
             modifier = Modifier.padding(12.dp),
