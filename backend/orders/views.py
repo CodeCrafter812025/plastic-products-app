@@ -1,3 +1,4 @@
+from decimal import Decimal, InvalidOperation
 from django.db import transaction
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
@@ -244,20 +245,34 @@ class OrderViewSet(viewsets.ModelViewSet):
         if not items_data:
             return Response({'error': 'لیست آیتم‌ها ارسال نشده است.'}, status=status.HTTP_400_BAD_REQUEST)
 
+        parsed_items = []
+        for item_data in items_data:
+            product_id = item_data['product_id']
+            raw_quantity = item_data.get('quantity', 0)
+            try:
+                quantity = Decimal(str(raw_quantity))
+            except (InvalidOperation, ValueError, TypeError):
+                return Response(
+                    {'error': f'مقدار quantity نامعتبر است: {raw_quantity!r}'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            if quantity <= 0:
+                return Response(
+                    {'error': 'مقدار quantity باید عددی بزرگ‌تر از صفر باشد.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            parsed_items.append({'product_id': product_id, 'quantity': quantity})
+
         current_items = {item.product_id: item for item in order.items.all()}
 
-        product_ids = [item['product_id'] for item in items_data if item.get('quantity', 0) > 0]
+        product_ids = [item['product_id'] for item in parsed_items]
         products = Product.objects.select_for_update().filter(id__in=product_ids, is_active=True)
         product_dict = {p.id: p for p in products}
 
         new_items_dict = {}
-        for item_data in items_data:
+        for item_data in parsed_items:
             product_id = item_data['product_id']
-            quantity = item_data.get('quantity', 0)
-            if quantity < 0:
-                return Response({'error': 'مقدار نمی‌تواند منفی باشد.'}, status=status.HTTP_400_BAD_REQUEST)
-            if quantity == 0:
-                continue
+            quantity = item_data['quantity']
             product = product_dict.get(product_id)
             if not product:
                 return Response({'error': f'محصول با شناسه {product_id} یافت نشد یا غیرفعال است.'}, status=status.HTTP_400_BAD_REQUEST)
