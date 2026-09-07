@@ -93,3 +93,16 @@ data class EditOrderItemRequest(
 data class EditOrderItemsRequest(
     val items: List<EditOrderItemRequest>,
 )
+
+/** Body for PATCH /visitor/orders/{id}/status/ — only "loading"/"delivered" are accepted. */
+@Serializable
+data class UpdateOrderStatusRequest(val status: String)
+
+/**
+ * PATCH /visitor/orders/{id}/status/'s success response — orders/views.py
+ * VisitorOrderStatusViewSet.status() returns a plain {'message': ...} on success,
+ * not the full Order. The backend itself enforces the assigned->loading->delivered
+ * order (see orders/views.py) and rejects any other transition with a 400.
+ */
+@Serializable
+data class UpdateOrderStatusResponse(val message: String)

@@ -2,9 +2,11 @@ package ir.codecrafter.plasticproducts.data.network
 
 import ir.codecrafter.plasticproducts.data.model.CancelOrderResponse
 import ir.codecrafter.plasticproducts.data.model.EditOrderItemsRequest
+import ir.codecrafter.plasticproducts.data.model.Invoice
 import ir.codecrafter.plasticproducts.data.model.Order
 import ir.codecrafter.plasticproducts.data.model.OrderCreateResponse
 import ir.codecrafter.plasticproducts.data.model.OrderStatusHistoryEntry
+import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
@@ -13,6 +15,7 @@ import retrofit2.http.PATCH
 import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Path
+import retrofit2.http.Streaming
 
 interface OrderApi {
 
@@ -49,4 +52,21 @@ interface OrderApi {
         @Path("id") id: Int,
         @Body body: EditOrderItemsRequest,
     ): Response<ApiEnvelope<Order>>
+
+    /** orders/serializers.py InvoiceSerializer — see Invoice.kt. 404 if the order has no invoice yet (not delivered). */
+    @GET("orders/{id}/invoice/")
+    suspend fun getInvoice(@Path("id") id: Int): Response<ApiEnvelope<Invoice>>
+
+    /**
+     * orders/views.py invoice_pdf() returns a raw django.http.HttpResponse
+     * (Content-Type: application/pdf) on success, bypassing DRF's renderer/envelope
+     * entirely — its error paths (403/404) are still normal enveloped JSON, but a
+     * successful body is not JSON at all. @Streaming + ResponseBody makes Retrofit
+     * hand back the raw body instead of routing it through the registered
+     * kotlinx-serialization converter, which would otherwise fail trying to parse
+     * PDF bytes as JSON.
+     */
+    @Streaming
+    @GET("orders/{id}/invoice_pdf/")
+    suspend fun getInvoicePdf(@Path("id") id: Int): Response<ResponseBody>
 }
