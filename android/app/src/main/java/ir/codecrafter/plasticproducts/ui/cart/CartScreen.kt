@@ -206,22 +206,41 @@ private fun CartItemRow(
             ) {
                 Text(text = item.productDetail.title, style = MaterialTheme.typography.titleMedium)
 
-                OutlinedTextField(
-                    value = quantityText,
-                    onValueChange = { quantityText = it },
-                    label = { Text(stringResource(R.string.label_cart_quantity)) },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Decimal,
-                        imeAction = ImeAction.Done,
-                    ),
-                    keyboardActions = KeyboardActions(
-                        onDone = { if (quantityText != item.quantity) onQuantityChange(quantityText) },
-                    ),
+                val quantityChanged = quantityText.trim() != item.quantity.trim()
+
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 8.dp),
-                )
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    OutlinedTextField(
+                        value = quantityText,
+                        onValueChange = { quantityText = it },
+                        label = { Text(stringResource(R.string.label_cart_quantity)) },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Decimal,
+                            imeAction = ImeAction.Done,
+                        ),
+                        keyboardActions = KeyboardActions(
+                            // A second, optional path to the same onQuantityChange call the
+                            // "اعمال" button below triggers — kept for anyone who does use the
+                            // keyboard's Done action, not a replacement for the button.
+                            onDone = { if (quantityChanged) onQuantityChange(quantityText) },
+                        ),
+                        modifier = Modifier.weight(1f),
+                    )
+
+                    if (quantityChanged) {
+                        TextButton(
+                            onClick = { onQuantityChange(quantityText) },
+                            modifier = Modifier.padding(start = 4.dp),
+                        ) {
+                            Text(stringResource(R.string.btn_apply_quantity))
+                        }
+                    }
+                }
 
                 Text(
                     text = stringResource(R.string.label_cart_item_subtotal, item.subtotal),
