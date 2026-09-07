@@ -19,6 +19,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import ir.codecrafter.plasticproducts.R
 import ir.codecrafter.plasticproducts.ui.cart.CartScreen
+import ir.codecrafter.plasticproducts.ui.orders.OrderEditScreen
 import ir.codecrafter.plasticproducts.ui.products.ProductDetailScreen
 import ir.codecrafter.plasticproducts.ui.products.ProductListScreen
 import ir.codecrafter.plasticproducts.ui.profile.ProfileScreen
@@ -42,6 +43,14 @@ object ProductRoutes {
 /** Cart destination, reached from ProductListScreen's cart access point. */
 object CartRoutes {
     const val CART = "cart"
+}
+
+/** Order edit destination, reached from CartScreen's post-order confirmation dialog. */
+object OrderRoutes {
+    const val ORDER_ID_ARG = "orderId"
+    const val EDIT_PATTERN = "order_edit/{$ORDER_ID_ARG}"
+
+    fun edit(orderId: Int) = "order_edit/$orderId"
 }
 
 /**
@@ -86,6 +95,17 @@ fun AppNavHost(navController: NavHostController = rememberNavController()) {
         }
         composable(CartRoutes.CART) {
             CartScreen(
+                onBackToProducts = {
+                    navController.popBackStack(RootRoutes.BUYER_ROOT, inclusive = false)
+                },
+                onEditOrder = { orderId -> navController.navigate(OrderRoutes.edit(orderId)) },
+            )
+        }
+        composable(
+            route = OrderRoutes.EDIT_PATTERN,
+            arguments = listOf(navArgument(OrderRoutes.ORDER_ID_ARG) { type = NavType.IntType }),
+        ) {
+            OrderEditScreen(
                 onBackToProducts = {
                     navController.popBackStack(RootRoutes.BUYER_ROOT, inclusive = false)
                 },

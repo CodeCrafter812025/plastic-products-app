@@ -26,6 +26,8 @@ class OrderRepository @Inject constructor(
 
     suspend fun createOrder(): AuthResult<OrderCreateResponse> = safeCall { orderApi.createOrder() }
 
+    suspend fun getOrderDetail(orderId: Int): AuthResult<Order> = safeCall { orderApi.getOrder(orderId) }
+
     suspend fun getStatusHistory(orderId: Int): AuthResult<List<OrderStatusHistoryEntry>> =
         safeCall { orderApi.getStatusHistory(orderId) }
 

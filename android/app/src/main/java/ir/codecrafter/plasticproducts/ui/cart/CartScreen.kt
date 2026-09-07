@@ -49,12 +49,16 @@ import ir.codecrafter.plasticproducts.data.model.CartItem
 @Composable
 fun CartScreen(
     onBackToProducts: () -> Unit,
+    onEditOrder: (Int) -> Unit,
     viewModel: CartViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val isPlacingOrder by viewModel.isPlacingOrder.collectAsStateWithLifecycle()
     val placeOrderError by viewModel.placeOrderError.collectAsStateWithLifecycle()
     val placeOrderResult by viewModel.placeOrderResult.collectAsStateWithLifecycle()
+    val isCancellingOrder by viewModel.isCancellingOrder.collectAsStateWithLifecycle()
+    val orderCancelled by viewModel.orderCancelled.collectAsStateWithLifecycle()
+    var showCancelConfirm by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(viewModel) {
@@ -144,8 +148,40 @@ fun CartScreen(
     }
 
     val orderResult = placeOrderResult
-    if (orderResult != null) {
-        AlertDialog(
+    when {
+        orderCancelled -> AlertDialog(
+            onDismissRequest = {},
+            title = { Text(stringResource(R.string.title_order_cancelled)) },
+            confirmButton = {
+                TextButton(onClick = onBackToProducts) {
+                    Text(stringResource(R.string.btn_back_to_product_list))
+                }
+            },
+        )
+
+        showCancelConfirm && orderResult != null -> AlertDialog(
+            onDismissRequest = { if (!isCancellingOrder) showCancelConfirm = false },
+            title = { Text(stringResource(R.string.btn_cancel_order)) },
+            text = { Text(stringResource(R.string.msg_cancel_order_confirm)) },
+            confirmButton = {
+                TextButton(
+                    onClick = { viewModel.cancelOrder(orderResult.orderId) },
+                    enabled = !isCancellingOrder,
+                ) {
+                    Text(stringResource(R.string.btn_yes))
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showCancelConfirm = false },
+                    enabled = !isCancellingOrder,
+                ) {
+                    Text(stringResource(R.string.btn_no))
+                }
+            },
+        )
+
+        orderResult != null -> AlertDialog(
             onDismissRequest = {},
             title = { Text(stringResource(R.string.title_order_placed)) },
             text = {
@@ -163,6 +199,16 @@ fun CartScreen(
                     onBackToProducts()
                 }) {
                     Text(stringResource(R.string.btn_back_to_product_list))
+                }
+            },
+            dismissButton = {
+                Row {
+                    TextButton(onClick = { onEditOrder(orderResult.orderId) }) {
+                        Text(stringResource(R.string.btn_edit_order))
+                    }
+                    TextButton(onClick = { showCancelConfirm = true }) {
+                        Text(stringResource(R.string.btn_cancel_order))
+                    }
                 }
             },
         )

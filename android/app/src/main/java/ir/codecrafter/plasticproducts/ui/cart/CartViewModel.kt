@@ -59,6 +59,14 @@ class CartViewModel @Inject constructor(
     private val _placeOrderResult = MutableStateFlow<PlaceOrderResult?>(null)
     val placeOrderResult: StateFlow<PlaceOrderResult?> = _placeOrderResult.asStateFlow()
 
+    // Separate from placeOrderResult for the same reason: cancelling the
+    // just-placed order is its own one-shot action/outcome.
+    private val _isCancellingOrder = MutableStateFlow(false)
+    val isCancellingOrder: StateFlow<Boolean> = _isCancellingOrder.asStateFlow()
+
+    private val _orderCancelled = MutableStateFlow(false)
+    val orderCancelled: StateFlow<Boolean> = _orderCancelled.asStateFlow()
+
     init {
         loadCart()
     }
@@ -126,6 +134,22 @@ class CartViewModel @Inject constructor(
 
     fun consumePlaceOrderResult() {
         _placeOrderResult.value = null
+    }
+
+    fun cancelOrder(orderId: Int) {
+        viewModelScope.launch {
+            _isCancellingOrder.value = true
+            when (val result = orderRepository.cancelOrder(orderId)) {
+                is AuthResult.Success -> {
+                    _isCancellingOrder.value = false
+                    _orderCancelled.value = true
+                }
+                else -> {
+                    _isCancellingOrder.value = false
+                    _events.send(CartEvent.ActionFailed(describeFailure(result)))
+                }
+            }
+        }
     }
 
     private fun describeFailure(result: AuthResult<*>): String = when (result) {

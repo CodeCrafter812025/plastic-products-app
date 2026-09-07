@@ -20,6 +20,16 @@ interface OrderApi {
     @POST("orders/")
     suspend fun createOrder(): Response<ApiEnvelope<OrderCreateResponse>>
 
+    /**
+     * OrderViewSet is a full ModelViewSet with no retrieve() override, so this is
+     * DRF's default RetrieveModelMixin behavior — OrderSerializer's full shape (see
+     * Order in Order.kt), scoped by get_queryset() to orders the caller may see
+     * (their own as buyer, assigned ones as visitor, all as admin). Verified by
+     * reading orders/views.py directly, not assumed from the router registration.
+     */
+    @GET("orders/{id}/")
+    suspend fun getOrder(@Path("id") id: Int): Response<ApiEnvelope<Order>>
+
     /** Plain array response (no pagination), like ProductApi.getProducts(). */
     @GET("orders/{id}/status_history/")
     suspend fun getStatusHistory(@Path("id") id: Int): Response<ApiEnvelope<List<OrderStatusHistoryEntry>>>
