@@ -90,3 +90,69 @@ class OrderEditItemsQuantityTests(APITestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('error', response.data)
+
+
+class OrderSerializerBuyerInfoTests(APITestCase):
+    """
+    buyer_phone/buyer_address were added to OrderSerializer so that whoever
+    already has access to an order (buyer, assigned visitor, admin) can see
+    contact info without a separate lookup.
+    """
+
+    def setUp(self):
+        self.buyer = User.objects.create(
+            phone='09121234567', username='09121234567', full_name='Buyer',
+            role='buyer', address='تهران، خیابان آزادی'
+        )
+        self.admin = User.objects.create(
+            phone='09120000000', username='09120000000', full_name='Admin', role='admin'
+        )
+        self.visitor = User.objects.create(
+            phone='09121111111', username='09121111111', full_name='Visitor', role='visitor'
+        )
+        self.product = Product.objects.create(
+            title='Test', price=Decimal('10.00'), weight=Decimal('1.0'),
+            quality='اولیه', stock=Decimal('50'), is_active=True,
+            created_by=self.admin
+        )
+
+        self.order = Order.objects.create(buyer=self.buyer, total_price=Decimal('20.00'), status='pending')
+        OrderItem.objects.create(
+            order=self.order, product=self.product, quantity=Decimal('2'),
+            unit_price=Decimal('10.00'), total_price=Decimal('20.00')
+        )
+
+        client_admin = APIClient()
+        refresh_admin = RefreshToken.for_user(self.admin)
+        client_admin.credentials(HTTP_AUTHORIZATION=f'Bearer {refresh_admin.access_token}')
+        assign_url = reverse('order-assignment-list')
+        response = client_admin.post(assign_url, {
+            'order_id': self.order.id,
+            'new_visitor_id': self.visitor.id,
+        })
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        self.client_visitor = APIClient()
+        refresh_visitor = RefreshToken.for_user(self.visitor)
+        self.client_visitor.credentials(HTTP_AUTHORIZATION=f'Bearer {refresh_visitor.access_token}')
+
+    def test_assigned_visitor_sees_buyer_phone_and_address_in_list(self):
+        response = self.client_visitor.get(reverse('order-list'))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        orders = [o for o in response.data if o['id'] == self.order.id]
+        self.assertEqual(len(orders), 1)
+        self.assertEqual(orders[0]['buyer_phone'], self.buyer.phone)
+        self.assertEqual(orders[0]['buyer_address'], self.buyer.address)
+
+    def test_assigned_visitor_sees_buyer_phone_and_address_in_detail(self):
+        response = self.client_visitor.get(reverse('order-detail', args=[self.order.id]))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['buyer_phone'], self.buyer.phone)
+        self.assertEqual(response.data['buyer_address'], self.buyer.address)
+
+    def test_buyer_address_null_serializes_to_none(self):
+        self.buyer.address = None
+        self.buyer.save()
+        response = self.client_visitor.get(reverse('order-detail', args=[self.order.id]))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIsNone(response.data['buyer_address'])
