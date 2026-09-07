@@ -33,6 +33,16 @@ interface OrderApi {
     @GET("orders/{id}/")
     suspend fun getOrder(@Path("id") id: Int): Response<ApiEnvelope<Order>>
 
+    /**
+     * Likewise DRF's default ListModelMixin (no list() override, no
+     * pagination_class anywhere) — get_queryset() alone decides what comes back
+     * (buyer's own orders, a visitor's assigned ones, or all of them for admin),
+     * so no query params are needed or supported here. Plain array response, like
+     * ProductApi.getProducts()/getStatusHistory().
+     */
+    @GET("orders/")
+    suspend fun getOrders(): Response<ApiEnvelope<List<Order>>>
+
     /** Plain array response (no pagination), like ProductApi.getProducts(). */
     @GET("orders/{id}/status_history/")
     suspend fun getStatusHistory(@Path("id") id: Int): Response<ApiEnvelope<List<OrderStatusHistoryEntry>>>

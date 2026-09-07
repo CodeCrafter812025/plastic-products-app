@@ -30,6 +30,8 @@ class OrderRepository @Inject constructor(
 
     suspend fun getOrderDetail(orderId: Int): AuthResult<Order> = safeCall { orderApi.getOrder(orderId) }
 
+    suspend fun getOrders(): AuthResult<List<Order>> = safeCall { orderApi.getOrders() }
+
     suspend fun getStatusHistory(orderId: Int): AuthResult<List<OrderStatusHistoryEntry>> =
         safeCall { orderApi.getStatusHistory(orderId) }
 

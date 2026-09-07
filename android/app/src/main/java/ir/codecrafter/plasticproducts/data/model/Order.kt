@@ -14,12 +14,23 @@ data class OrderItem(
     @SerialName("total_price") val totalPrice: String,
 )
 
-/** orders/serializers.py OrderSerializer — the full order shape. */
+/**
+ * orders/serializers.py OrderSerializer — the full order shape. buyer_phone and
+ * buyer_address (both serializers.CharField(source='buyer.phone'/'buyer.address',
+ * read_only=True)) were confirmed on origin/main, not the (behind) local backend/
+ * checkout in this branch — see users/models.py: phone is a required CharField
+ * (never null in practice) but address is TextField(blank=True, null=True), and
+ * DRF's Serializer.to_representation() emits a literal JSON null for any field
+ * whose source attribute is None regardless of the field's own allow_null, so
+ * buyer_address can genuinely be null on the wire. Both kept nullable here.
+ */
 @Serializable
 data class Order(
     val id: Int,
     val buyer: Int,
     @SerialName("buyer_name") val buyerName: String? = null,
+    @SerialName("buyer_phone") val buyerPhone: String? = null,
+    @SerialName("buyer_address") val buyerAddress: String? = null,
     val visitor: Int? = null,
     @SerialName("visitor_name") val visitorName: String? = null,
     @SerialName("total_price") val totalPrice: String,
