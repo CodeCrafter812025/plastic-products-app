@@ -15,6 +15,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
@@ -25,6 +27,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -42,14 +45,25 @@ import coil.compose.AsyncImage
 import ir.codecrafter.plasticproducts.R
 import ir.codecrafter.plasticproducts.data.model.Product
 import ir.codecrafter.plasticproducts.data.model.ProductQuality
+import ir.codecrafter.plasticproducts.ui.cart.CartViewModel
 
 @Composable
 fun ProductListScreen(
     onProductClick: (Int) -> Unit,
+    onCartClick: () -> Unit,
     viewModel: ProductListViewModel = hiltViewModel(),
+    cartViewModel: CartViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val cartState by cartViewModel.uiState.collectAsStateWithLifecycle()
     var showMoreFilters by remember { mutableStateOf(false) }
+
+    // cartViewModel is scoped to this destination's own back stack entry, so its
+    // init{} only loads the cart once, the first time this screen is created —
+    // re-run it every time this screen is (re)composed (i.e. every time the user
+    // navigates back to it) so the badge count doesn't go stale after adding or
+    // removing cart items on other screens.
+    LaunchedEffect(Unit) { cartViewModel.loadCart() }
 
     Scaffold { paddingValues: PaddingValues ->
         Column(
@@ -58,6 +72,21 @@ fun ProductListScreen(
                 .padding(paddingValues)
                 .padding(horizontal = 24.dp, vertical = 16.dp),
         ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+            ) {
+                TextButton(onClick = onCartClick) {
+                    BadgedBox(badge = {
+                        if (cartState.items.isNotEmpty()) {
+                            Badge { Text(cartState.items.size.toString()) }
+                        }
+                    }) {
+                        Text(stringResource(R.string.btn_cart))
+                    }
+                }
+            }
+
             OutlinedTextField(
                 value = state.searchText,
                 onValueChange = viewModel::onSearchTextChange,

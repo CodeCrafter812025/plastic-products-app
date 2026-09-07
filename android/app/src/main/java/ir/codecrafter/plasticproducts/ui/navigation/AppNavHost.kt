@@ -18,6 +18,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import ir.codecrafter.plasticproducts.R
+import ir.codecrafter.plasticproducts.ui.cart.CartScreen
 import ir.codecrafter.plasticproducts.ui.products.ProductDetailScreen
 import ir.codecrafter.plasticproducts.ui.products.ProductListScreen
 import ir.codecrafter.plasticproducts.ui.profile.ProfileScreen
@@ -36,6 +37,11 @@ object ProductRoutes {
     const val DETAIL_PATTERN = "product_detail/{$PRODUCT_ID_ARG}"
 
     fun detail(productId: Int) = "product_detail/$productId"
+}
+
+/** Cart destination, reached from ProductListScreen's cart access point. */
+object CartRoutes {
+    const val CART = "cart"
 }
 
 /**
@@ -69,6 +75,7 @@ fun AppNavHost(navController: NavHostController = rememberNavController()) {
         composable(RootRoutes.BUYER_ROOT) {
             ProductListScreen(
                 onProductClick = { productId -> navController.navigate(ProductRoutes.detail(productId)) },
+                onCartClick = { navController.navigate(CartRoutes.CART) },
             )
         }
         composable(
@@ -76,6 +83,13 @@ fun AppNavHost(navController: NavHostController = rememberNavController()) {
             arguments = listOf(navArgument(ProductRoutes.PRODUCT_ID_ARG) { type = NavType.IntType }),
         ) {
             ProductDetailScreen(onBackToList = { navController.popBackStack() })
+        }
+        composable(CartRoutes.CART) {
+            CartScreen(
+                onBackToProducts = {
+                    navController.popBackStack(RootRoutes.BUYER_ROOT, inclusive = false)
+                },
+            )
         }
         composable(RootRoutes.VISITOR_ROOT) {
             RolePlaceholder(stringResource(R.string.role_label_visitor)) { navController.navigate(RootRoutes.PROFILE) }

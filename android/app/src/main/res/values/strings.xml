@@ -61,4 +61,23 @@
     <string name="error_network">خطا در اتصال به اینترنت. دوباره تلاش کنید.</string>
     <string name="error_generic">خطایی رخ داد. دوباره تلاش کنید.</string>
 
+    <!-- ui/products/ProductDetailScreen.kt (add-to-cart) -->
+    <string name="label_cart_quantity">مقدار</string>
+    <string name="btn_add_to_cart">افزودن به سبد</string>
+    <string name="msg_added_to_cart">به سبد خرید اضافه شد</string>
+
+    <!-- ui/products/ProductListScreen.kt (cart access point) -->
+    <string name="btn_cart">سبد خرید</string>
+
+    <!-- ui/cart/CartScreen.kt -->
+    <string name="label_cart_item_subtotal">جمع جزء: %1$s تومان</string>
+    <string name="label_cart_total">جمع کل: %1$s تومان</string>
+    <string name="empty_cart">سبد خرید شما خالی است</string>
+    <string name="btn_place_order">ثبت سفارش</string>
+    <string name="btn_remove_from_cart">حذف</string>
+    <string name="title_order_placed">سفارش ثبت شد</string>
+    <string name="label_order_id_value">شماره سفارش: %1$s</string>
+    <string name="label_order_total_value">مبلغ کل: %1$s تومان</string>
+    <string name="btn_back_to_product_list">بازگشت به لیست محصولات</string>
+
 </resources>

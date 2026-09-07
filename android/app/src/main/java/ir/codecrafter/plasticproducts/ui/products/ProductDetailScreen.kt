@@ -4,24 +4,34 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AssistChip
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -37,8 +47,18 @@ fun ProductDetailScreen(
     viewModel: ProductDetailViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val addedToCartMessage = stringResource(R.string.msg_added_to_cart)
 
-    Scaffold { paddingValues: PaddingValues ->
+    LaunchedEffect(viewModel) {
+        viewModel.events.collect { event ->
+            when (event) {
+                ProductDetailEvent.AddedToCart -> snackbarHostState.showSnackbar(addedToCartMessage)
+            }
+        }
+    }
+
+    Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) { paddingValues: PaddingValues ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -57,6 +77,11 @@ fun ProductDetailScreen(
 
                 state.product != null -> ProductDetailContent(
                     product = state.product!!,
+                    quantityInput = state.quantityInput,
+                    isAddingToCart = state.isAddingToCart,
+                    addToCartError = state.addToCartError,
+                    onQuantityInputChange = viewModel::onQuantityInputChange,
+                    onAddToCart = viewModel::addToCart,
                     onBackToList = onBackToList,
                 )
             }
@@ -65,7 +90,15 @@ fun ProductDetailScreen(
 }
 
 @Composable
-private fun ProductDetailContent(product: Product, onBackToList: () -> Unit) {
+private fun ProductDetailContent(
+    product: Product,
+    quantityInput: String,
+    isAddingToCart: Boolean,
+    addToCartError: String?,
+    onQuantityInputChange: (String) -> Unit,
+    onAddToCart: () -> Unit,
+    onBackToList: () -> Unit,
+) {
     Column(modifier = Modifier.fillMaxSize()) {
         ImageGallery(imageUrls = product.imageUrls, contentDescription = product.title)
 
@@ -107,6 +140,45 @@ private fun ProductDetailContent(product: Product, onBackToList: () -> Unit) {
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(top = 8.dp),
             )
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                OutlinedTextField(
+                    value = quantityInput,
+                    onValueChange = onQuantityInputChange,
+                    label = { Text(stringResource(R.string.label_cart_quantity)) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    modifier = Modifier.weight(1f),
+                )
+                Button(
+                    onClick = onAddToCart,
+                    enabled = quantityInput.isNotBlank() && !isAddingToCart,
+                    modifier = Modifier.padding(start = 8.dp),
+                ) {
+                    if (isAddingToCart) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.onPrimary,
+                        )
+                    } else {
+                        Text(stringResource(R.string.btn_add_to_cart))
+                    }
+                }
+            }
+
+            if (addToCartError != null) {
+                Text(
+                    text = addToCartError,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(top = 8.dp),
+                )
+            }
 
             if (product.description.isNotBlank()) {
                 Text(
