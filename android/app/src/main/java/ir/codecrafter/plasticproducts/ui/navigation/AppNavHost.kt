@@ -108,6 +108,7 @@ fun AppNavHost(navController: NavHostController = rememberNavController()) {
                 onProductClick = { productId -> navController.navigate(ProductRoutes.detail(productId)) },
                 onCartClick = { navController.navigate(CartRoutes.CART) },
                 onMyOrdersClick = { navController.navigate(BuyerOrderRoutes.LIST) },
+                onProfileClick = { navController.navigate(RootRoutes.PROFILE) },
             )
         }
         composable(BuyerOrderRoutes.LIST) {

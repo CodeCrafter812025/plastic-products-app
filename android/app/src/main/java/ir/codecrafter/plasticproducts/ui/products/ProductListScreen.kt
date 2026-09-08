@@ -52,6 +52,7 @@ fun ProductListScreen(
     onProductClick: (Int) -> Unit,
     onCartClick: () -> Unit,
     onMyOrdersClick: () -> Unit,
+    onProfileClick: () -> Unit,
     viewModel: ProductListViewModel = hiltViewModel(),
     cartViewModel: CartViewModel = hiltViewModel(),
 ) {
@@ -88,6 +89,9 @@ fun ProductListScreen(
                     }) {
                         Text(stringResource(R.string.btn_cart))
                     }
+                }
+                TextButton(onClick = onProfileClick) {
+                    Text(stringResource(R.string.btn_profile))
                 }
             }
 
