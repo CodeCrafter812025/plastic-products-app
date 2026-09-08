@@ -51,6 +51,7 @@ import ir.codecrafter.plasticproducts.ui.cart.CartViewModel
 fun ProductListScreen(
     onProductClick: (Int) -> Unit,
     onCartClick: () -> Unit,
+    onMyOrdersClick: () -> Unit,
     viewModel: ProductListViewModel = hiltViewModel(),
     cartViewModel: CartViewModel = hiltViewModel(),
 ) {
@@ -76,6 +77,9 @@ fun ProductListScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.End,
             ) {
+                TextButton(onClick = onMyOrdersClick) {
+                    Text(stringResource(R.string.btn_my_orders))
+                }
                 TextButton(onClick = onCartClick) {
                     BadgedBox(badge = {
                         if (cartState.items.isNotEmpty()) {

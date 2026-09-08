@@ -8,14 +8,20 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -26,9 +32,19 @@ import ir.codecrafter.plasticproducts.R
 
 @Composable
 fun ProfileScreen(
+    onLoggedOut: () -> Unit,
     viewModel: ProfileViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    var showLogoutConfirm by remember { mutableStateOf(false) }
+
+    LaunchedEffect(viewModel) {
+        viewModel.events.collect { event ->
+            when (event) {
+                ProfileEvent.LoggedOut -> onLoggedOut()
+            }
+        }
+    }
 
     Scaffold { paddingValues: PaddingValues ->
         if (state.isLoading) {
@@ -116,6 +132,34 @@ fun ProfileScreen(
                     Text(stringResource(R.string.btn_save))
                 }
             }
+
+            TextButton(
+                onClick = { showLogoutConfirm = true },
+                modifier = Modifier.padding(top = 16.dp),
+            ) {
+                Text(stringResource(R.string.btn_logout))
+            }
         }
+    }
+
+    if (showLogoutConfirm) {
+        AlertDialog(
+            onDismissRequest = { showLogoutConfirm = false },
+            title = { Text(stringResource(R.string.btn_logout)) },
+            text = { Text(stringResource(R.string.msg_logout_confirm)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showLogoutConfirm = false
+                    viewModel.logout()
+                }) {
+                    Text(stringResource(R.string.btn_yes))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showLogoutConfirm = false }) {
+                    Text(stringResource(R.string.btn_no))
+                }
+            },
+        )
     }
 }

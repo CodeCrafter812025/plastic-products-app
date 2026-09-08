@@ -114,4 +114,19 @@
     <string name="btn_mark_delivered">تحویل داده شد</string>
     <string name="msg_confirm_delivered">مطمئنید این سفارش تحویل داده شد؟</string>
 
+    <!-- ui/orders/BuyerOrderListScreen.kt -->
+    <string name="label_order_created_at_value">تاریخ ثبت: %1$s</string>
+    <string name="empty_buyer_orders">سفارشی ثبت نکرده‌اید</string>
+
+    <!-- ui/products/ProductListScreen.kt (my-orders access point) -->
+    <string name="btn_my_orders">سفارش‌های من</string>
+
+    <!-- ui/orders/BuyerOrderDetailScreen.kt -->
+    <string name="title_status_history">تاریخچه وضعیت</string>
+    <string name="label_status_change_entry">%1$s — %2$s</string>
+
+    <!-- ui/profile/ProfileScreen.kt (logout) -->
+    <string name="btn_logout">خروج از حساب</string>
+    <string name="msg_logout_confirm">مطمئنید می‌خواهید از حساب خود خارج شوید؟</string>
+
 </resources>

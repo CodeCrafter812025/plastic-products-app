@@ -7,11 +7,14 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import ir.codecrafter.plasticproducts.R
 import ir.codecrafter.plasticproducts.data.network.ErrorMessage
+import ir.codecrafter.plasticproducts.data.repository.AuthRepository
 import ir.codecrafter.plasticproducts.data.repository.AuthResult
 import ir.codecrafter.plasticproducts.data.repository.ProfileRepository
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -25,17 +28,30 @@ data class ProfileUiState(
     val saveSuccessMessage: String? = null,
 )
 
+sealed class ProfileEvent {
+    data object LoggedOut : ProfileEvent()
+}
+
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
     private val profileRepository: ProfileRepository,
+    private val authRepository: AuthRepository,
     @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ProfileUiState())
     val uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()
 
+    private val _events = Channel<ProfileEvent>(Channel.BUFFERED)
+    val events = _events.receiveAsFlow()
+
     init {
         loadProfile()
+    }
+
+    fun logout() {
+        authRepository.logout()
+        viewModelScope.launch { _events.send(ProfileEvent.LoggedOut) }
     }
 
     fun loadProfile() {

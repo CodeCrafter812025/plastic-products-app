@@ -19,6 +19,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import ir.codecrafter.plasticproducts.R
 import ir.codecrafter.plasticproducts.ui.cart.CartScreen
+import ir.codecrafter.plasticproducts.ui.orders.BuyerOrderDetailScreen
+import ir.codecrafter.plasticproducts.ui.orders.BuyerOrderListScreen
 import ir.codecrafter.plasticproducts.ui.orders.OrderEditScreen
 import ir.codecrafter.plasticproducts.ui.products.ProductDetailScreen
 import ir.codecrafter.plasticproducts.ui.products.ProductListScreen
@@ -63,6 +65,15 @@ object VisitorOrderRoutes {
     fun detail(orderId: Int) = "visitor_order_detail/$orderId"
 }
 
+/** Buyer's own order list/detail, reached from ProductListScreen's "سفارش‌های من" access point. */
+object BuyerOrderRoutes {
+    const val LIST = "buyer_order_list"
+    const val ORDER_ID_ARG = "orderId"
+    const val DETAIL_PATTERN = "buyer_order_detail/{$ORDER_ID_ARG}"
+
+    fun detail(orderId: Int) = "buyer_order_detail/$orderId"
+}
+
 /**
  * Top level of the app: the auth graph plus one root destination per role's own
  * (not-yet-built) graph, so authGraph's onAuthenticated has somewhere real to
@@ -96,6 +107,20 @@ fun AppNavHost(navController: NavHostController = rememberNavController()) {
             ProductListScreen(
                 onProductClick = { productId -> navController.navigate(ProductRoutes.detail(productId)) },
                 onCartClick = { navController.navigate(CartRoutes.CART) },
+                onMyOrdersClick = { navController.navigate(BuyerOrderRoutes.LIST) },
+            )
+        }
+        composable(BuyerOrderRoutes.LIST) {
+            BuyerOrderListScreen(
+                onOrderClick = { orderId -> navController.navigate(BuyerOrderRoutes.detail(orderId)) },
+            )
+        }
+        composable(
+            route = BuyerOrderRoutes.DETAIL_PATTERN,
+            arguments = listOf(navArgument(BuyerOrderRoutes.ORDER_ID_ARG) { type = NavType.IntType }),
+        ) {
+            BuyerOrderDetailScreen(
+                onEditOrder = { orderId -> navController.navigate(OrderRoutes.edit(orderId)) },
             )
         }
         composable(
@@ -136,7 +161,18 @@ fun AppNavHost(navController: NavHostController = rememberNavController()) {
         composable(RootRoutes.ADMIN_ROOT) {
             RolePlaceholder(stringResource(R.string.role_label_admin)) { navController.navigate(RootRoutes.PROFILE) }
         }
-        composable(RootRoutes.PROFILE) { ProfileScreen() }
+        composable(RootRoutes.PROFILE) {
+            ProfileScreen(
+                onLoggedOut = {
+                    // Coming back from deep inside a role's own graph, not just the auth
+                    // graph — clear the whole back stack, not popUpTo(AuthRoutes.GRAPH)
+                    // like onAuthenticated above (which never had anything before it).
+                    navController.navigate(AuthRoutes.GRAPH) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                },
+            )
+        }
     }
 }
 
