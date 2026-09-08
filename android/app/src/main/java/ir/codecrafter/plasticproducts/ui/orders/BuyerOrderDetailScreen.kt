@@ -41,6 +41,7 @@ import ir.codecrafter.plasticproducts.data.model.OrderStatusHistoryEntry
 @Composable
 fun BuyerOrderDetailScreen(
     onEditOrder: (Int) -> Unit,
+    onViewInvoice: (Int) -> Unit,
     viewModel: BuyerOrderDetailViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -78,6 +79,7 @@ fun BuyerOrderDetailScreen(
                     isCancelling = state.isCancelling,
                     onEditOrder = { onEditOrder(state.order!!.id) },
                     onRequestCancel = { showCancelConfirm = true },
+                    onViewInvoice = { onViewInvoice(state.order!!.id) },
                 )
             }
         }
@@ -118,6 +120,7 @@ private fun BuyerOrderDetailContent(
     isCancelling: Boolean,
     onEditOrder: () -> Unit,
     onRequestCancel: () -> Unit,
+    onViewInvoice: () -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
@@ -176,6 +179,19 @@ private fun BuyerOrderDetailContent(
                                 Text(stringResource(R.string.btn_cancel_order))
                             }
                         }
+                    }
+                }
+            }
+
+            if (order.status == "delivered") {
+                item {
+                    Button(
+                        onClick = onViewInvoice,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 12.dp),
+                    ) {
+                        Text(stringResource(R.string.btn_view_invoice))
                     }
                 }
             }

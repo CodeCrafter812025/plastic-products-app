@@ -129,4 +129,16 @@
     <string name="btn_logout">خروج از حساب</string>
     <string name="msg_logout_confirm">مطمئنید می‌خواهید از حساب خود خارج شوید؟</string>
 
+    <!-- ui/orders/BuyerOrderDetailScreen.kt (invoice access point) -->
+    <string name="btn_view_invoice">مشاهده فاکتور</string>
+
+    <!-- ui/invoice/InvoiceScreen.kt -->
+    <string name="label_invoice_number_value">شماره فاکتور: %1$s</string>
+    <string name="label_invoice_issued_at_value">تاریخ صدور: %1$s</string>
+    <string name="label_invoice_item_line_total_value">جمع: %1$s تومان</string>
+    <string name="btn_download_invoice_pdf">دانلود فاکتور (PDF)</string>
+
+    <!-- ui/invoice/InvoiceViewModel.kt -->
+    <string name="error_no_pdf_viewer">هیچ برنامه‌ای برای نمایش PDF یافت نشد</string>
+
 </resources>

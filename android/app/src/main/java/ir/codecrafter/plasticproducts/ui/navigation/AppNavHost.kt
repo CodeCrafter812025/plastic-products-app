@@ -19,6 +19,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import ir.codecrafter.plasticproducts.R
 import ir.codecrafter.plasticproducts.ui.cart.CartScreen
+import ir.codecrafter.plasticproducts.ui.invoice.InvoiceScreen
 import ir.codecrafter.plasticproducts.ui.orders.BuyerOrderDetailScreen
 import ir.codecrafter.plasticproducts.ui.orders.BuyerOrderListScreen
 import ir.codecrafter.plasticproducts.ui.orders.OrderEditScreen
@@ -74,6 +75,14 @@ object BuyerOrderRoutes {
     fun detail(orderId: Int) = "buyer_order_detail/$orderId"
 }
 
+/** Invoice destination, reached from BuyerOrderDetailScreen's "مشاهده فاکتور" button on delivered orders. */
+object InvoiceRoutes {
+    const val ORDER_ID_ARG = "orderId"
+    const val DETAIL_PATTERN = "invoice/{$ORDER_ID_ARG}"
+
+    fun detail(orderId: Int) = "invoice/$orderId"
+}
+
 /**
  * Top level of the app: the auth graph plus one root destination per role's own
  * (not-yet-built) graph, so authGraph's onAuthenticated has somewhere real to
@@ -122,7 +131,14 @@ fun AppNavHost(navController: NavHostController = rememberNavController()) {
         ) {
             BuyerOrderDetailScreen(
                 onEditOrder = { orderId -> navController.navigate(OrderRoutes.edit(orderId)) },
+                onViewInvoice = { orderId -> navController.navigate(InvoiceRoutes.detail(orderId)) },
             )
+        }
+        composable(
+            route = InvoiceRoutes.DETAIL_PATTERN,
+            arguments = listOf(navArgument(InvoiceRoutes.ORDER_ID_ARG) { type = NavType.IntType }),
+        ) {
+            InvoiceScreen()
         }
         composable(
             route = ProductRoutes.DETAIL_PATTERN,
