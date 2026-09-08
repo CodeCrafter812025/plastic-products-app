@@ -92,4 +92,26 @@
     <string name="msg_order_items_updated">تغییرات سفارش با موفقیت ثبت شد</string>
     <string name="empty_order_items">این سفارش دیگر هیچ آیتمی ندارد</string>
 
+    <!-- Order.status labels — ui/visitor/VisitorOrderListScreen.kt, VisitorOrderDetailScreen.kt -->
+    <string name="status_pending">در انتظار تخصیص</string>
+    <string name="status_assigned">تخصیص داده شده</string>
+    <string name="status_loading">بارگیری شد</string>
+    <string name="status_delivered">تحویل داده شد</string>
+    <string name="status_cancelled">لغو شده</string>
+    <string name="label_order_status_value">وضعیت: %1$s</string>
+
+    <!-- ui/visitor/VisitorOrderListScreen.kt -->
+    <string name="empty_visitor_orders">سفارشی برای شما تخصیص داده نشده است</string>
+
+    <!-- ui/visitor/VisitorOrderDetailScreen.kt -->
+    <string name="label_buyer_name_value">نام خریدار: %1$s</string>
+    <string name="label_buyer_phone_value">شماره تماس: %1$s</string>
+    <string name="label_buyer_address_value">آدرس: %1$s</string>
+    <string name="msg_address_not_registered">آدرس ثبت نشده</string>
+    <string name="label_order_item_quantity_value">تعداد: %1$s</string>
+    <string name="label_order_item_unit_price_value">قیمت واحد: %1$s تومان</string>
+    <string name="btn_start_loading">شروع بارگیری</string>
+    <string name="btn_mark_delivered">تحویل داده شد</string>
+    <string name="msg_confirm_delivered">مطمئنید این سفارش تحویل داده شد؟</string>
+
 </resources>

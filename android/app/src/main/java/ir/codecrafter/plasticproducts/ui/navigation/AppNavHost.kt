@@ -23,6 +23,8 @@ import ir.codecrafter.plasticproducts.ui.orders.OrderEditScreen
 import ir.codecrafter.plasticproducts.ui.products.ProductDetailScreen
 import ir.codecrafter.plasticproducts.ui.products.ProductListScreen
 import ir.codecrafter.plasticproducts.ui.profile.ProfileScreen
+import ir.codecrafter.plasticproducts.ui.visitor.VisitorOrderDetailScreen
+import ir.codecrafter.plasticproducts.ui.visitor.VisitorOrderListScreen
 
 /** Root destinations the auth graph hands off to once a user is authenticated. */
 object RootRoutes {
@@ -53,14 +55,23 @@ object OrderRoutes {
     fun edit(orderId: Int) = "order_edit/$orderId"
 }
 
+/** Visitor order detail destination, reached from VisitorOrderListScreen's rows. */
+object VisitorOrderRoutes {
+    const val ORDER_ID_ARG = "orderId"
+    const val DETAIL_PATTERN = "visitor_order_detail/{$ORDER_ID_ARG}"
+
+    fun detail(orderId: Int) = "visitor_order_detail/$orderId"
+}
+
 /**
  * Top level of the app: the auth graph plus one root destination per role's own
  * (not-yet-built) graph, so authGraph's onAuthenticated has somewhere real to
- * navigate. buyer_root now shows the real ProductListScreen; VisitorRootPlaceholder/
- * AdminRootPlaceholder are still deliberately minimal stand-ins — out of scope for
- * this task — meant to be replaced by each role's actual nav graph when that's
- * built. Their "پروفایل" button is a temporary way to reach ProfileScreen for
- * testing; it goes away once each role gets its own real navigation.
+ * navigate. buyer_root and visitor_root now show their real screens
+ * (ProductListScreen, VisitorOrderListScreen); AdminRootPlaceholder is still a
+ * deliberately minimal stand-in — out of scope for this task — meant to be
+ * replaced once admin's own nav graph is built. Its "پروفایل" button is a
+ * temporary way to reach ProfileScreen for testing; it goes away once admin gets
+ * its own real navigation.
  */
 @Composable
 fun AppNavHost(navController: NavHostController = rememberNavController()) {
@@ -112,7 +123,15 @@ fun AppNavHost(navController: NavHostController = rememberNavController()) {
             )
         }
         composable(RootRoutes.VISITOR_ROOT) {
-            RolePlaceholder(stringResource(R.string.role_label_visitor)) { navController.navigate(RootRoutes.PROFILE) }
+            VisitorOrderListScreen(
+                onOrderClick = { orderId -> navController.navigate(VisitorOrderRoutes.detail(orderId)) },
+            )
+        }
+        composable(
+            route = VisitorOrderRoutes.DETAIL_PATTERN,
+            arguments = listOf(navArgument(VisitorOrderRoutes.ORDER_ID_ARG) { type = NavType.IntType }),
+        ) {
+            VisitorOrderDetailScreen()
         }
         composable(RootRoutes.ADMIN_ROOT) {
             RolePlaceholder(stringResource(R.string.role_label_admin)) { navController.navigate(RootRoutes.PROFILE) }

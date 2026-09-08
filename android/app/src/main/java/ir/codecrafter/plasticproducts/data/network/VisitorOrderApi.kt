@@ -13,8 +13,8 @@ interface VisitorOrderApi {
      * VisitorOrderStatusViewSet is a GenericViewSet with no list/retrieve mixins —
      * this "status" action is the only endpoint it exposes. There is no GET on
      * /visitor/orders/ or /visitor/orders/{id}/ at all; a visitor's own order list
-     * still comes from GET /orders/{id}/ (scoped by get_queryset() to
-     * visitor=request.user) once that list endpoint exists.
+     * comes from OrderApi.getOrders() (GET /orders/), scoped server-side by
+     * get_queryset() to visitor=request.user.
      */
     @PATCH("visitor/orders/{id}/status/")
     suspend fun updateStatus(
