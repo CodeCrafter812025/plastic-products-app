@@ -141,4 +141,11 @@
     <!-- ui/invoice/InvoiceViewModel.kt -->
     <string name="error_no_pdf_viewer">هیچ برنامه‌ای برای نمایش PDF یافت نشد</string>
 
+    <!-- ui/products/ProductListScreen.kt (notifications access point) -->
+    <string name="btn_notifications">اعلان‌ها</string>
+
+    <!-- ui/notifications/NotificationListScreen.kt -->
+    <string name="btn_mark_all_notifications_read">علامت‌گذاری همه به‌عنوان خوانده‌شده</string>
+    <string name="empty_notifications">اعلانی وجود ندارد</string>
+
 </resources>

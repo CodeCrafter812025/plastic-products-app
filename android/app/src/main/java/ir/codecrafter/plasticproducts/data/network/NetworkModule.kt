@@ -90,4 +90,8 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideVisitorOrderApi(retrofit: Retrofit): VisitorOrderApi = retrofit.create(VisitorOrderApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideNotificationApi(retrofit: Retrofit): NotificationApi = retrofit.create(NotificationApi::class.java)
 }

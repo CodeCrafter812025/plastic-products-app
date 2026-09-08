@@ -20,6 +20,7 @@ import androidx.navigation.navArgument
 import ir.codecrafter.plasticproducts.R
 import ir.codecrafter.plasticproducts.ui.cart.CartScreen
 import ir.codecrafter.plasticproducts.ui.invoice.InvoiceScreen
+import ir.codecrafter.plasticproducts.ui.notifications.NotificationListScreen
 import ir.codecrafter.plasticproducts.ui.orders.BuyerOrderDetailScreen
 import ir.codecrafter.plasticproducts.ui.orders.BuyerOrderListScreen
 import ir.codecrafter.plasticproducts.ui.orders.OrderEditScreen
@@ -83,6 +84,11 @@ object InvoiceRoutes {
     fun detail(orderId: Int) = "invoice/$orderId"
 }
 
+/** Notification list destination, reached from ProductListScreen's notification access point. */
+object NotificationRoutes {
+    const val LIST = "notifications"
+}
+
 /**
  * Top level of the app: the auth graph plus one root destination per role's own
  * (not-yet-built) graph, so authGraph's onAuthenticated has somewhere real to
@@ -118,6 +124,12 @@ fun AppNavHost(navController: NavHostController = rememberNavController()) {
                 onCartClick = { navController.navigate(CartRoutes.CART) },
                 onMyOrdersClick = { navController.navigate(BuyerOrderRoutes.LIST) },
                 onProfileClick = { navController.navigate(RootRoutes.PROFILE) },
+                onNotificationsClick = { navController.navigate(NotificationRoutes.LIST) },
+            )
+        }
+        composable(NotificationRoutes.LIST) {
+            NotificationListScreen(
+                onOrderClick = { orderId -> navController.navigate(BuyerOrderRoutes.detail(orderId)) },
             )
         }
         composable(BuyerOrderRoutes.LIST) {

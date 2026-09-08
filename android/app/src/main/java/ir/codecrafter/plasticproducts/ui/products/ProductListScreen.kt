@@ -46,6 +46,7 @@ import ir.codecrafter.plasticproducts.R
 import ir.codecrafter.plasticproducts.data.model.Product
 import ir.codecrafter.plasticproducts.data.model.ProductQuality
 import ir.codecrafter.plasticproducts.ui.cart.CartViewModel
+import ir.codecrafter.plasticproducts.ui.notifications.NotificationListViewModel
 
 @Composable
 fun ProductListScreen(
@@ -53,19 +54,25 @@ fun ProductListScreen(
     onCartClick: () -> Unit,
     onMyOrdersClick: () -> Unit,
     onProfileClick: () -> Unit,
+    onNotificationsClick: () -> Unit,
     viewModel: ProductListViewModel = hiltViewModel(),
     cartViewModel: CartViewModel = hiltViewModel(),
+    notificationListViewModel: NotificationListViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val cartState by cartViewModel.uiState.collectAsStateWithLifecycle()
+    val notificationState by notificationListViewModel.uiState.collectAsStateWithLifecycle()
     var showMoreFilters by remember { mutableStateOf(false) }
 
-    // cartViewModel is scoped to this destination's own back stack entry, so its
-    // init{} only loads the cart once, the first time this screen is created —
-    // re-run it every time this screen is (re)composed (i.e. every time the user
-    // navigates back to it) so the badge count doesn't go stale after adding or
-    // removing cart items on other screens.
-    LaunchedEffect(Unit) { cartViewModel.loadCart() }
+    // cartViewModel/notificationListViewModel are scoped to this destination's own
+    // back stack entry, so their init{} only loads once, the first time this screen
+    // is created — re-run both every time this screen is (re)composed (i.e. every
+    // time the user navigates back to it) so the badge counts don't go stale after
+    // changes made on other screens.
+    LaunchedEffect(Unit) {
+        cartViewModel.loadCart()
+        notificationListViewModel.loadNotifications()
+    }
 
     Scaffold { paddingValues: PaddingValues ->
         Column(
@@ -78,6 +85,16 @@ fun ProductListScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.End,
             ) {
+                TextButton(onClick = onNotificationsClick) {
+                    val unreadCount = notificationState.notifications.count { !it.isRead }
+                    BadgedBox(badge = {
+                        if (unreadCount > 0) {
+                            Badge { Text(unreadCount.toString()) }
+                        }
+                    }) {
+                        Text(stringResource(R.string.btn_notifications))
+                    }
+                }
                 TextButton(onClick = onMyOrdersClick) {
                     Text(stringResource(R.string.btn_my_orders))
                 }
