@@ -145,7 +145,7 @@ private fun BuyerOrderDetailContent(
                 )
             }
 
-            items(order.items, key = { it.id }) { item ->
+            items(order.items, key = { "item_${it.id}" }) { item ->
                 OrderItemRow(item)
             }
 
@@ -204,7 +204,7 @@ private fun BuyerOrderDetailContent(
                         modifier = Modifier.padding(top = 24.dp, bottom = 8.dp),
                     )
                 }
-                items(statusHistory, key = { it.id }) { entry ->
+                items(statusHistory, key = { "history_${it.id}" }) { entry ->
                     Text(
                         text = stringResource(
                             R.string.label_status_change_entry,
