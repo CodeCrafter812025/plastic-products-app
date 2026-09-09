@@ -34,15 +34,16 @@ interface AdminProductApi {
 
     /**
      * orders/models.py OrderItem.product is on_delete=models.RESTRICT — deleting a
-     * product still referenced by any order item fails at the database level with
-     * a Django RestrictedError. That's a plain Django exception, not a DRF
-     * APIException, so core/exception_handlers.py's custom_exception_handler
-     * (which only post-processes what DRF's own exception_handler already turned
-     * into a Response) never sees it — the call surfaces as a bare, unenveloped
-     * 500, not the usual {success:false, error:{...}} shape. Verified by reading
-     * both orders/models.py and core/exception_handlers.py on origin/main, not
-     * assumed. See AdminProductRepository.deleteProduct's KDoc for the UI-layer
-     * implication (prefer toggleActive() as the primary "remove" action).
+     * product still referenced by any order item is blocked at the database level
+     * with a Django RestrictedError. core/exception_handlers.py's
+     * custom_exception_handler explicitly catches RestrictedError/ProtectedError
+     * and turns it into a clean HTTP 400 in the standard envelope, with a
+     * ready-to-display Persian message ("این محصول قبلاً در سفارشی استفاده شده و
+     * قابل حذف نیست؛ به‌جای حذف، آن را غیرفعال کنید."), not a raw 500 — verified
+     * by reading both orders/models.py and core/exception_handlers.py on
+     * origin/main, not assumed. See AdminProductRepository.deleteProduct's KDoc
+     * for the UI-layer implication (still prefer toggleActive() as the primary
+     * "remove" action; delete stays a valid, cleanly-erroring secondary path).
      */
     @DELETE("products/{id}/")
     suspend fun deleteProduct(@Path("id") id: Int): Response<Unit>

@@ -38,12 +38,12 @@ class AdminProductRepository @Inject constructor(
 
     /**
      * orders/models.py OrderItem.product is on_delete=RESTRICT — deleting a
-     * product still referenced by any order fails server-side with an uncaught,
-     * unenveloped 500 rather than a clean validation error (see
-     * AdminProductApi.deleteProduct's KDoc). Until the backend changes this,
-     * toggleActive() (deactivate) should be the primary "remove product" action
-     * offered in the UI, with delete treated as an unsafe/rarely-usable escape
-     * hatch rather than the main path.
+     * product still referenced by any order fails server-side, but cleanly: a
+     * 400 in the standard envelope with a ready-to-display Persian message (see
+     * AdminProductApi.deleteProduct's KDoc), not a raw 500. Still, toggleActive()
+     * (deactivate) should be the primary "remove product" action offered in the
+     * UI — most products with any order history will hit this 400 on delete, so
+     * deactivating is the action that actually succeeds for them.
      */
     suspend fun deleteProduct(id: Int): AuthResult<Unit> = safeCallNoContent { adminProductApi.deleteProduct(id) }
 
