@@ -148,4 +148,15 @@
     <string name="btn_mark_all_notifications_read">علامت‌گذاری همه به‌عنوان خوانده‌شده</string>
     <string name="empty_notifications">اعلانی وجود ندارد</string>
 
+    <!-- ui/admin/AdminProductListScreen.kt -->
+    <string name="btn_add_new_product">افزودن محصول جدید</string>
+    <string name="btn_activate_product">فعال‌سازی</string>
+    <string name="btn_deactivate_product">غیرفعال‌سازی</string>
+    <string name="label_product_inactive_badge">غیرفعال</string>
+    <string name="btn_delete_product">حذف محصول</string>
+    <string name="msg_delete_product_confirm">این عمل غیرقابل‌بازگشت است؛ مطمئنید می‌خواهید این محصول را برای همیشه حذف کنید؟</string>
+
+    <!-- ui/navigation/AppNavHost.kt (admin product create/edit placeholder) -->
+    <string name="placeholder_admin_product_form">فرم افزودن/ویرایش محصول — این بخش هنوز ساخته نشده است</string>
+
 </resources>

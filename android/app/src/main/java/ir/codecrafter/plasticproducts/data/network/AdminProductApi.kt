@@ -20,8 +20,22 @@ import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Part
 import retrofit2.http.Path
+import retrofit2.http.Query
 
 interface AdminProductApi {
+
+    /**
+     * products/views.py ProductViewSet.get_queryset() — for the list action,
+     * include_inactive only takes effect when the caller is authenticated as
+     * admin (server-side role check, not just a client-side convenience) and
+     * must be the literal string "true"; anything else (including "false" or
+     * an absent param) behaves like the public list (is_active=True only).
+     * Verified on origin/main, not assumed.
+     */
+    @GET("products/")
+    suspend fun getProducts(
+        @Query("include_inactive") includeInactive: Boolean? = null,
+    ): Response<ApiEnvelope<List<Product>>>
 
     @POST("products/")
     suspend fun createProduct(@Body body: ProductWriteBody): Response<ApiEnvelope<Product>>

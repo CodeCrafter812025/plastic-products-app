@@ -29,6 +29,10 @@ class AdminProductRepository @Inject constructor(
     private val json: Json,
 ) {
 
+    /** includeInactive is only ever sent as "true" or omitted — see AdminProductApi.getProducts's KDoc. */
+    suspend fun getProducts(includeInactive: Boolean): AuthResult<List<Product>> =
+        safeCall { adminProductApi.getProducts(if (includeInactive) true else null) }
+
     suspend fun createProduct(body: ProductWriteBody): AuthResult<Product> =
         safeCall { adminProductApi.createProduct(body) }
 

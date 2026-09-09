@@ -1,16 +1,14 @@
 package ir.codecrafter.plasticproducts.ui.navigation
 
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -18,6 +16,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import ir.codecrafter.plasticproducts.R
+import ir.codecrafter.plasticproducts.ui.admin.AdminProductListScreen
 import ir.codecrafter.plasticproducts.ui.cart.CartScreen
 import ir.codecrafter.plasticproducts.ui.invoice.InvoiceScreen
 import ir.codecrafter.plasticproducts.ui.notifications.NotificationListScreen
@@ -90,14 +89,23 @@ object NotificationRoutes {
 }
 
 /**
+ * Admin's product create/edit destinations, reached from AdminProductListScreen's
+ * "افزودن محصول جدید" button and its row clicks. Both currently show a bare
+ * placeholder — the actual form is a later task.
+ */
+object AdminProductRoutes {
+    const val CREATE = "admin_product_create"
+    const val PRODUCT_ID_ARG = "productId"
+    const val EDIT_PATTERN = "admin_product_edit/{$PRODUCT_ID_ARG}"
+
+    fun edit(productId: Int) = "admin_product_edit/$productId"
+}
+
+/**
  * Top level of the app: the auth graph plus one root destination per role's own
- * (not-yet-built) graph, so authGraph's onAuthenticated has somewhere real to
- * navigate. buyer_root and visitor_root now show their real screens
- * (ProductListScreen, VisitorOrderListScreen); AdminRootPlaceholder is still a
- * deliberately minimal stand-in — out of scope for this task — meant to be
- * replaced once admin's own nav graph is built. Its "پروفایل" button is a
- * temporary way to reach ProfileScreen for testing; it goes away once admin gets
- * its own real navigation.
+ * graph, so authGraph's onAuthenticated has somewhere real to navigate. All three
+ * roots now show their real screens (ProductListScreen, VisitorOrderListScreen,
+ * AdminProductListScreen).
  */
 @Composable
 fun AppNavHost(navController: NavHostController = rememberNavController()) {
@@ -188,7 +196,19 @@ fun AppNavHost(navController: NavHostController = rememberNavController()) {
             VisitorOrderDetailScreen()
         }
         composable(RootRoutes.ADMIN_ROOT) {
-            RolePlaceholder(stringResource(R.string.role_label_admin)) { navController.navigate(RootRoutes.PROFILE) }
+            AdminProductListScreen(
+                onAddProductClick = { navController.navigate(AdminProductRoutes.CREATE) },
+                onProductClick = { productId -> navController.navigate(AdminProductRoutes.edit(productId)) },
+            )
+        }
+        composable(AdminProductRoutes.CREATE) {
+            AdminProductFormPlaceholder()
+        }
+        composable(
+            route = AdminProductRoutes.EDIT_PATTERN,
+            arguments = listOf(navArgument(AdminProductRoutes.PRODUCT_ID_ARG) { type = NavType.IntType }),
+        ) {
+            AdminProductFormPlaceholder()
         }
         composable(RootRoutes.PROFILE) {
             ProfileScreen(
@@ -206,22 +226,15 @@ fun AppNavHost(navController: NavHostController = rememberNavController()) {
 }
 
 @Composable
-private fun RolePlaceholder(roleLabel: String, onProfileClick: () -> Unit) {
+private fun AdminProductFormPlaceholder() {
     Scaffold { paddingValues ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
-                .padding(24.dp),
+                .padding(paddingValues),
+            contentAlignment = Alignment.Center,
         ) {
-            Text(
-                text = stringResource(R.string.placeholder_role_not_built_message, roleLabel),
-                style = MaterialTheme.typography.bodyLarge,
-            )
-            // Temporary, for testing ProfileScreen this phase only.
-            Button(onClick = onProfileClick, modifier = Modifier.padding(top = 16.dp)) {
-                Text(stringResource(R.string.btn_profile))
-            }
+            Text(stringResource(R.string.placeholder_admin_product_form))
         }
     }
 }
