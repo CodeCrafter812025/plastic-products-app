@@ -35,7 +35,14 @@ class ProductViewSet(viewsets.ModelViewSet):
         reactivate them); everyone else still only sees active ones.
         """
         if self.action == 'list':
-            queryset = Product.objects.filter(is_active=True)
+            user = self.request.user
+            is_admin = user.is_authenticated and getattr(user, 'role', None) == 'admin'
+            include_inactive = is_admin and self.request.query_params.get('include_inactive') == 'true'
+
+            if include_inactive:
+                queryset = Product.objects.all()
+            else:
+                queryset = Product.objects.filter(is_active=True)
 
             search = self.request.query_params.get('search')
             if search:

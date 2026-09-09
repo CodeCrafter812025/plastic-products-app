@@ -99,3 +99,55 @@ class ProductDeleteRestrictedErrorTests(APITestCase):
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertFalse(Product.objects.filter(id=self.unused_product.id).exists())
+
+
+class ProductListIncludeInactiveTests(APITestCase):
+    """
+    ?include_inactive=true is an admin-only opt-in for the product list
+    (used by the admin product-management UI). Default behavior for
+    everyone, admin included, must stay unchanged: only active products.
+    """
+
+    def setUp(self):
+        self.list_url = reverse('product-list')
+        self.admin = User.objects.create(
+            phone='09120000002', username='09120000002', full_name='Admin', role='admin'
+        )
+        self.buyer = User.objects.create(
+            phone='09121234567', username='09121234567', full_name='Buyer', role='buyer'
+        )
+        self.active_product = Product.objects.create(
+            title='محصول فعال', price=Decimal('10.00'), weight=Decimal('1.00'),
+            quality='اولیه', stock=Decimal('10.00'), is_active=True, created_by=self.admin,
+        )
+        self.inactive_product = Product.objects.create(
+            title='محصول غیرفعال', price=Decimal('10.00'), weight=Decimal('1.00'),
+            quality='اولیه', stock=Decimal('10.00'), is_active=False, created_by=self.admin,
+        )
+
+    def _client_for(self, user):
+        client = APIClient()
+        refresh = RefreshToken.for_user(user)
+        client.credentials(HTTP_AUTHORIZATION=f'Bearer {refresh.access_token}')
+        return client
+
+    def test_admin_with_include_inactive_true_sees_all_products(self):
+        client = self._client_for(self.admin)
+        response = client.get(self.list_url, {'include_inactive': 'true'})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        returned_ids = {p['id'] for p in response.data}
+        self.assertEqual(returned_ids, {self.active_product.id, self.inactive_product.id})
+
+    def test_admin_without_param_sees_only_active_products(self):
+        client = self._client_for(self.admin)
+        response = client.get(self.list_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        returned_ids = {p['id'] for p in response.data}
+        self.assertEqual(returned_ids, {self.active_product.id})
+
+    def test_non_admin_with_include_inactive_true_is_ignored(self):
+        client = self._client_for(self.buyer)
+        response = client.get(self.list_url, {'include_inactive': 'true'})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        returned_ids = {p['id'] for p in response.data}
+        self.assertEqual(returned_ids, {self.active_product.id})
