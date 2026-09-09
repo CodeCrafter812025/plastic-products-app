@@ -94,4 +94,8 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideNotificationApi(retrofit: Retrofit): NotificationApi = retrofit.create(NotificationApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideAdminProductApi(retrofit: Retrofit): AdminProductApi = retrofit.create(AdminProductApi::class.java)
 }
