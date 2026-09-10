@@ -28,11 +28,6 @@ class ProductSerializer(serializers.ModelSerializer):
                 urls.append(url)
         return urls
 
-    def validate_image_urls(self, value):
-        if len(value) > 5:
-            raise serializers.ValidationError("حداکثر ۵ تصویر مجاز است.")
-        return value
-
 class PriceHistorySerializer(serializers.ModelSerializer):
     changed_by_name = serializers.StringRelatedField(source='changed_by', read_only=True)
     
