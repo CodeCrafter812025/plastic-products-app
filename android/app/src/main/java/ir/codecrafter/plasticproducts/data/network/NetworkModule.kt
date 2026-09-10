@@ -98,4 +98,8 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideAdminProductApi(retrofit: Retrofit): AdminProductApi = retrofit.create(AdminProductApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideAdminUserApi(retrofit: Retrofit): AdminUserApi = retrofit.create(AdminUserApi::class.java)
 }
