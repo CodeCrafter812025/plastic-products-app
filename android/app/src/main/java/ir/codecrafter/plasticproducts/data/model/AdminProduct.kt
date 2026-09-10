@@ -24,6 +24,26 @@ data class ProductWriteBody(
     @SerialName("is_active") val isActive: Boolean,
 )
 
+/**
+ * Body for PATCH products/{id}/ from the main edit form — deliberately excludes
+ * price and stock. Those two fields have dedicated endpoints (updatePrice/
+ * updateStock) specifically because changing them there also creates a
+ * PriceHistory/StockHistory record; if this body carried price/stock too,
+ * saving the general form would silently change them via ProductViewSet's
+ * plain serializer update, bypassing history creation entirely. Used only for
+ * edit-mode saves — create mode still needs the full ProductWriteBody, since a
+ * brand new product has no existing price/stock to fall back to.
+ */
+@Serializable
+data class ProductUpdateBody(
+    val title: String,
+    val weight: String,
+    val color: String? = null,
+    val quality: String,
+    val description: String = "",
+    @SerialName("is_active") val isActive: Boolean,
+)
+
 /** Body for PATCH products/{id}/price/. */
 @Serializable
 data class UpdateProductPriceRequest(val price: String)

@@ -174,4 +174,27 @@
     <string name="msg_max_images_reached">حداکثر ۵ تصویر مجاز است</string>
     <string name="msg_save_product_before_images">برای افزودن تصویر، ابتدا محصول را ذخیره کنید</string>
 
+    <!-- ui/admin/AdminProductFormScreen.kt (price/stock read-only rows + change dialogs) -->
+    <string name="label_product_price_value">قیمت: %1$s تومان</string>
+    <string name="label_product_stock_value">موجودی: %1$s</string>
+    <string name="btn_change_price">تغییر قیمت</string>
+    <string name="btn_change_stock">تغییر موجودی</string>
+    <string name="btn_cancel">انصراف</string>
+    <string name="stock_reason_initial">اولیه</string>
+    <string name="stock_reason_sale">فروش</string>
+    <string name="stock_reason_restock">تامین مجدد</string>
+    <string name="stock_reason_adjustment">تعدیل</string>
+
+    <!-- ui/admin/AdminProductFormScreen.kt (price/stock history access point) -->
+    <string name="btn_view_price_stock_history">تاریخچه‌ی قیمت و موجودی</string>
+
+    <!-- ui/admin/ProductHistoryScreen.kt -->
+    <string name="tab_price_history">تاریخچه‌ی قیمت</string>
+    <string name="tab_stock_history">تاریخچه‌ی موجودی</string>
+    <string name="label_price_history_change">از %1$s به %2$s تومان</string>
+    <string name="label_stock_history_change">از %1$s به %2$s</string>
+    <string name="label_history_changed_at_by">%1$s — %2$s</string>
+    <string name="empty_price_history">تاریخچه‌ی قیمتی ثبت نشده</string>
+    <string name="empty_stock_history">تاریخچه‌ی موجودی ثبت نشده</string>
+
 </resources>

@@ -3,6 +3,7 @@ package ir.codecrafter.plasticproducts.data.network
 import ir.codecrafter.plasticproducts.data.model.PriceHistory
 import ir.codecrafter.plasticproducts.data.model.Product
 import ir.codecrafter.plasticproducts.data.model.ProductActionMessageResponse
+import ir.codecrafter.plasticproducts.data.model.ProductUpdateBody
 import ir.codecrafter.plasticproducts.data.model.ProductWriteBody
 import ir.codecrafter.plasticproducts.data.model.StockHistory
 import ir.codecrafter.plasticproducts.data.model.ToggleProductActiveResponse
@@ -40,11 +41,13 @@ interface AdminProductApi {
     @POST("products/")
     suspend fun createProduct(@Body body: ProductWriteBody): Response<ApiEnvelope<Product>>
 
+    /** Body is ProductUpdateBody, not ProductWriteBody — see its KDoc for why price/stock are excluded from edit-mode saves. */
     @PUT("products/{id}/")
-    suspend fun putProduct(@Path("id") id: Int, @Body body: ProductWriteBody): Response<ApiEnvelope<Product>>
+    suspend fun putProduct(@Path("id") id: Int, @Body body: ProductUpdateBody): Response<ApiEnvelope<Product>>
 
+    /** Body is ProductUpdateBody, not ProductWriteBody — see its KDoc for why price/stock are excluded from edit-mode saves. */
     @PATCH("products/{id}/")
-    suspend fun patchProduct(@Path("id") id: Int, @Body body: ProductWriteBody): Response<ApiEnvelope<Product>>
+    suspend fun patchProduct(@Path("id") id: Int, @Body body: ProductUpdateBody): Response<ApiEnvelope<Product>>
 
     /**
      * orders/models.py OrderItem.product is on_delete=models.RESTRICT — deleting a

@@ -50,10 +50,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import ir.codecrafter.plasticproducts.R
 import ir.codecrafter.plasticproducts.data.model.ProductQuality
+import ir.codecrafter.plasticproducts.data.model.StockChangeReason
 
 @Composable
 fun AdminProductFormScreen(
     onSaved: () -> Unit,
+    onViewHistory: () -> Unit,
     viewModel: AdminProductFormViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -86,7 +88,7 @@ fun AdminProductFormScreen(
                         .padding(24.dp),
                 )
 
-                else -> AdminProductFormContent(state = state, viewModel = viewModel)
+                else -> AdminProductFormContent(state = state, viewModel = viewModel, onViewHistory = onViewHistory)
             }
         }
     }
@@ -105,13 +107,24 @@ fun AdminProductFormScreen(
 }
 
 @Composable
-private fun AdminProductFormContent(state: AdminProductFormUiState, viewModel: AdminProductFormViewModel) {
+private fun AdminProductFormContent(
+    state: AdminProductFormUiState,
+    viewModel: AdminProductFormViewModel,
+    onViewHistory: () -> Unit,
+) {
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+        if (state.isEditMode) {
+            item {
+                TextButton(onClick = onViewHistory, modifier = Modifier.fillMaxWidth()) {
+                    Text(stringResource(R.string.btn_view_price_stock_history))
+                }
+            }
+        }
         item {
             OutlinedTextField(
                 value = state.title,
@@ -138,15 +151,25 @@ private fun AdminProductFormContent(state: AdminProductFormUiState, viewModel: A
                 modifier = Modifier.fillMaxWidth(),
             )
         }
-        item {
-            OutlinedTextField(
-                value = state.price,
-                onValueChange = viewModel::onPriceChange,
-                label = { Text(stringResource(R.string.label_product_price)) },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                modifier = Modifier.fillMaxWidth(),
-            )
+        if (state.isEditMode) {
+            item {
+                ProductPriceRow(
+                    price = state.price,
+                    isUpdating = state.isUpdatingPrice,
+                    onConfirm = viewModel::updatePrice,
+                )
+            }
+        } else {
+            item {
+                OutlinedTextField(
+                    value = state.price,
+                    onValueChange = viewModel::onPriceChange,
+                    label = { Text(stringResource(R.string.label_product_price)) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
         }
         item {
             OutlinedTextField(
@@ -158,15 +181,25 @@ private fun AdminProductFormContent(state: AdminProductFormUiState, viewModel: A
                 modifier = Modifier.fillMaxWidth(),
             )
         }
-        item {
-            OutlinedTextField(
-                value = state.stock,
-                onValueChange = viewModel::onStockChange,
-                label = { Text(stringResource(R.string.label_product_stock)) },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                modifier = Modifier.fillMaxWidth(),
-            )
+        if (state.isEditMode) {
+            item {
+                ProductStockRow(
+                    stock = state.stock,
+                    isUpdating = state.isUpdatingStock,
+                    onConfirm = viewModel::updateStock,
+                )
+            }
+        } else {
+            item {
+                OutlinedTextField(
+                    value = state.stock,
+                    onValueChange = viewModel::onStockChange,
+                    label = { Text(stringResource(R.string.label_product_stock)) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
         }
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -310,4 +343,159 @@ private fun ProductImagesSection(
             )
         }
     }
+}
+
+/** Read-only in edit mode — price changes go through PATCH products/{id}/price/, not the general form save. */
+@Composable
+private fun ProductPriceRow(price: String, isUpdating: Boolean, onConfirm: (String) -> Unit) {
+    var showDialog by remember { mutableStateOf(false) }
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = stringResource(R.string.label_product_price_value, price),
+            modifier = Modifier.weight(1f),
+        )
+        TextButton(onClick = { showDialog = true }, enabled = !isUpdating) {
+            Text(stringResource(R.string.btn_change_price))
+        }
+    }
+
+    if (showDialog) {
+        ChangePriceDialog(
+            onConfirm = { newPrice ->
+                onConfirm(newPrice)
+                showDialog = false
+            },
+            onDismiss = { showDialog = false },
+        )
+    }
+}
+
+@Composable
+private fun ChangePriceDialog(onConfirm: (String) -> Unit, onDismiss: () -> Unit) {
+    var priceText by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.btn_change_price)) },
+        text = {
+            OutlinedTextField(
+                value = priceText,
+                onValueChange = { priceText = it },
+                label = { Text(stringResource(R.string.label_product_price)) },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                modifier = Modifier.fillMaxWidth(),
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = { onConfirm(priceText) }, enabled = priceText.isNotBlank()) {
+                Text(stringResource(R.string.btn_save))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.btn_cancel))
+            }
+        },
+    )
+}
+
+/** Read-only in edit mode — stock changes go through PATCH products/{id}/stock/, not the general form save. */
+@Composable
+private fun ProductStockRow(
+    stock: String,
+    isUpdating: Boolean,
+    onConfirm: (String, StockChangeReason) -> Unit,
+) {
+    var showDialog by remember { mutableStateOf(false) }
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = stringResource(R.string.label_product_stock_value, stock),
+            modifier = Modifier.weight(1f),
+        )
+        TextButton(onClick = { showDialog = true }, enabled = !isUpdating) {
+            Text(stringResource(R.string.btn_change_stock))
+        }
+    }
+
+    if (showDialog) {
+        ChangeStockDialog(
+            onConfirm = { newStock, reason ->
+                onConfirm(newStock, reason)
+                showDialog = false
+            },
+            onDismiss = { showDialog = false },
+        )
+    }
+}
+
+@Composable
+private fun ChangeStockDialog(onConfirm: (String, StockChangeReason) -> Unit, onDismiss: () -> Unit) {
+    var stockText by remember { mutableStateOf("") }
+    var reason by remember { mutableStateOf(StockChangeReason.ADJUSTMENT) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.btn_change_stock)) },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = stockText,
+                    onValueChange = { stockText = it },
+                    label = { Text(stringResource(R.string.label_product_stock)) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Row(
+                    modifier = Modifier.padding(top = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    FilterChip(
+                        selected = reason == StockChangeReason.INITIAL,
+                        onClick = { reason = StockChangeReason.INITIAL },
+                        label = { Text(stringResource(R.string.stock_reason_initial)) },
+                    )
+                    FilterChip(
+                        selected = reason == StockChangeReason.SALE,
+                        onClick = { reason = StockChangeReason.SALE },
+                        label = { Text(stringResource(R.string.stock_reason_sale)) },
+                    )
+                }
+                Row(
+                    modifier = Modifier.padding(top = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    FilterChip(
+                        selected = reason == StockChangeReason.RESTOCK,
+                        onClick = { reason = StockChangeReason.RESTOCK },
+                        label = { Text(stringResource(R.string.stock_reason_restock)) },
+                    )
+                    FilterChip(
+                        selected = reason == StockChangeReason.ADJUSTMENT,
+                        onClick = { reason = StockChangeReason.ADJUSTMENT },
+                        label = { Text(stringResource(R.string.stock_reason_adjustment)) },
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onConfirm(stockText, reason) }, enabled = stockText.isNotBlank()) {
+                Text(stringResource(R.string.btn_save))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.btn_cancel))
+            }
+        },
+    )
 }

@@ -9,6 +9,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import ir.codecrafter.plasticproducts.ui.admin.AdminProductFormScreen
 import ir.codecrafter.plasticproducts.ui.admin.AdminProductListScreen
+import ir.codecrafter.plasticproducts.ui.admin.ProductHistoryScreen
 import ir.codecrafter.plasticproducts.ui.cart.CartScreen
 import ir.codecrafter.plasticproducts.ui.invoice.InvoiceScreen
 import ir.codecrafter.plasticproducts.ui.notifications.NotificationListScreen
@@ -82,8 +83,7 @@ object NotificationRoutes {
 
 /**
  * Admin's product create/edit destinations, reached from AdminProductListScreen's
- * "افزودن محصول جدید" button and its row clicks. Both show AdminProductFormScreen —
- * image upload is a later task, not part of this form.
+ * "افزودن محصول جدید" button and its row clicks. Both show AdminProductFormScreen.
  */
 object AdminProductRoutes {
     const val CREATE = "admin_product_create"
@@ -91,6 +91,14 @@ object AdminProductRoutes {
     const val EDIT_PATTERN = "admin_product_edit/{$PRODUCT_ID_ARG}"
 
     fun edit(productId: Int) = "admin_product_edit/$productId"
+}
+
+/** Price/stock history destination, reached from AdminProductFormScreen's edit-mode history button. */
+object ProductHistoryRoutes {
+    const val PRODUCT_ID_ARG = "productId"
+    const val DETAIL_PATTERN = "product_history/{$PRODUCT_ID_ARG}"
+
+    fun detail(productId: Int) = "product_history/$productId"
 }
 
 /**
@@ -194,13 +202,29 @@ fun AppNavHost(navController: NavHostController = rememberNavController()) {
             )
         }
         composable(AdminProductRoutes.CREATE) {
-            AdminProductFormScreen(onSaved = { navController.popBackStack() })
+            AdminProductFormScreen(
+                onSaved = { navController.popBackStack() },
+                // No product id exists yet in create mode, so the history button never shows — see AdminProductFormScreen.
+                onViewHistory = {},
+            )
         }
         composable(
             route = AdminProductRoutes.EDIT_PATTERN,
             arguments = listOf(navArgument(AdminProductRoutes.PRODUCT_ID_ARG) { type = NavType.IntType }),
+        ) { backStackEntry ->
+            val productId = backStackEntry.arguments?.getInt(AdminProductRoutes.PRODUCT_ID_ARG)
+            AdminProductFormScreen(
+                onSaved = { navController.popBackStack() },
+                onViewHistory = {
+                    if (productId != null) navController.navigate(ProductHistoryRoutes.detail(productId))
+                },
+            )
+        }
+        composable(
+            route = ProductHistoryRoutes.DETAIL_PATTERN,
+            arguments = listOf(navArgument(ProductHistoryRoutes.PRODUCT_ID_ARG) { type = NavType.IntType }),
         ) {
-            AdminProductFormScreen(onSaved = { navController.popBackStack() })
+            ProductHistoryScreen()
         }
         composable(RootRoutes.PROFILE) {
             ProfileScreen(

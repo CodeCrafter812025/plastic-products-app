@@ -3,6 +3,7 @@ package ir.codecrafter.plasticproducts.data.repository
 import ir.codecrafter.plasticproducts.data.model.PriceHistory
 import ir.codecrafter.plasticproducts.data.model.Product
 import ir.codecrafter.plasticproducts.data.model.ProductActionMessageResponse
+import ir.codecrafter.plasticproducts.data.model.ProductUpdateBody
 import ir.codecrafter.plasticproducts.data.model.ProductWriteBody
 import ir.codecrafter.plasticproducts.data.model.StockChangeReason
 import ir.codecrafter.plasticproducts.data.model.StockHistory
@@ -37,7 +38,7 @@ class AdminProductRepository @Inject constructor(
         safeCall { adminProductApi.createProduct(body) }
 
     /** Uses PATCH — see OrderRepository.editItems for the same PUT-vs-PATCH convention note. */
-    suspend fun updateProduct(id: Int, body: ProductWriteBody): AuthResult<Product> =
+    suspend fun updateProduct(id: Int, body: ProductUpdateBody): AuthResult<Product> =
         safeCall { adminProductApi.patchProduct(id, body) }
 
     /**

@@ -9,7 +9,9 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import ir.codecrafter.plasticproducts.R
+import ir.codecrafter.plasticproducts.data.model.ProductUpdateBody
 import ir.codecrafter.plasticproducts.data.model.ProductWriteBody
+import ir.codecrafter.plasticproducts.data.model.StockChangeReason
 import ir.codecrafter.plasticproducts.data.network.ErrorMessage
 import ir.codecrafter.plasticproducts.data.repository.AdminProductRepository
 import ir.codecrafter.plasticproducts.data.repository.AuthResult
@@ -46,6 +48,8 @@ data class AdminProductFormUiState(
     val isLoading: Boolean = false,
     val isSaving: Boolean = false,
     val isUploadingImage: Boolean = false,
+    val isUpdatingPrice: Boolean = false,
+    val isUpdatingStock: Boolean = false,
     val errorMessage: String? = null,
 )
 
@@ -124,25 +128,43 @@ class AdminProductFormViewModel @Inject constructor(
 
     fun onIsActiveChange(value: Boolean) = _uiState.update { it.copy(isActive = value) }
 
+    /**
+     * In edit mode, saves through ProductUpdateBody (no price/stock — those go
+     * through updatePrice()/updateStock() below, each with its own dedicated
+     * endpoint and history record). In create mode there's no id yet for those
+     * dedicated endpoints, so the full ProductWriteBody (including price/stock)
+     * is still required here.
+     */
     fun save() {
         val state = _uiState.value
         val quality = state.quality ?: return
-        val body = ProductWriteBody(
-            title = state.title.trim(),
-            price = state.price.trim(),
-            weight = state.weight.trim(),
-            color = state.color.trim().ifBlank { null },
-            quality = quality,
-            description = state.description.trim(),
-            stock = state.stock.trim(),
-            isActive = if (state.isEditMode) state.isActive else true,
-        )
         viewModelScope.launch {
             _uiState.update { it.copy(isSaving = true) }
             val result = if (productId != null) {
-                adminProductRepository.updateProduct(productId, body)
+                adminProductRepository.updateProduct(
+                    productId,
+                    ProductUpdateBody(
+                        title = state.title.trim(),
+                        weight = state.weight.trim(),
+                        color = state.color.trim().ifBlank { null },
+                        quality = quality,
+                        description = state.description.trim(),
+                        isActive = state.isActive,
+                    ),
+                )
             } else {
-                adminProductRepository.createProduct(body)
+                adminProductRepository.createProduct(
+                    ProductWriteBody(
+                        title = state.title.trim(),
+                        price = state.price.trim(),
+                        weight = state.weight.trim(),
+                        color = state.color.trim().ifBlank { null },
+                        quality = quality,
+                        description = state.description.trim(),
+                        stock = state.stock.trim(),
+                        isActive = true,
+                    ),
+                )
             }
             when (result) {
                 is AuthResult.Success -> {
@@ -151,6 +173,42 @@ class AdminProductFormViewModel @Inject constructor(
                 }
                 else -> {
                     _uiState.update { it.copy(isSaving = false) }
+                    _events.send(AdminProductFormEvent.ActionFailed(describeFailure(result)))
+                }
+            }
+        }
+    }
+
+    /** Only callable in edit mode — see save()'s KDoc for why price changes go through this dedicated endpoint instead. */
+    fun updatePrice(newPrice: String) {
+        val id = productId ?: return
+        viewModelScope.launch {
+            _uiState.update { it.copy(isUpdatingPrice = true) }
+            when (val result = adminProductRepository.updatePrice(id, newPrice.trim())) {
+                is AuthResult.Success -> {
+                    _uiState.update { it.copy(isUpdatingPrice = false) }
+                    loadProduct(id)
+                }
+                else -> {
+                    _uiState.update { it.copy(isUpdatingPrice = false) }
+                    _events.send(AdminProductFormEvent.ActionFailed(describeFailure(result)))
+                }
+            }
+        }
+    }
+
+    /** Only callable in edit mode — see save()'s KDoc for why stock changes go through this dedicated endpoint instead. */
+    fun updateStock(newStock: String, reason: StockChangeReason) {
+        val id = productId ?: return
+        viewModelScope.launch {
+            _uiState.update { it.copy(isUpdatingStock = true) }
+            when (val result = adminProductRepository.updateStock(id, newStock.trim(), reason)) {
+                is AuthResult.Success -> {
+                    _uiState.update { it.copy(isUpdatingStock = false) }
+                    loadProduct(id)
+                }
+                else -> {
+                    _uiState.update { it.copy(isUpdatingStock = false) }
                     _events.send(AdminProductFormEvent.ActionFailed(describeFailure(result)))
                 }
             }
