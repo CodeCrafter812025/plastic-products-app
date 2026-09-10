@@ -151,3 +151,40 @@ class ProductListIncludeInactiveTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         returned_ids = {p['id'] for p in response.data}
         self.assertEqual(returned_ids, {self.active_product.id})
+
+
+class ProductImageUrlsAbsoluteTests(APITestCase):
+    """
+    image_urls could hold either a relative path (e.g. from upload_image,
+    which stores whatever FileSystemStorage.url() returns) or an already
+    absolute URL (older seed data). The serializer must turn relative ones
+    into absolute URLs using the request, and leave absolute ones alone.
+    """
+
+    def setUp(self):
+        self.client = APIClient()
+        self.admin = User.objects.create(
+            phone='09120000003', username='09120000003', full_name='Admin', role='admin'
+        )
+        self.relative_product = Product.objects.create(
+            title='محصول با آدرس نسبی', price=Decimal('10.00'), weight=Decimal('1.00'),
+            quality='اولیه', stock=Decimal('10.00'), is_active=True, created_by=self.admin,
+            image_urls=['/media/x.jpg'],
+        )
+        self.absolute_product = Product.objects.create(
+            title='محصول با آدرس کامل', price=Decimal('10.00'), weight=Decimal('1.00'),
+            quality='اولیه', stock=Decimal('10.00'), is_active=True, created_by=self.admin,
+            image_urls=['https://cdn.example.com/y.jpg'],
+        )
+
+    def test_relative_image_url_becomes_absolute(self):
+        url = reverse('product-detail', args=[self.relative_product.id])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['image_urls'], ['http://testserver/media/x.jpg'])
+
+    def test_already_absolute_image_url_is_left_unchanged(self):
+        url = reverse('product-detail', args=[self.absolute_product.id])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['image_urls'], ['https://cdn.example.com/y.jpg'])
