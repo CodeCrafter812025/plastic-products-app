@@ -15,7 +15,7 @@ product, created = Product.objects.get_or_create(
         "price": 150000,
         "weight": 1,
         "color": "blue",
-        "quality": "primary",
+        "quality": "اولیه",
         "stock": 100,
         "created_by": admin,
     }
