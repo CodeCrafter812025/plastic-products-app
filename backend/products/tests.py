@@ -1,5 +1,8 @@
+import tempfile
 from decimal import Decimal
 from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import override_settings
 from django.urls import reverse
 from rest_framework.test import APITestCase, APIClient
 from rest_framework import status
@@ -188,3 +191,35 @@ class ProductImageUrlsAbsoluteTests(APITestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['image_urls'], ['https://cdn.example.com/y.jpg'])
+
+
+@override_settings(MEDIA_ROOT=tempfile.mkdtemp())
+class ProductUploadImageAbsoluteUrlTests(APITestCase):
+    """
+    upload_image used to return product.image_urls straight off the model
+    (a relative path from FileSystemStorage.url()), inconsistent with
+    list/retrieve/create/update which go through ProductSerializer and
+    return absolute URLs.
+    """
+
+    def setUp(self):
+        self.client = APIClient()
+        self.admin = User.objects.create(
+            phone='09120000004', username='09120000004', full_name='Admin', role='admin'
+        )
+        refresh = RefreshToken.for_user(self.admin)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {refresh.access_token}')
+        self.product = Product.objects.create(
+            title='محصول', price=Decimal('10.00'), weight=Decimal('1.00'),
+            quality='اولیه', stock=Decimal('10.00'), is_active=True, created_by=self.admin,
+        )
+
+    def test_upload_image_returns_absolute_url_and_image_urls(self):
+        url = reverse('product-upload-image', args=[self.product.id])
+        image_file = SimpleUploadedFile('test.jpg', b'fake-image-bytes', content_type='image/jpeg')
+        response = self.client.post(url, {'image': image_file}, format='multipart')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data['url'].startswith('http://'))
+        self.assertEqual(len(response.data['image_urls']), 1)
+        self.assertTrue(response.data['image_urls'][0].startswith('http://'))
+        self.assertEqual(response.data['url'], response.data['image_urls'][0])

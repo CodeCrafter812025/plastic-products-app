@@ -182,10 +182,11 @@ class ProductViewSet(viewsets.ModelViewSet):
         product.image_urls.append(url)
         product.save()
 
+        serialized_data = ProductSerializer(product, context=self.get_serializer_context()).data
         return Response({
             'message': 'تصویر با موفقیت بارگذاری شد.',
-            'url': url,
-            'image_urls': product.image_urls
+            'url': serialized_data['image_urls'][-1],
+            'image_urls': serialized_data['image_urls']
         })
 
 
