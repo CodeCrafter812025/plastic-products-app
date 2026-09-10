@@ -49,6 +49,11 @@ class VisitorCreateSerializer(serializers.Serializer):
     phone = serializers.CharField(max_length=11)
     full_name = serializers.CharField(max_length=100)
 
+    def validate_phone(self, value):
+        if User.objects.filter(phone=value).exists():
+            raise serializers.ValidationError('این شماره تلفن قبلاً ثبت شده است.')
+        return value
+
     def create(self, validated_data):
         user = User.objects.create(
             phone=validated_data['phone'],
