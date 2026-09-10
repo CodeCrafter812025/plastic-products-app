@@ -1,21 +1,13 @@
 package ir.codecrafter.plasticproducts.ui.navigation
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import ir.codecrafter.plasticproducts.R
+import ir.codecrafter.plasticproducts.ui.admin.AdminProductFormScreen
 import ir.codecrafter.plasticproducts.ui.admin.AdminProductListScreen
 import ir.codecrafter.plasticproducts.ui.cart.CartScreen
 import ir.codecrafter.plasticproducts.ui.invoice.InvoiceScreen
@@ -90,8 +82,8 @@ object NotificationRoutes {
 
 /**
  * Admin's product create/edit destinations, reached from AdminProductListScreen's
- * "افزودن محصول جدید" button and its row clicks. Both currently show a bare
- * placeholder — the actual form is a later task.
+ * "افزودن محصول جدید" button and its row clicks. Both show AdminProductFormScreen —
+ * image upload is a later task, not part of this form.
  */
 object AdminProductRoutes {
     const val CREATE = "admin_product_create"
@@ -202,13 +194,13 @@ fun AppNavHost(navController: NavHostController = rememberNavController()) {
             )
         }
         composable(AdminProductRoutes.CREATE) {
-            AdminProductFormPlaceholder()
+            AdminProductFormScreen(onSaved = { navController.popBackStack() })
         }
         composable(
             route = AdminProductRoutes.EDIT_PATTERN,
             arguments = listOf(navArgument(AdminProductRoutes.PRODUCT_ID_ARG) { type = NavType.IntType }),
         ) {
-            AdminProductFormPlaceholder()
+            AdminProductFormScreen(onSaved = { navController.popBackStack() })
         }
         composable(RootRoutes.PROFILE) {
             ProfileScreen(
@@ -221,20 +213,6 @@ fun AppNavHost(navController: NavHostController = rememberNavController()) {
                     }
                 },
             )
-        }
-    }
-}
-
-@Composable
-private fun AdminProductFormPlaceholder() {
-    Scaffold { paddingValues ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(stringResource(R.string.placeholder_admin_product_form))
         }
     }
 }

@@ -60,6 +60,13 @@ fun AdminProductListScreen(
         }
     }
 
+    // This composable's content is torn down and rebuilt fresh every time the user
+    // navigates away and back (e.g. returning here after saving the create/edit
+    // form), the same way ProductListScreen re-runs cartViewModel.loadCart() — so
+    // this reruns loadProducts() on every return, keeping the list from going stale
+    // after a create/edit/toggle/delete made on another screen.
+    LaunchedEffect(Unit) { viewModel.loadProducts() }
+
     Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) { paddingValues: PaddingValues ->
         Column(
             modifier = Modifier

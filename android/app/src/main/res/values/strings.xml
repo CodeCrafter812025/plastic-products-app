@@ -159,4 +159,13 @@
     <!-- ui/navigation/AppNavHost.kt (admin product create/edit placeholder) -->
     <string name="placeholder_admin_product_form">فرم افزودن/ویرایش محصول — این بخش هنوز ساخته نشده است</string>
 
+    <!-- ui/admin/AdminProductFormScreen.kt -->
+    <string name="label_product_title">عنوان</string>
+    <string name="label_product_color">رنگ (اختیاری)</string>
+    <string name="label_product_price">قیمت (تومان)</string>
+    <string name="label_product_weight">وزن</string>
+    <string name="label_product_stock">موجودی</string>
+    <string name="label_product_active">فعال</string>
+    <string name="msg_product_saved">محصول با موفقیت ذخیره شد</string>
+
 </resources>
