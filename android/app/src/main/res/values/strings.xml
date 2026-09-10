@@ -168,4 +168,10 @@
     <string name="label_product_active">فعال</string>
     <string name="msg_product_saved">محصول با موفقیت ذخیره شد</string>
 
+    <!-- ui/admin/AdminProductFormScreen.kt (product images) -->
+    <string name="title_product_images">تصاویر محصول</string>
+    <string name="btn_add_product_image">افزودن تصویر</string>
+    <string name="msg_max_images_reached">حداکثر ۵ تصویر مجاز است</string>
+    <string name="msg_save_product_before_images">برای افزودن تصویر، ابتدا محصول را ذخیره کنید</string>
+
 </resources>

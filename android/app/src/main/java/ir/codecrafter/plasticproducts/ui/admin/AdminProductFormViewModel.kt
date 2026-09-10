@@ -1,6 +1,8 @@
 package ir.codecrafter.plasticproducts.ui.admin
 
 import android.content.Context
+import android.net.Uri
+import android.webkit.MimeTypeMap
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -13,6 +15,7 @@ import ir.codecrafter.plasticproducts.data.repository.AdminProductRepository
 import ir.codecrafter.plasticproducts.data.repository.AuthResult
 import ir.codecrafter.plasticproducts.data.repository.ProductRepository
 import ir.codecrafter.plasticproducts.ui.navigation.AdminProductRoutes
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -20,6 +23,11 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.toRequestBody
+import java.io.IOException
 import javax.inject.Inject
 
 data class AdminProductFormUiState(
@@ -32,9 +40,12 @@ data class AdminProductFormUiState(
     val description: String = "",
     val stock: String = "",
     val isActive: Boolean = true,
+    /** Only populated/meaningful in edit mode — create mode has no product id to upload images against yet. */
+    val imageUrls: List<String> = emptyList(),
     /** Only meaningful in edit mode, while the existing product is being fetched to prefill the form. */
     val isLoading: Boolean = false,
     val isSaving: Boolean = false,
+    val isUploadingImage: Boolean = false,
     val errorMessage: String? = null,
 )
 
@@ -88,6 +99,7 @@ class AdminProductFormViewModel @Inject constructor(
                             description = product.description,
                             stock = product.stock,
                             isActive = product.isActive,
+                            imageUrls = product.imageUrls,
                         )
                     }
                 }
@@ -142,6 +154,51 @@ class AdminProductFormViewModel @Inject constructor(
                     _events.send(AdminProductFormEvent.ActionFailed(describeFailure(result)))
                 }
             }
+        }
+    }
+
+    /**
+     * Only callable in edit mode (productId != null) — the UI only shows the
+     * "افزودن تصویر" button once a real product id exists to upload against.
+     */
+    fun uploadImage(uri: Uri) {
+        val id = productId ?: return
+        viewModelScope.launch {
+            _uiState.update { it.copy(isUploadingImage = true) }
+            val part = withContext(Dispatchers.IO) { buildImagePart(uri) }
+            if (part == null) {
+                _uiState.update { it.copy(isUploadingImage = false) }
+                _events.send(AdminProductFormEvent.ActionFailed(context.getString(R.string.error_generic)))
+                return@launch
+            }
+            when (val result = adminProductRepository.uploadImage(id, part)) {
+                is AuthResult.Success -> _uiState.update {
+                    it.copy(isUploadingImage = false, imageUrls = result.data.imageUrls)
+                }
+                else -> {
+                    _uiState.update { it.copy(isUploadingImage = false) }
+                    _events.send(AdminProductFormEvent.ActionFailed(describeFailure(result)))
+                }
+            }
+        }
+    }
+
+    /**
+     * Runs on Dispatchers.IO (called via withContext from uploadImage()). The
+     * filename must carry a real extension — products/views.py upload_image()
+     * validates request.FILES['image'].name's extension against an allow-list
+     * (jpg/jpeg/png/gif/webp), and a content:// URI's own path never reliably
+     * carries one, so it's derived from the MIME type instead.
+     */
+    private fun buildImagePart(uri: Uri): MultipartBody.Part? {
+        return try {
+            val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() } ?: return null
+            val mimeType = context.contentResolver.getType(uri) ?: "image/jpeg"
+            val extension = MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType) ?: "jpg"
+            val requestBody = bytes.toRequestBody(mimeType.toMediaTypeOrNull())
+            MultipartBody.Part.createFormData("image", "upload.$extension", requestBody)
+        } catch (e: IOException) {
+            null
         }
     }
 
