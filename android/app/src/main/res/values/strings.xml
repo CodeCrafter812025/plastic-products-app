@@ -197,4 +197,23 @@
     <string name="empty_price_history">تاریخچه‌ی قیمتی ثبت نشده</string>
     <string name="empty_stock_history">تاریخچه‌ی موجودی ثبت نشده</string>
 
+    <!-- ui/admin/AdminProductListScreen.kt (users access point) -->
+    <string name="btn_users">کاربران</string>
+
+    <!-- ui/admin/AdminUserListScreen.kt -->
+    <string name="btn_add_new_visitor">افزودن ویزیتور جدید</string>
+    <string name="role_label_buyer">خریدار</string>
+    <string name="empty_users_list">کاربری یافت نشد</string>
+    <string name="btn_view_visitor_performance">عملکرد</string>
+
+    <!-- ui/admin/VisitorPerformanceScreen.kt -->
+    <string name="msg_visitor_performance_all_note">این لیست عملکرد همه‌ی ویزیتورها را نشان می‌دهد؛ ردیف هایلایت‌شده مربوط به ویزیتور انتخاب‌شده است.</string>
+    <string name="label_total_assigned_value">تخصیص‌یافته: %1$s</string>
+    <string name="label_delivered_value">تحویل‌شده: %1$s</string>
+    <string name="label_cancelled_value">لغوشده: %1$s</string>
+    <string name="label_avg_delivery_time_value">میانگین زمان تحویل: %1$s</string>
+    <string name="label_avg_delivery_hours">%1$s ساعت</string>
+    <string name="msg_no_data">بدون داده</string>
+    <string name="empty_visitor_performance">هیچ ویزیتوری یافت نشد</string>
+
 </resources>

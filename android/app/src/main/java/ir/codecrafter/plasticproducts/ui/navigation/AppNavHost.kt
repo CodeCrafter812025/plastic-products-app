@@ -9,7 +9,9 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import ir.codecrafter.plasticproducts.ui.admin.AdminProductFormScreen
 import ir.codecrafter.plasticproducts.ui.admin.AdminProductListScreen
+import ir.codecrafter.plasticproducts.ui.admin.AdminUserListScreen
 import ir.codecrafter.plasticproducts.ui.admin.ProductHistoryScreen
+import ir.codecrafter.plasticproducts.ui.admin.VisitorPerformanceScreen
 import ir.codecrafter.plasticproducts.ui.cart.CartScreen
 import ir.codecrafter.plasticproducts.ui.invoice.InvoiceScreen
 import ir.codecrafter.plasticproducts.ui.notifications.NotificationListScreen
@@ -99,6 +101,19 @@ object ProductHistoryRoutes {
     const val DETAIL_PATTERN = "product_history/{$PRODUCT_ID_ARG}"
 
     fun detail(productId: Int) = "product_history/$productId"
+}
+
+/** Admin's user list, reached from AdminProductListScreen's "کاربران" access point. */
+object AdminUserRoutes {
+    const val LIST = "admin_users"
+}
+
+/** Visitor performance destination, reached from AdminUserListScreen's per-visitor-row "عملکرد" button. */
+object VisitorPerformanceRoutes {
+    const val VISITOR_ID_ARG = "visitorId"
+    const val DETAIL_PATTERN = "visitor_performance/{$VISITOR_ID_ARG}"
+
+    fun detail(visitorId: Int) = "visitor_performance/$visitorId"
 }
 
 /**
@@ -199,7 +214,21 @@ fun AppNavHost(navController: NavHostController = rememberNavController()) {
             AdminProductListScreen(
                 onAddProductClick = { navController.navigate(AdminProductRoutes.CREATE) },
                 onProductClick = { productId -> navController.navigate(AdminProductRoutes.edit(productId)) },
+                onUsersClick = { navController.navigate(AdminUserRoutes.LIST) },
             )
+        }
+        composable(AdminUserRoutes.LIST) {
+            AdminUserListScreen(
+                onViewVisitorPerformance = { visitorId ->
+                    navController.navigate(VisitorPerformanceRoutes.detail(visitorId))
+                },
+            )
+        }
+        composable(
+            route = VisitorPerformanceRoutes.DETAIL_PATTERN,
+            arguments = listOf(navArgument(VisitorPerformanceRoutes.VISITOR_ID_ARG) { type = NavType.IntType }),
+        ) {
+            VisitorPerformanceScreen()
         }
         composable(AdminProductRoutes.CREATE) {
             AdminProductFormScreen(

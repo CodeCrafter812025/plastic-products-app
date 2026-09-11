@@ -46,6 +46,7 @@ import ir.codecrafter.plasticproducts.data.model.Product
 fun AdminProductListScreen(
     onAddProductClick: () -> Unit,
     onProductClick: (Int) -> Unit,
+    onUsersClick: () -> Unit,
     viewModel: AdminProductListViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -74,11 +75,16 @@ fun AdminProductListScreen(
                 .padding(paddingValues)
                 .padding(16.dp),
         ) {
-            Button(
-                onClick = onAddProductClick,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text(stringResource(R.string.btn_add_new_product))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(
+                    onClick = onAddProductClick,
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text(stringResource(R.string.btn_add_new_product))
+                }
+                TextButton(onClick = onUsersClick) {
+                    Text(stringResource(R.string.btn_users))
+                }
             }
 
             Box(
