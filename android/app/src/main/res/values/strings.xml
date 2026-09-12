@@ -226,4 +226,23 @@
     <!-- ui/admin/AdminProductListScreen.kt (orders access point) -->
     <string name="btn_orders">سفارش‌ها</string>
 
+    <!-- ui/admin/AdminProductListScreen.kt (dashboard access point) -->
+    <string name="btn_dashboard">داشبورد</string>
+
+    <!-- ui/admin/AdminDashboardScreen.kt -->
+    <string name="title_order_status">وضعیت سفارش‌ها</string>
+    <string name="title_revenue">درآمد</string>
+    <string name="title_top_products">پرفروش‌ترین محصولات</string>
+    <string name="title_low_stock">موجودی کم</string>
+    <string name="title_buyer_signups">ثبت‌نام‌های خریدار</string>
+    <string name="label_from_date">از تاریخ</string>
+    <string name="label_to_date">تا تاریخ</string>
+    <string name="btn_show_revenue">نمایش</string>
+    <string name="label_revenue_value">درآمد کل: %1$s تومان</string>
+    <string name="label_quantity_sold_value">تعداد فروخته‌شده: %1$s</string>
+    <string name="label_signup_count_value">%1$s — %2$s ثبت‌نام</string>
+    <string name="label_period_daily">روزانه</string>
+    <string name="label_period_weekly">هفتگی</string>
+    <string name="btn_view_all_visitor_performance">مشاهده‌ی عملکرد ویزیتورها</string>
+
 </resources>

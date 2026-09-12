@@ -7,6 +7,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import ir.codecrafter.plasticproducts.ui.admin.AdminDashboardScreen
 import ir.codecrafter.plasticproducts.ui.admin.AdminOrderListScreen
 import ir.codecrafter.plasticproducts.ui.admin.AdminProductFormScreen
 import ir.codecrafter.plasticproducts.ui.admin.AdminProductListScreen
@@ -122,6 +123,11 @@ object AdminOrderRoutes {
     const val LIST = "admin_orders"
 }
 
+/** Admin's reports dashboard, reached from AdminProductListScreen's "داشبورد" access point. */
+object AdminDashboardRoutes {
+    const val HOME = "admin_dashboard"
+}
+
 /**
  * Top level of the app: the auth graph plus one root destination per role's own
  * graph, so authGraph's onAuthenticated has somewhere real to navigate. All three
@@ -222,11 +228,20 @@ fun AppNavHost(navController: NavHostController = rememberNavController()) {
                 onProductClick = { productId -> navController.navigate(AdminProductRoutes.edit(productId)) },
                 onUsersClick = { navController.navigate(AdminUserRoutes.LIST) },
                 onOrdersClick = { navController.navigate(AdminOrderRoutes.LIST) },
+                onDashboardClick = { navController.navigate(AdminDashboardRoutes.HOME) },
             )
         }
         composable(AdminOrderRoutes.LIST) {
             AdminOrderListScreen(
                 onOrderClick = { orderId -> navController.navigate(BuyerOrderRoutes.detail(orderId)) },
+            )
+        }
+        composable(AdminDashboardRoutes.HOME) {
+            AdminDashboardScreen(
+                // No specific visitor is being highlighted from the dashboard — -1 never
+                // matches a real id, so VisitorPerformanceScreen (built in an earlier
+                // phase, left untouched) just shows the full list with no row highlighted.
+                onViewVisitorPerformance = { navController.navigate(VisitorPerformanceRoutes.detail(-1)) },
             )
         }
         composable(AdminUserRoutes.LIST) {

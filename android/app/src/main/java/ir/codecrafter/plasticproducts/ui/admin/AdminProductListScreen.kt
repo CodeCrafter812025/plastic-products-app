@@ -2,6 +2,7 @@ package ir.codecrafter.plasticproducts.ui.admin
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -48,6 +50,7 @@ fun AdminProductListScreen(
     onProductClick: (Int) -> Unit,
     onUsersClick: () -> Unit,
     onOrdersClick: () -> Unit,
+    onDashboardClick: () -> Unit,
     viewModel: AdminProductListViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -76,11 +79,13 @@ fun AdminProductListScreen(
                 .padding(paddingValues)
                 .padding(16.dp),
         ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(
-                    onClick = onAddProductClick,
-                    modifier = Modifier.weight(1f),
-                ) {
+            // Horizontally scrollable so this row keeps working as more access-point
+            // buttons get added over time, instead of overflowing/clipping silently.
+            Row(
+                modifier = Modifier.horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Button(onClick = onAddProductClick) {
                     Text(stringResource(R.string.btn_add_new_product))
                 }
                 TextButton(onClick = onUsersClick) {
@@ -88,6 +93,9 @@ fun AdminProductListScreen(
                 }
                 TextButton(onClick = onOrdersClick) {
                     Text(stringResource(R.string.btn_orders))
+                }
+                TextButton(onClick = onDashboardClick) {
+                    Text(stringResource(R.string.btn_dashboard))
                 }
             }
 
