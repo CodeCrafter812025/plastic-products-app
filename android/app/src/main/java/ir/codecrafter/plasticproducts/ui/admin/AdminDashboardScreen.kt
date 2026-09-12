@@ -12,16 +12,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -37,9 +32,8 @@ import ir.codecrafter.plasticproducts.R
 import ir.codecrafter.plasticproducts.data.model.LowStockProduct
 import ir.codecrafter.plasticproducts.data.model.SignupCount
 import ir.codecrafter.plasticproducts.data.model.TopProduct
+import ir.codecrafter.plasticproducts.ui.common.JalaliDatePickerDialog
 import ir.codecrafter.plasticproducts.util.PersianDateFormatter
-import java.time.Instant
-import java.time.ZoneOffset
 
 private val ORDER_STATUSES = listOf("pending", "assigned", "loading", "delivered", "cancelled")
 
@@ -272,41 +266,38 @@ private fun RevenueSection(
     }
 
     if (showFromPicker) {
-        DateSelectionDialog(onDateSelected = onFromSelected, onDismiss = { showFromPicker = false })
+        val initial = from?.let { isoToJalaliMonth(it) }
+        JalaliDatePickerDialog(
+            initialJy = initial?.first,
+            initialJm = initial?.second,
+            onDateSelected = { jy, jm, jd -> onFromSelected(jalaliToIsoDate(jy, jm, jd)) },
+            onDismiss = { showFromPicker = false },
+        )
     }
     if (showToPicker) {
-        DateSelectionDialog(onDateSelected = onToSelected, onDismiss = { showToPicker = false })
+        val initial = to?.let { isoToJalaliMonth(it) }
+        JalaliDatePickerDialog(
+            initialJy = initial?.first,
+            initialJm = initial?.second,
+            onDateSelected = { jy, jm, jd -> onToSelected(jalaliToIsoDate(jy, jm, jd)) },
+            onDismiss = { showToPicker = false },
+        )
     }
 }
 
-/** Produces a YYYY-MM-DD string in UTC, matching what admin-reports/revenue/ expects. */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun DateSelectionDialog(onDateSelected: (String) -> Unit, onDismiss: () -> Unit) {
-    val datePickerState = rememberDatePickerState()
-    DatePickerDialog(
-        onDismissRequest = onDismiss,
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    datePickerState.selectedDateMillis?.let { millis ->
-                        val date = Instant.ofEpochMilli(millis).atZone(ZoneOffset.UTC).toLocalDate().toString()
-                        onDateSelected(date)
-                    }
-                    onDismiss()
-                },
-            ) {
-                Text(stringResource(R.string.btn_save))
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.btn_cancel))
-            }
-        },
-    ) {
-        DatePicker(state = datePickerState)
-    }
+/** The Jalali (year, month) of a "YYYY-MM-DD..." Gregorian ISO string, or null if it can't be parsed. */
+private fun isoToJalaliMonth(isoDate: String): Pair<Int, Int>? = try {
+    val parts = isoDate.substring(0, 10).split("-")
+    val (jy, jm, _) = PersianDateFormatter.gregorianToJalali(parts[0].toInt(), parts[1].toInt(), parts[2].toInt())
+    jy to jm
+} catch (e: Exception) {
+    null
+}
+
+/** Produces the YYYY-MM-DD Gregorian string that admin-reports/revenue/ expects from a Jalali (jy, jm, jd). */
+private fun jalaliToIsoDate(jy: Int, jm: Int, jd: Int): String {
+    val (gy, gm, gd) = PersianDateFormatter.jalaliToGregorian(jy, jm, jd)
+    return "%04d-%02d-%02d".format(gy, gm, gd)
 }
 
 @Composable

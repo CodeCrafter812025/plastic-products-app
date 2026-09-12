@@ -245,4 +245,8 @@
     <string name="label_period_weekly">هفتگی</string>
     <string name="btn_view_all_visitor_performance">مشاهده‌ی عملکرد ویزیتورها</string>
 
+    <!-- ui/common/JalaliDatePickerDialog.kt -->
+    <string name="btn_previous_month">ماه قبل</string>
+    <string name="btn_next_month">ماه بعد</string>
+
 </resources>
