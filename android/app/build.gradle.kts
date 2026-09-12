@@ -45,6 +45,15 @@ android {
         compose = true
         buildConfig = true
     }
+
+    lint {
+        // checkTestSources=false (the default) only suppresses *reporting* issues in
+        // test sources — lint still analyzes them, which is what crashes on
+        // PersianDateFormatterTest.kt. ignoreTestSources skips analyzing test sources
+        // entirely, avoiding the crash. Present in AGP's Lint DSL since 7.0, so it's
+        // available on this project's AGP 8.7.2 (see gradle/libs.versions.toml).
+        ignoreTestSources = true
+    }
 }
 
 dependencies {
