@@ -13,6 +13,8 @@ import ir.codecrafter.plasticproducts.data.network.ErrorMessage
 import ir.codecrafter.plasticproducts.data.repository.AdminProductRepository
 import ir.codecrafter.plasticproducts.data.repository.AuthResult
 import ir.codecrafter.plasticproducts.ui.navigation.ProductHistoryRoutes
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -50,8 +52,12 @@ class ProductHistoryViewModel @Inject constructor(
     fun load() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
-            val priceResult = adminProductRepository.getPriceHistory(productId)
-            val stockResult = adminProductRepository.getStockHistory(productId)
+            // Independent endpoints — fetched in parallel rather than one after the other.
+            val (priceResult, stockResult) = coroutineScope {
+                val price = async { adminProductRepository.getPriceHistory(productId) }
+                val stock = async { adminProductRepository.getStockHistory(productId) }
+                price.await() to stock.await()
+            }
             if (priceResult is AuthResult.Success && stockResult is AuthResult.Success) {
                 _uiState.update {
                     it.copy(

@@ -14,7 +14,9 @@ import ir.codecrafter.plasticproducts.data.network.ErrorMessage
 import ir.codecrafter.plasticproducts.data.repository.AuthResult
 import ir.codecrafter.plasticproducts.data.repository.OrderRepository
 import ir.codecrafter.plasticproducts.ui.navigation.BuyerOrderRoutes
+import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -65,12 +67,17 @@ class BuyerOrderDetailViewModel @Inject constructor(
     fun loadOrder() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
-            val orderResult = orderRepository.getOrderDetail(orderId)
+            // Independent endpoints, fetched in parallel — only how their results are
+            // used depends on order success (a status_history failure isn't fatal to
+            // the whole screen; the order itself is the primary content, history is
+            // supplementary), not the requests themselves.
+            val (orderResult, historyResult) = coroutineScope {
+                val order = async { orderRepository.getOrderDetail(orderId) }
+                val history = async { orderRepository.getStatusHistory(orderId) }
+                order.await() to history.await()
+            }
             when (orderResult) {
                 is AuthResult.Success -> {
-                    // A status_history failure isn't fatal to the whole screen — the
-                    // order itself is the primary content, history is supplementary.
-                    val historyResult = orderRepository.getStatusHistory(orderId)
                     val history = (historyResult as? AuthResult.Success)?.data.orEmpty()
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,

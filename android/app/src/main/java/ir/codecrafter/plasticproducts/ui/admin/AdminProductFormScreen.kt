@@ -316,7 +316,8 @@ private fun ProductImagesSection(
                     .height(80.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                items(imageUrls) { url ->
+                // Each URL is itself already a natural unique key here.
+                items(imageUrls, key = { it }) { url ->
                     AsyncImage(
                         model = url,
                         contentDescription = productTitle,

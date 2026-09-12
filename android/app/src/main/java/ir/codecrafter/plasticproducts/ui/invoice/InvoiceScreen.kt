@@ -126,7 +126,9 @@ private fun InvoiceContent(
                 )
             }
 
-            items(invoice.itemsSnapshot) { item ->
+            // InvoiceItemSnapshot has no id (it's a plain JSON snapshot, not a DB row) —
+            // hashCode over all its fields is a reasonable stand-in key here.
+            items(invoice.itemsSnapshot, key = { it.hashCode() }) { item ->
                 InvoiceItemRow(item)
             }
 
