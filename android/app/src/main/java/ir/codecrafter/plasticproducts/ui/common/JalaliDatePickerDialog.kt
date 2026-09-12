@@ -138,19 +138,25 @@ fun JalaliDatePickerDialog(
                     Row(modifier = Modifier.fillMaxWidth()) {
                         for (col in 0 until 7) {
                             val day = row * 7 + col - leadingBlanks + 1
+                            val isRealDay = day in 1..daysInMonth
                             Box(
-                                modifier = Modifier.weight(1f).height(40.dp),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(48.dp)
+                                    .let {
+                                        if (isRealDay) {
+                                            it.clickable {
+                                                onDateSelected(displayedJy, displayedJm, day)
+                                                onDismiss()
+                                            }
+                                        } else {
+                                            it
+                                        }
+                                    },
                                 contentAlignment = Alignment.Center,
                             ) {
-                                if (day in 1..daysInMonth) {
-                                    Text(
-                                        text = toPersianDigits(day),
-                                        textAlign = TextAlign.Center,
-                                        modifier = Modifier.clickable {
-                                            onDateSelected(displayedJy, displayedJm, day)
-                                            onDismiss()
-                                        },
-                                    )
+                                if (isRealDay) {
+                                    Text(text = toPersianDigits(day), textAlign = TextAlign.Center)
                                 }
                             }
                         }

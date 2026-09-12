@@ -173,8 +173,16 @@ private fun AdminUserRow(
                 style = MaterialTheme.typography.titleMedium,
                 color = if (user.isActive) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Text(text = user.phone, style = MaterialTheme.typography.bodyMedium)
-            Text(text = roleLabel(user.role), style = MaterialTheme.typography.bodyMedium)
+            Text(
+                text = user.phone,
+                style = MaterialTheme.typography.bodyMedium,
+                color = if (user.isActive) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                text = roleLabel(user.role),
+                style = MaterialTheme.typography.bodyMedium,
+                color = if (user.isActive) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+            )
             if (!user.isActive) {
                 Text(
                     text = stringResource(R.string.label_product_inactive_badge),

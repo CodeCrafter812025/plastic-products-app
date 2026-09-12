@@ -216,6 +216,11 @@ private fun AdminProductRow(
                     Text(
                         text = stringResource(R.string.product_price_toman, product.price),
                         style = MaterialTheme.typography.bodyMedium,
+                        color = if (product.isActive) {
+                            MaterialTheme.colorScheme.onSurface
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
                     )
                     if (!product.isActive) {
                         Text(

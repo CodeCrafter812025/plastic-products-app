@@ -20,6 +20,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -86,26 +87,41 @@ fun VisitorPerformanceScreen(viewModel: VisitorPerformanceViewModel = hiltViewMo
 
 @Composable
 private fun VisitorPerformanceRow(entry: VisitorPerformance, isHighlighted: Boolean) {
+    // Manual background swap (not CardDefaults.cardColors) — Card's own content color
+    // stays theme-default otherwise, so it's paired here explicitly per Text below.
+    val contentColor = if (isHighlighted) MaterialTheme.colorScheme.onPrimaryContainer else null
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .let { if (isHighlighted) it.background(MaterialTheme.colorScheme.primaryContainer) else it },
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
-            Text(text = entry.fullName.orEmpty(), style = MaterialTheme.typography.titleMedium)
-            Text(text = entry.phone, style = MaterialTheme.typography.bodyMedium)
+            Text(
+                text = entry.fullName.orEmpty(),
+                style = MaterialTheme.typography.titleMedium,
+                color = contentColor ?: Color.Unspecified,
+            )
+            Text(
+                text = entry.phone,
+                style = MaterialTheme.typography.bodyMedium,
+                color = contentColor ?: Color.Unspecified,
+            )
             Text(
                 text = stringResource(R.string.label_total_assigned_value, entry.totalAssigned.toString()),
                 style = MaterialTheme.typography.bodyMedium,
+                color = contentColor ?: Color.Unspecified,
                 modifier = Modifier.padding(top = 4.dp),
             )
             Text(
                 text = stringResource(R.string.label_delivered_value, entry.delivered.toString()),
                 style = MaterialTheme.typography.bodyMedium,
+                color = contentColor ?: Color.Unspecified,
             )
             Text(
                 text = stringResource(R.string.label_cancelled_value, entry.cancelled.toString()),
                 style = MaterialTheme.typography.bodyMedium,
+                color = contentColor ?: Color.Unspecified,
             )
             Text(
                 text = stringResource(
@@ -113,6 +129,7 @@ private fun VisitorPerformanceRow(entry: VisitorPerformance, isHighlighted: Bool
                     avgDeliveryValueText(entry.avgDeliverySeconds),
                 ),
                 style = MaterialTheme.typography.bodyMedium,
+                color = contentColor ?: Color.Unspecified,
             )
         }
     }

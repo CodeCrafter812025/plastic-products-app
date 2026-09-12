@@ -249,6 +249,7 @@ private fun AdminProductFormContent(
         if (state.isEditMode) {
             item {
                 ProductImagesSection(
+                    productTitle = state.title,
                     imageUrls = state.imageUrls,
                     isUploading = state.isUploadingImage,
                     onImagePicked = viewModel::uploadImage,
@@ -298,6 +299,7 @@ private fun AdminProductFormContent(
  */
 @Composable
 private fun ProductImagesSection(
+    productTitle: String,
     imageUrls: List<String>,
     isUploading: Boolean,
     onImagePicked: (Uri) -> Unit,
@@ -317,7 +319,7 @@ private fun ProductImagesSection(
                 items(imageUrls) { url ->
                     AsyncImage(
                         model = url,
-                        contentDescription = null,
+                        contentDescription = productTitle,
                         contentScale = ContentScale.Crop,
                         modifier = Modifier
                             .size(80.dp)
