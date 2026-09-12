@@ -223,4 +223,7 @@
     <string name="empty_admin_orders">سفارشی یافت نشد</string>
     <string name="msg_cancel_order_admin_confirm">این لغو توسط ادمین انجام می‌شود و غیرقابل‌بازگشت است؛ مطمئنید می‌خواهید این سفارش را لغو کنید؟</string>
 
+    <!-- ui/admin/AdminProductListScreen.kt (orders access point) -->
+    <string name="btn_orders">سفارش‌ها</string>
+
 </resources>

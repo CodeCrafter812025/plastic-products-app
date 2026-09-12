@@ -7,6 +7,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import ir.codecrafter.plasticproducts.ui.admin.AdminOrderListScreen
 import ir.codecrafter.plasticproducts.ui.admin.AdminProductFormScreen
 import ir.codecrafter.plasticproducts.ui.admin.AdminProductListScreen
 import ir.codecrafter.plasticproducts.ui.admin.AdminUserListScreen
@@ -116,6 +117,11 @@ object VisitorPerformanceRoutes {
     fun detail(visitorId: Int) = "visitor_performance/$visitorId"
 }
 
+/** Admin's order list, reached from AdminProductListScreen's "سفارش‌ها" access point. */
+object AdminOrderRoutes {
+    const val LIST = "admin_orders"
+}
+
 /**
  * Top level of the app: the auth graph plus one root destination per role's own
  * graph, so authGraph's onAuthenticated has somewhere real to navigate. All three
@@ -215,6 +221,12 @@ fun AppNavHost(navController: NavHostController = rememberNavController()) {
                 onAddProductClick = { navController.navigate(AdminProductRoutes.CREATE) },
                 onProductClick = { productId -> navController.navigate(AdminProductRoutes.edit(productId)) },
                 onUsersClick = { navController.navigate(AdminUserRoutes.LIST) },
+                onOrdersClick = { navController.navigate(AdminOrderRoutes.LIST) },
+            )
+        }
+        composable(AdminOrderRoutes.LIST) {
+            AdminOrderListScreen(
+                onOrderClick = { orderId -> navController.navigate(BuyerOrderRoutes.detail(orderId)) },
             )
         }
         composable(AdminUserRoutes.LIST) {

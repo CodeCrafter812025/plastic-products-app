@@ -47,6 +47,7 @@ fun AdminProductListScreen(
     onAddProductClick: () -> Unit,
     onProductClick: (Int) -> Unit,
     onUsersClick: () -> Unit,
+    onOrdersClick: () -> Unit,
     viewModel: AdminProductListViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -84,6 +85,9 @@ fun AdminProductListScreen(
                 }
                 TextButton(onClick = onUsersClick) {
                     Text(stringResource(R.string.btn_users))
+                }
+                TextButton(onClick = onOrdersClick) {
+                    Text(stringResource(R.string.btn_orders))
                 }
             }
 
