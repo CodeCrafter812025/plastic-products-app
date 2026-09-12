@@ -25,6 +25,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ir.codecrafter.plasticproducts.R
 import ir.codecrafter.plasticproducts.data.model.Order
+import ir.codecrafter.plasticproducts.util.PersianDateFormatter
 
 @Composable
 fun BuyerOrderListScreen(
@@ -96,7 +97,10 @@ private fun BuyerOrderRow(order: Order, onClick: () -> Unit) {
                 modifier = Modifier.padding(top = 4.dp),
             )
             Text(
-                text = stringResource(R.string.label_order_created_at_value, order.createdAt),
+                text = stringResource(
+                    R.string.label_order_created_at_value,
+                    PersianDateFormatter.toJalaliDate(order.createdAt),
+                ),
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(top = 4.dp),
             )

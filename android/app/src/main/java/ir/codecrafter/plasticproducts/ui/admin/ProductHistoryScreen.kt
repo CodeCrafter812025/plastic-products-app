@@ -31,6 +31,7 @@ import ir.codecrafter.plasticproducts.R
 import ir.codecrafter.plasticproducts.data.model.PriceHistory
 import ir.codecrafter.plasticproducts.data.model.StockChangeReason
 import ir.codecrafter.plasticproducts.data.model.StockHistory
+import ir.codecrafter.plasticproducts.util.PersianDateFormatter
 
 @Composable
 fun ProductHistoryScreen(viewModel: ProductHistoryViewModel = hiltViewModel()) {
@@ -106,7 +107,7 @@ private fun PriceHistoryList(entries: List<PriceHistory>) {
                     Text(
                         text = stringResource(
                             R.string.label_history_changed_at_by,
-                            entry.changedAt,
+                            PersianDateFormatter.toJalaliDateTime(entry.changedAt),
                             entry.changedByName ?: "-",
                         ),
                         style = MaterialTheme.typography.bodySmall,
@@ -152,7 +153,7 @@ private fun StockHistoryList(entries: List<StockHistory>) {
                     Text(
                         text = stringResource(
                             R.string.label_history_changed_at_by,
-                            entry.changedAt,
+                            PersianDateFormatter.toJalaliDateTime(entry.changedAt),
                             entry.changedByName ?: "-",
                         ),
                         style = MaterialTheme.typography.bodySmall,

@@ -37,6 +37,7 @@ import ir.codecrafter.plasticproducts.R
 import ir.codecrafter.plasticproducts.data.model.Order
 import ir.codecrafter.plasticproducts.data.model.OrderItem
 import ir.codecrafter.plasticproducts.data.model.OrderStatusHistoryEntry
+import ir.codecrafter.plasticproducts.util.PersianDateFormatter
 
 @Composable
 fun BuyerOrderDetailScreen(
@@ -211,7 +212,7 @@ private fun BuyerOrderDetailContent(
                         text = stringResource(
                             R.string.label_status_change_entry,
                             statusLabel(entry.newStatus),
-                            entry.changedAt,
+                            PersianDateFormatter.toJalaliDateTime(entry.changedAt),
                         ),
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.padding(bottom = 4.dp),

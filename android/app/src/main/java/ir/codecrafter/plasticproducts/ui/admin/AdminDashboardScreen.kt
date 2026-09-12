@@ -37,6 +37,7 @@ import ir.codecrafter.plasticproducts.R
 import ir.codecrafter.plasticproducts.data.model.LowStockProduct
 import ir.codecrafter.plasticproducts.data.model.SignupCount
 import ir.codecrafter.plasticproducts.data.model.TopProduct
+import ir.codecrafter.plasticproducts.util.PersianDateFormatter
 import java.time.Instant
 import java.time.ZoneOffset
 
@@ -211,8 +212,9 @@ private fun LowStockRow(product: LowStockProduct) {
 
 @Composable
 private fun SignupRow(entry: SignupCount) {
+    val periodLabel = entry.period?.let { PersianDateFormatter.toJalaliDate(it) } ?: "-"
     Text(
-        text = stringResource(R.string.label_signup_count_value, entry.period ?: "-", entry.count.toString()),
+        text = stringResource(R.string.label_signup_count_value, periodLabel, entry.count.toString()),
         style = MaterialTheme.typography.bodyMedium,
         modifier = Modifier.padding(vertical = 2.dp),
     )
@@ -235,10 +237,10 @@ private fun RevenueSection(
     Column {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedButton(onClick = { showFromPicker = true }, modifier = Modifier.weight(1f)) {
-                Text(from ?: stringResource(R.string.label_from_date))
+                Text(from?.let { PersianDateFormatter.toJalaliDate(it) } ?: stringResource(R.string.label_from_date))
             }
             OutlinedButton(onClick = { showToPicker = true }, modifier = Modifier.weight(1f)) {
-                Text(to ?: stringResource(R.string.label_to_date))
+                Text(to?.let { PersianDateFormatter.toJalaliDate(it) } ?: stringResource(R.string.label_to_date))
             }
         }
         Button(

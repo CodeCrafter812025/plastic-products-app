@@ -31,6 +31,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ir.codecrafter.plasticproducts.R
 import ir.codecrafter.plasticproducts.data.model.Notification
+import ir.codecrafter.plasticproducts.util.PersianDateFormatter
 
 @Composable
 fun NotificationListScreen(
@@ -117,7 +118,7 @@ private fun NotificationRow(notification: Notification, onClick: () -> Unit) {
         Column(modifier = Modifier.padding(12.dp)) {
             Text(text = notification.message, style = MaterialTheme.typography.bodyLarge)
             Text(
-                text = notification.sentAt,
+                text = PersianDateFormatter.toJalaliDateTime(notification.sentAt),
                 style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.padding(top = 4.dp),
             )

@@ -30,6 +30,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ir.codecrafter.plasticproducts.R
 import ir.codecrafter.plasticproducts.data.model.Invoice
 import ir.codecrafter.plasticproducts.data.model.InvoiceItemSnapshot
+import ir.codecrafter.plasticproducts.util.PersianDateFormatter
 
 @Composable
 fun InvoiceScreen(
@@ -91,7 +92,10 @@ private fun InvoiceContent(
                     style = MaterialTheme.typography.headlineSmall,
                 )
                 Text(
-                    text = stringResource(R.string.label_invoice_issued_at_value, invoice.issuedAt),
+                    text = stringResource(
+                        R.string.label_invoice_issued_at_value,
+                        PersianDateFormatter.toJalaliDate(invoice.issuedAt),
+                    ),
                     style = MaterialTheme.typography.bodyLarge,
                     modifier = Modifier.padding(top = 8.dp),
                 )
