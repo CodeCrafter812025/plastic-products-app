@@ -77,6 +77,7 @@ fun BuyerOrderDetailScreen(
                     order = state.order!!,
                     statusHistory = state.statusHistory,
                     isCancelling = state.isCancelling,
+                    isBuyer = viewModel.isBuyer,
                     onEditOrder = { onEditOrder(state.order!!.id) },
                     onRequestCancel = { showCancelConfirm = true },
                     onViewInvoice = { onViewInvoice(state.order!!.id) },
@@ -118,6 +119,7 @@ private fun BuyerOrderDetailContent(
     order: Order,
     statusHistory: List<OrderStatusHistoryEntry>,
     isCancelling: Boolean,
+    isBuyer: Boolean,
     onEditOrder: () -> Unit,
     onRequestCancel: () -> Unit,
     onViewInvoice: () -> Unit,
@@ -149,7 +151,7 @@ private fun BuyerOrderDetailContent(
                 OrderItemRow(item)
             }
 
-            if (order.status == "pending") {
+            if (order.status == "pending" && isBuyer) {
                 item {
                     Row(
                         modifier = Modifier

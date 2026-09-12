@@ -216,4 +216,11 @@
     <string name="msg_no_data">بدون داده</string>
     <string name="empty_visitor_performance">هیچ ویزیتوری یافت نشد</string>
 
+    <!-- ui/admin/AdminOrderListScreen.kt -->
+    <string name="btn_assign_to_visitor">تخصیص به ویزیتور</string>
+    <string name="title_select_visitor">انتخاب ویزیتور</string>
+    <string name="empty_active_visitors">ویزیتور فعالی یافت نشد</string>
+    <string name="empty_admin_orders">سفارشی یافت نشد</string>
+    <string name="msg_cancel_order_admin_confirm">این لغو توسط ادمین انجام می‌شود و غیرقابل‌بازگشت است؛ مطمئنید می‌خواهید این سفارش را لغو کنید؟</string>
+
 </resources>

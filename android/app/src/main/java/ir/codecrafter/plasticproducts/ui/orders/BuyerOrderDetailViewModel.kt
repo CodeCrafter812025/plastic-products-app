@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import ir.codecrafter.plasticproducts.R
+import ir.codecrafter.plasticproducts.data.local.TokenManager
 import ir.codecrafter.plasticproducts.data.model.Order
 import ir.codecrafter.plasticproducts.data.model.OrderStatusHistoryEntry
 import ir.codecrafter.plasticproducts.data.network.ErrorMessage
@@ -36,11 +37,20 @@ sealed class BuyerOrderDetailEvent {
 @HiltViewModel
 class BuyerOrderDetailViewModel @Inject constructor(
     private val orderRepository: OrderRepository,
+    tokenManager: TokenManager,
     @ApplicationContext private val context: Context,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
     private val orderId: Int = checkNotNull(savedStateHandle[BuyerOrderRoutes.ORDER_ID_ARG])
+
+    /**
+     * This screen is reused as-is for admin's order list rows (same underlying
+     * data), which also surfaces "pending" orders — but edit/cancel there are
+     * buyer-only actions, so they must only show for an actual buyer viewer,
+     * not just based on order.status.
+     */
+    val isBuyer: Boolean = tokenManager.role == "buyer"
 
     private val _uiState = MutableStateFlow(BuyerOrderDetailUiState())
     val uiState: StateFlow<BuyerOrderDetailUiState> = _uiState.asStateFlow()
