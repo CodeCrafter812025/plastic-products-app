@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ir.codecrafter.plasticproducts.R
+import ir.codecrafter.plasticproducts.ui.common.ErrorWithRetry
 
 @Composable
 fun ProfileScreen(
@@ -55,6 +56,27 @@ fun ProfileScreen(
                 contentAlignment = Alignment.Center,
             ) {
                 CircularProgressIndicator()
+            }
+            return@Scaffold
+        }
+
+        // Phone is only ever blank before a successful load fills the form — so an
+        // errorMessage alongside a blank phone means the *initial* load itself failed,
+        // not a save attempt (save failures happen once the form already has data).
+        // Showing a blank form with an error underneath would be more confusing than
+        // this full-page retry state.
+        if (state.errorMessage != null && state.phone.isBlank()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
+                contentAlignment = Alignment.Center,
+            ) {
+                ErrorWithRetry(
+                    message = state.errorMessage.orEmpty(),
+                    onRetry = viewModel::loadProfile,
+                    modifier = Modifier.padding(24.dp),
+                )
             }
             return@Scaffold
         }

@@ -86,6 +86,11 @@ class AdminProductFormViewModel @Inject constructor(
         productId?.let(::loadProduct)
     }
 
+    /** Re-runs the edit-mode prefill load — a no-op in create mode, where there's no productId to reload. */
+    fun retryLoad() {
+        productId?.let(::loadProduct)
+    }
+
     private fun loadProduct(id: Int) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }

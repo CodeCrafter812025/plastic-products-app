@@ -46,6 +46,7 @@ import ir.codecrafter.plasticproducts.R
 import ir.codecrafter.plasticproducts.data.model.Product
 import ir.codecrafter.plasticproducts.data.model.ProductQuality
 import ir.codecrafter.plasticproducts.ui.cart.CartViewModel
+import ir.codecrafter.plasticproducts.ui.common.ErrorWithRetry
 import ir.codecrafter.plasticproducts.ui.notifications.NotificationListViewModel
 
 @Composable
@@ -72,6 +73,7 @@ fun ProductListScreen(
     LaunchedEffect(Unit) {
         cartViewModel.loadCart()
         notificationListViewModel.loadNotifications()
+        viewModel.retryLoad()
     }
 
     Scaffold { paddingValues: PaddingValues ->
@@ -198,9 +200,9 @@ fun ProductListScreen(
                         CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
 
                     state.errorMessage != null ->
-                        Text(
-                            text = state.errorMessage.orEmpty(),
-                            color = MaterialTheme.colorScheme.error,
+                        ErrorWithRetry(
+                            message = state.errorMessage.orEmpty(),
+                            onRetry = viewModel::retryLoad,
                             modifier = Modifier
                                 .align(Alignment.Center)
                                 .padding(24.dp),

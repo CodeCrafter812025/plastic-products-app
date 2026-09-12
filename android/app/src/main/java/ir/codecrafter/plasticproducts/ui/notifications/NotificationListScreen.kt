@@ -31,6 +31,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ir.codecrafter.plasticproducts.R
 import ir.codecrafter.plasticproducts.data.model.Notification
+import ir.codecrafter.plasticproducts.ui.common.ErrorWithRetry
 import ir.codecrafter.plasticproducts.util.PersianDateFormatter
 
 @Composable
@@ -70,9 +71,9 @@ fun NotificationListScreen(
                         CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
 
                     state.errorMessage != null ->
-                        Text(
-                            text = state.errorMessage.orEmpty(),
-                            color = MaterialTheme.colorScheme.error,
+                        ErrorWithRetry(
+                            message = state.errorMessage.orEmpty(),
+                            onRetry = viewModel::loadNotifications,
                             modifier = Modifier
                                 .align(Alignment.Center)
                                 .padding(24.dp),

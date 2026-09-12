@@ -17,6 +17,7 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
@@ -31,12 +32,17 @@ import ir.codecrafter.plasticproducts.R
 import ir.codecrafter.plasticproducts.data.model.PriceHistory
 import ir.codecrafter.plasticproducts.data.model.StockChangeReason
 import ir.codecrafter.plasticproducts.data.model.StockHistory
+import ir.codecrafter.plasticproducts.ui.common.ErrorWithRetry
 import ir.codecrafter.plasticproducts.util.PersianDateFormatter
 
 @Composable
 fun ProductHistoryScreen(viewModel: ProductHistoryViewModel = hiltViewModel()) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var selectedTab by remember { mutableIntStateOf(0) }
+
+    // Screen-driven load (see ProductHistoryViewModel's comment) — covers both
+    // the first visit and every return-to-screen refresh with a single request.
+    LaunchedEffect(Unit) { viewModel.load() }
 
     Scaffold { paddingValues: PaddingValues ->
         Column(
@@ -61,9 +67,9 @@ fun ProductHistoryScreen(viewModel: ProductHistoryViewModel = hiltViewModel()) {
                 when {
                     state.isLoading -> CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
 
-                    state.errorMessage != null -> Text(
-                        text = state.errorMessage.orEmpty(),
-                        color = MaterialTheme.colorScheme.error,
+                    state.errorMessage != null -> ErrorWithRetry(
+                        message = state.errorMessage.orEmpty(),
+                        onRetry = viewModel::load,
                         modifier = Modifier
                             .align(Alignment.Center)
                             .padding(24.dp),

@@ -45,6 +45,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import ir.codecrafter.plasticproducts.R
 import ir.codecrafter.plasticproducts.data.model.CartItem
+import ir.codecrafter.plasticproducts.ui.common.ErrorWithRetry
 
 @Composable
 fun CartScreen(
@@ -80,9 +81,9 @@ fun CartScreen(
                     CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
 
                 state.errorMessage != null ->
-                    Text(
-                        text = state.errorMessage.orEmpty(),
-                        color = MaterialTheme.colorScheme.error,
+                    ErrorWithRetry(
+                        message = state.errorMessage.orEmpty(),
+                        onRetry = viewModel::loadCart,
                         modifier = Modifier
                             .align(Alignment.Center)
                             .padding(24.dp),

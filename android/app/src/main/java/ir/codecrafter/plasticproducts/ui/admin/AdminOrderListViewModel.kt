@@ -31,6 +31,7 @@ data class AdminOrderListUiState(
     val actionInProgressOrderId: Int? = null,
     val activeVisitors: List<AdminUser> = emptyList(),
     val isLoadingVisitors: Boolean = false,
+    val visitorsErrorMessage: String? = null,
     val isAssigning: Boolean = false,
 )
 
@@ -69,17 +70,22 @@ class AdminOrderListViewModel @Inject constructor(
 
     fun onStatusFilterChange(status: String?) = _uiState.update { it.copy(statusFilter = status) }
 
-    /** isActive isn't part of AdminUserRepository.getUsers's own filter — applied here, client-side, on top of role=visitor. */
+    /**
+     * isActive isn't part of AdminUserRepository.getUsers's own filter — applied
+     * here, client-side, on top of role=visitor. A failure here is shown as a
+     * persistent message with a retry button inside the assign dialog itself
+     * (visitorsErrorMessage), not just a transient snackbar — the dialog would
+     * otherwise be stuck on an empty visitor list with no visible explanation.
+     */
     fun loadActiveVisitors() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoadingVisitors = true) }
+            _uiState.update { it.copy(isLoadingVisitors = true, visitorsErrorMessage = null) }
             when (val result = adminUserRepository.getUsers(roleFilter = "visitor")) {
                 is AuthResult.Success -> _uiState.update {
                     it.copy(isLoadingVisitors = false, activeVisitors = result.data.filter { visitor -> visitor.isActive })
                 }
-                else -> {
-                    _uiState.update { it.copy(isLoadingVisitors = false) }
-                    _events.send(AdminOrderListEvent.ActionFailed(describeFailure(result)))
+                else -> _uiState.update {
+                    it.copy(isLoadingVisitors = false, visitorsErrorMessage = describeFailure(result))
                 }
             }
         }

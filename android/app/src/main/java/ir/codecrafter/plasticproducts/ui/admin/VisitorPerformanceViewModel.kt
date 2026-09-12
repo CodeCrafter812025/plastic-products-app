@@ -43,10 +43,9 @@ class VisitorPerformanceViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(VisitorPerformanceUiState())
     val uiState: StateFlow<VisitorPerformanceUiState> = _uiState.asStateFlow()
 
-    init {
-        load()
-    }
-
+    // No init-time load here — VisitorPerformanceScreen's own LaunchedEffect(Unit)
+    // triggers the first load and every return-to-screen reload alike, so there's
+    // exactly one load per visit instead of one from init() plus a duplicate first one.
     fun load() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }

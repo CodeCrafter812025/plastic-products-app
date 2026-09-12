@@ -39,6 +39,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ir.codecrafter.plasticproducts.R
 import ir.codecrafter.plasticproducts.data.model.OrderItem
+import ir.codecrafter.plasticproducts.ui.common.ErrorWithRetry
 
 @Composable
 fun OrderEditScreen(
@@ -68,9 +69,9 @@ fun OrderEditScreen(
                     CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
 
                 state.errorMessage != null ->
-                    Text(
-                        text = state.errorMessage.orEmpty(),
-                        color = MaterialTheme.colorScheme.error,
+                    ErrorWithRetry(
+                        message = state.errorMessage.orEmpty(),
+                        onRetry = viewModel::loadOrder,
                         modifier = Modifier
                             .align(Alignment.Center)
                             .padding(24.dp),

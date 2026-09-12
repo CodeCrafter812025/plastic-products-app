@@ -37,6 +37,7 @@ import ir.codecrafter.plasticproducts.R
 import ir.codecrafter.plasticproducts.data.model.Order
 import ir.codecrafter.plasticproducts.data.model.OrderItem
 import ir.codecrafter.plasticproducts.data.model.OrderStatusHistoryEntry
+import ir.codecrafter.plasticproducts.ui.common.ErrorWithRetry
 import ir.codecrafter.plasticproducts.util.PersianDateFormatter
 
 @Composable
@@ -66,9 +67,9 @@ fun BuyerOrderDetailScreen(
             when {
                 state.isLoading -> CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
 
-                state.errorMessage != null -> Text(
-                    text = state.errorMessage.orEmpty(),
-                    color = MaterialTheme.colorScheme.error,
+                state.errorMessage != null -> ErrorWithRetry(
+                    message = state.errorMessage.orEmpty(),
+                    onRetry = viewModel::loadOrder,
                     modifier = Modifier
                         .align(Alignment.Center)
                         .padding(24.dp),
@@ -82,6 +83,15 @@ fun BuyerOrderDetailScreen(
                     onEditOrder = { onEditOrder(state.order!!.id) },
                     onRequestCancel = { showCancelConfirm = true },
                     onViewInvoice = { onViewInvoice(state.order!!.id) },
+                )
+
+                // Defensive: not currently reachable, but avoids a silent blank screen.
+                else -> ErrorWithRetry(
+                    message = stringResource(R.string.msg_loading_failed_generic),
+                    onRetry = viewModel::loadOrder,
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .padding(24.dp),
                 )
             }
         }

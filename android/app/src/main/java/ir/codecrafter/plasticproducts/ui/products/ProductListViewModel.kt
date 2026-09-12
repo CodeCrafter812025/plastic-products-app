@@ -77,6 +77,17 @@ class ProductListViewModel @Inject constructor(
 
     fun onMaxPriceChange(value: String) = updateFilter { it.copy(maxPrice = value.ifBlank { null }) }
 
+    /**
+     * Re-runs the last filter/search through the same debounce-safe request
+     * path as a filter change — used for both the error state's retry button
+     * and the refresh-on-return call from ProductListScreen. loadProducts()
+     * itself stays private since every load must go through reloadRequests
+     * so collectLatest can cancel a stale in-flight request.
+     */
+    fun retryLoad() {
+        reloadRequests.tryEmit(Unit)
+    }
+
     private fun updateFilter(transform: (ProductFilter) -> ProductFilter) {
         _uiState.update { it.copy(filter = transform(it.filter)) }
         reloadRequests.tryEmit(Unit)

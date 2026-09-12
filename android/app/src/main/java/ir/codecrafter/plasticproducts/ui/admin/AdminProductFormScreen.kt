@@ -51,6 +51,7 @@ import coil.compose.AsyncImage
 import ir.codecrafter.plasticproducts.R
 import ir.codecrafter.plasticproducts.data.model.ProductQuality
 import ir.codecrafter.plasticproducts.data.model.StockChangeReason
+import ir.codecrafter.plasticproducts.ui.common.ErrorWithRetry
 
 @Composable
 fun AdminProductFormScreen(
@@ -80,9 +81,9 @@ fun AdminProductFormScreen(
             when {
                 state.isLoading -> CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
 
-                state.errorMessage != null && state.title.isBlank() -> Text(
-                    text = state.errorMessage.orEmpty(),
-                    color = MaterialTheme.colorScheme.error,
+                state.errorMessage != null && state.title.isBlank() -> ErrorWithRetry(
+                    message = state.errorMessage.orEmpty(),
+                    onRetry = viewModel::retryLoad,
                     modifier = Modifier
                         .align(Alignment.Center)
                         .padding(24.dp),
@@ -123,6 +124,19 @@ private fun AdminProductFormContent(
                 TextButton(onClick = onViewHistory, modifier = Modifier.fillMaxWidth()) {
                     Text(stringResource(R.string.btn_view_price_stock_history))
                 }
+            }
+        }
+        // The full-page error branch above only covers a failed *initial* load (title
+        // still blank). If a later reload fails after the form already has data, that
+        // error would otherwise be silently dropped — this keeps the form usable while
+        // still surfacing it, instead of only the transient ActionFailed snackbar.
+        if (state.errorMessage != null && state.title.isNotBlank()) {
+            item {
+                ErrorWithRetry(
+                    message = state.errorMessage,
+                    onRetry = viewModel::retryLoad,
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
         }
         item {

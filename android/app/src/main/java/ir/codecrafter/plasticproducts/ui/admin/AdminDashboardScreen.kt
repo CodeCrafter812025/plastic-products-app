@@ -32,6 +32,7 @@ import ir.codecrafter.plasticproducts.R
 import ir.codecrafter.plasticproducts.data.model.LowStockProduct
 import ir.codecrafter.plasticproducts.data.model.SignupCount
 import ir.codecrafter.plasticproducts.data.model.TopProduct
+import ir.codecrafter.plasticproducts.ui.common.ErrorWithRetry
 import ir.codecrafter.plasticproducts.ui.common.JalaliDatePickerDialog
 import ir.codecrafter.plasticproducts.util.PersianDateFormatter
 
@@ -56,7 +57,10 @@ fun AdminDashboardScreen(
                 DashboardSection(title = stringResource(R.string.title_order_status)) {
                     when {
                         state.isLoadingOrderCounts -> SectionLoading()
-                        state.orderCountsError != null -> SectionError(state.orderCountsError.orEmpty())
+                        state.orderCountsError != null -> SectionError(
+                            message = state.orderCountsError.orEmpty(),
+                            onRetry = viewModel::loadOrderCounts,
+                        )
                         else -> Column {
                             ORDER_STATUSES.forEach { status ->
                                 Text(
@@ -89,7 +93,10 @@ fun AdminDashboardScreen(
                 DashboardSection(title = stringResource(R.string.title_top_products)) {
                     when {
                         state.isLoadingTopProducts -> SectionLoading()
-                        state.topProductsError != null -> SectionError(state.topProductsError.orEmpty())
+                        state.topProductsError != null -> SectionError(
+                            message = state.topProductsError.orEmpty(),
+                            onRetry = viewModel::loadTopProducts,
+                        )
                         state.topProducts.isEmpty() -> SectionEmpty()
                         else -> Column {
                             state.topProducts.forEach { product -> TopProductRow(product) }
@@ -102,7 +109,10 @@ fun AdminDashboardScreen(
                 DashboardSection(title = stringResource(R.string.title_low_stock)) {
                     when {
                         state.isLoadingLowStock -> SectionLoading()
-                        state.lowStockError != null -> SectionError(state.lowStockError.orEmpty())
+                        state.lowStockError != null -> SectionError(
+                            message = state.lowStockError.orEmpty(),
+                            onRetry = viewModel::loadLowStock,
+                        )
                         state.lowStock.isEmpty() -> SectionEmpty()
                         else -> Column {
                             state.lowStock.forEach { product -> LowStockRow(product) }
@@ -129,7 +139,10 @@ fun AdminDashboardScreen(
                         Box(modifier = Modifier.padding(top = 8.dp)) {
                             when {
                                 state.isLoadingSignups -> SectionLoading()
-                                state.signupsError != null -> SectionError(state.signupsError.orEmpty())
+                                state.signupsError != null -> SectionError(
+                                    message = state.signupsError.orEmpty(),
+                                    onRetry = viewModel::loadSignups,
+                                )
                                 state.signups.isEmpty() -> SectionEmpty()
                                 else -> Column {
                                     state.signups.forEach { entry -> SignupRow(entry) }
@@ -172,8 +185,8 @@ private fun SectionLoading() {
 }
 
 @Composable
-private fun SectionError(message: String) {
-    Text(text = message, color = MaterialTheme.colorScheme.error)
+private fun SectionError(message: String, onRetry: () -> Unit) {
+    ErrorWithRetry(message = message, onRetry = onRetry)
 }
 
 @Composable
@@ -251,9 +264,9 @@ private fun RevenueSection(
             }
         }
         if (errorMessage != null) {
-            Text(
-                text = errorMessage,
-                color = MaterialTheme.colorScheme.error,
+            ErrorWithRetry(
+                message = errorMessage,
+                onRetry = onShowClick,
                 modifier = Modifier.padding(top = 8.dp),
             )
         } else if (totalRevenue != null) {

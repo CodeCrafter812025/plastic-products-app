@@ -41,6 +41,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ir.codecrafter.plasticproducts.R
 import ir.codecrafter.plasticproducts.data.model.AdminUser
 import ir.codecrafter.plasticproducts.data.model.Order
+import ir.codecrafter.plasticproducts.ui.common.ErrorWithRetry
 
 private val ORDER_STATUSES = listOf("pending", "assigned", "loading", "delivered", "cancelled")
 
@@ -109,9 +110,9 @@ fun AdminOrderListScreen(
                         CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
 
                     state.errorMessage != null ->
-                        Text(
-                            text = state.errorMessage.orEmpty(),
-                            color = MaterialTheme.colorScheme.error,
+                        ErrorWithRetry(
+                            message = state.errorMessage.orEmpty(),
+                            onRetry = viewModel::loadOrders,
                             modifier = Modifier
                                 .align(Alignment.Center)
                                 .padding(24.dp),
@@ -143,8 +144,10 @@ fun AdminOrderListScreen(
         AssignVisitorDialog(
             visitors = state.activeVisitors,
             isLoading = state.isLoadingVisitors,
+            errorMessage = state.visitorsErrorMessage,
             isAssigning = state.isAssigning,
             onConfirm = { visitorId -> viewModel.assignOrder(order.id, visitorId) },
+            onRetry = viewModel::loadActiveVisitors,
             onDismiss = { assignDialogOrder = null },
         )
     }
@@ -251,8 +254,10 @@ private fun AdminOrderRow(
 private fun AssignVisitorDialog(
     visitors: List<AdminUser>,
     isLoading: Boolean,
+    errorMessage: String?,
     isAssigning: Boolean,
     onConfirm: (Int) -> Unit,
+    onRetry: () -> Unit,
     onDismiss: () -> Unit,
 ) {
     var selectedVisitorId by remember { mutableStateOf<Int?>(null) }
@@ -265,6 +270,12 @@ private fun AssignVisitorDialog(
                 isLoading -> Box(modifier = Modifier.fillMaxWidth()) {
                     CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                 }
+
+                errorMessage != null -> ErrorWithRetry(
+                    message = errorMessage,
+                    onRetry = onRetry,
+                    modifier = Modifier.fillMaxWidth(),
+                )
 
                 visitors.isEmpty() -> Text(stringResource(R.string.empty_active_visitors))
 

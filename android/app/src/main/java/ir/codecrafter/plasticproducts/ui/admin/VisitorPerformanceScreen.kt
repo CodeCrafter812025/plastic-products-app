@@ -16,6 +16,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -25,11 +26,16 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ir.codecrafter.plasticproducts.R
 import ir.codecrafter.plasticproducts.data.model.VisitorPerformance
+import ir.codecrafter.plasticproducts.ui.common.ErrorWithRetry
 import java.util.Locale
 
 @Composable
 fun VisitorPerformanceScreen(viewModel: VisitorPerformanceViewModel = hiltViewModel()) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+
+    // Screen-driven load (see VisitorPerformanceViewModel's comment) — covers both
+    // the first visit and every return-to-screen refresh with a single request.
+    LaunchedEffect(Unit) { viewModel.load() }
 
     Scaffold { paddingValues: PaddingValues ->
         Column(
@@ -51,9 +57,9 @@ fun VisitorPerformanceScreen(viewModel: VisitorPerformanceViewModel = hiltViewMo
                 when {
                     state.isLoading -> CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
 
-                    state.errorMessage != null -> Text(
-                        text = state.errorMessage.orEmpty(),
-                        color = MaterialTheme.colorScheme.error,
+                    state.errorMessage != null -> ErrorWithRetry(
+                        message = state.errorMessage.orEmpty(),
+                        onRetry = viewModel::load,
                         modifier = Modifier
                             .align(Alignment.Center)
                             .padding(24.dp),

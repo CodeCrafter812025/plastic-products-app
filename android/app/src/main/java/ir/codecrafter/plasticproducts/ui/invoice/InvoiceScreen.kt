@@ -30,6 +30,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ir.codecrafter.plasticproducts.R
 import ir.codecrafter.plasticproducts.data.model.Invoice
 import ir.codecrafter.plasticproducts.data.model.InvoiceItemSnapshot
+import ir.codecrafter.plasticproducts.ui.common.ErrorWithRetry
 import ir.codecrafter.plasticproducts.util.PersianDateFormatter
 
 @Composable
@@ -56,9 +57,9 @@ fun InvoiceScreen(
             when {
                 state.isLoading -> CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
 
-                state.errorMessage != null -> Text(
-                    text = state.errorMessage.orEmpty(),
-                    color = MaterialTheme.colorScheme.error,
+                state.errorMessage != null -> ErrorWithRetry(
+                    message = state.errorMessage.orEmpty(),
+                    onRetry = viewModel::loadInvoice,
                     modifier = Modifier
                         .align(Alignment.Center)
                         .padding(24.dp),
@@ -68,6 +69,15 @@ fun InvoiceScreen(
                     invoice = state.invoice!!,
                     isDownloading = state.isDownloading,
                     onDownloadPdf = viewModel::downloadPdf,
+                )
+
+                // Defensive: not currently reachable, but avoids a silent blank screen.
+                else -> ErrorWithRetry(
+                    message = stringResource(R.string.msg_loading_failed_generic),
+                    onRetry = viewModel::loadInvoice,
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .padding(24.dp),
                 )
             }
         }

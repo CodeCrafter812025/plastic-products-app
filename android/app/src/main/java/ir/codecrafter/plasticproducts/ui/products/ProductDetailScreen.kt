@@ -39,6 +39,7 @@ import coil.compose.AsyncImage
 import ir.codecrafter.plasticproducts.R
 import ir.codecrafter.plasticproducts.data.model.Product
 import ir.codecrafter.plasticproducts.data.model.ProductQuality
+import ir.codecrafter.plasticproducts.ui.common.ErrorWithRetry
 import java.math.BigDecimal
 
 @Composable
@@ -67,9 +68,9 @@ fun ProductDetailScreen(
             when {
                 state.isLoading -> CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
 
-                state.errorMessage != null -> Text(
-                    text = state.errorMessage.orEmpty(),
-                    color = MaterialTheme.colorScheme.error,
+                state.errorMessage != null -> ErrorWithRetry(
+                    message = state.errorMessage.orEmpty(),
+                    onRetry = viewModel::loadProduct,
                     modifier = Modifier
                         .align(Alignment.Center)
                         .padding(24.dp),
@@ -83,6 +84,16 @@ fun ProductDetailScreen(
                     onQuantityInputChange = viewModel::onQuantityInputChange,
                     onAddToCart = viewModel::addToCart,
                     onBackToList = onBackToList,
+                )
+
+                // Defensive: not currently reachable (loadProduct() always ends in either an
+                // error or a product), but a silent blank screen would be worse than a message.
+                else -> ErrorWithRetry(
+                    message = stringResource(R.string.msg_loading_failed_generic),
+                    onRetry = viewModel::loadProduct,
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .padding(24.dp),
                 )
             }
         }

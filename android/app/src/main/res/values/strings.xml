@@ -61,6 +61,10 @@
     <string name="error_network">خطا در اتصال به اینترنت. دوباره تلاش کنید.</string>
     <string name="error_generic">خطایی رخ داد. دوباره تلاش کنید.</string>
 
+    <!-- ui/common/ErrorWithRetry.kt -->
+    <string name="btn_retry">تلاش مجدد</string>
+    <string name="msg_loading_failed_generic">خطایی در بارگذاری رخ داد.</string>
+
     <!-- ui/products/ProductDetailScreen.kt (add-to-cart) -->
     <string name="label_cart_quantity">مقدار</string>
     <string name="btn_add_to_cart">افزودن به سبد</string>
