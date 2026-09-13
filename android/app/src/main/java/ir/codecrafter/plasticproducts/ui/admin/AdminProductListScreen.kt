@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -16,10 +17,19 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ReceiptLong
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Dashboard
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.People
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -87,15 +97,39 @@ fun AdminProductListScreen(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Button(onClick = onAddProductClick) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = stringResource(R.string.btn_add_new_product),
+                        modifier = Modifier.size(ButtonDefaults.IconSize),
+                    )
+                    Spacer(modifier = Modifier.size(ButtonDefaults.IconSpacing))
                     Text(stringResource(R.string.btn_add_new_product))
                 }
                 TextButton(onClick = onUsersClick) {
+                    Icon(
+                        imageVector = Icons.Default.People,
+                        contentDescription = stringResource(R.string.btn_users),
+                        modifier = Modifier.size(ButtonDefaults.IconSize),
+                    )
+                    Spacer(modifier = Modifier.size(ButtonDefaults.IconSpacing))
                     Text(stringResource(R.string.btn_users))
                 }
                 TextButton(onClick = onOrdersClick) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ReceiptLong,
+                        contentDescription = stringResource(R.string.btn_orders),
+                        modifier = Modifier.size(ButtonDefaults.IconSize),
+                    )
+                    Spacer(modifier = Modifier.size(ButtonDefaults.IconSpacing))
                     Text(stringResource(R.string.btn_orders))
                 }
                 TextButton(onClick = onDashboardClick) {
+                    Icon(
+                        imageVector = Icons.Default.Dashboard,
+                        contentDescription = stringResource(R.string.btn_dashboard),
+                        modifier = Modifier.size(ButtonDefaults.IconSize),
+                    )
+                    Spacer(modifier = Modifier.size(ButtonDefaults.IconSpacing))
                     Text(stringResource(R.string.btn_dashboard))
                 }
             }
@@ -259,13 +293,14 @@ private fun AdminProductRow(
                         )
                     }
                 }
-                TextButton(
+                IconButton(
                     onClick = onRequestDelete,
                     enabled = !isActionInProgress,
                 ) {
-                    Text(
-                        text = stringResource(R.string.btn_delete_product),
-                        color = MaterialTheme.colorScheme.error,
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = stringResource(R.string.btn_delete_product),
+                        tint = MaterialTheme.colorScheme.error,
                     )
                 }
             }
