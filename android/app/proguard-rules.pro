@@ -20,3 +20,12 @@
 -keepclasseswithmembers class ir.codecrafter.plasticproducts.** {
     kotlinx.serialization.KSerializer serializer(...);
 }
+
+# Tink (used under androidx.security:security-crypto) references these
+# compile-time-only annotations (Google's error-prone, javax.annotation,
+# the Checker Framework) that aren't on the runtime classpath — a known R8
+# "missing class" warning with Tink, harmless since nothing here is actually
+# called at runtime.
+-dontwarn com.google.errorprone.annotations.**
+-dontwarn javax.annotation.**
+-dontwarn org.checkerframework.**
