@@ -28,12 +28,27 @@ from reportlab.pdfbase.ttfonts import TTFont
 import arabic_reshaper
 from bidi.algorithm import get_display
 from django.conf import settings
+import jdatetime
 
 pdfmetrics.registerFont(TTFont('Vazirmatn', os.path.join(settings.BASE_DIR, 'static', 'fonts', 'Vazirmatn-Regular.ttf')))
 
 def fa(text):
     """آماده‌سازی متن فارسی برای نمایش درست در ReportLab (اتصال حروف + راست‌به‌چپ)."""
     return get_display(arabic_reshaper.reshape(str(text)))
+
+PERSIAN_MONTH_NAMES = [
+    'فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور',
+    'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند',
+]
+PERSIAN_DIGITS = str.maketrans('0123456789', '۰۱۲۳۴۵۶۷۸۹')
+
+def to_jalali_display(dt):
+    """
+    تبدیل یک datetime میلادی به رشته‌ی نمایشی شمسی (مثل «۱۷ شهریور ۱۴۰۵»)،
+    فقط برای نمایش داخل PDF فاکتور. دیتابیس و بقیه‌ی API همچنان میلادی می‌مانند.
+    """
+    j_date = jdatetime.date.fromgregorian(date=dt.date())
+    return f"{j_date.day} {PERSIAN_MONTH_NAMES[j_date.month - 1]} {j_date.year}".translate(PERSIAN_DIGITS)
 
 
 class CartViewSet(viewsets.GenericViewSet):
@@ -449,7 +464,7 @@ class OrderViewSet(viewsets.ModelViewSet):
 
         # Invoice details
         elements.append(Paragraph(fa(f"شماره فاکتور: {invoice.invoice_number}"), normal_style))
-        elements.append(Paragraph(fa(f"تاریخ صدور: {invoice.issued_at.strftime('%Y-%m-%d %H:%M')}"), normal_style))
+        elements.append(Paragraph(fa(f"تاریخ صدور: {to_jalali_display(invoice.issued_at)}"), normal_style))
         elements.append(Spacer(1, 0.5*cm))
 
         elements.append(Paragraph(fa("اطلاعات خریدار:"), heading_style))

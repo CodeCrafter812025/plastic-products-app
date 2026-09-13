@@ -1,4 +1,6 @@
+from datetime import datetime, timezone as dt_timezone
 from decimal import Decimal
+from unittest.mock import patch
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from rest_framework.test import APITestCase, APIClient
@@ -6,7 +8,7 @@ from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from products.models import Product
-from orders.models import Order, OrderItem
+from orders.models import Order, OrderItem, Invoice
 
 User = get_user_model()
 
@@ -156,3 +158,61 @@ class OrderSerializerBuyerInfoTests(APITestCase):
         response = self.client_visitor.get(reverse('order-detail', args=[self.order.id]))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIsNone(response.data['buyer_address'])
+
+
+class JalaliDisplayDateTests(APITestCase):
+    """to_jalali_display() is a pure helper used only for the invoice PDF's
+    display text; the database and the rest of the API stay Gregorian."""
+
+    def test_known_gregorian_date_converts_to_expected_jalali_string(self):
+        from orders.views import to_jalali_display
+        dt = datetime(2026, 9, 8, 12, 0, tzinfo=dt_timezone.utc)
+        self.assertEqual(to_jalali_display(dt), '۱۷ شهریور ۱۴۰۵')
+
+
+class InvoicePdfJalaliDateTests(APITestCase):
+    """
+    invoice_pdf used to print the Gregorian issued_at date straight into the
+    PDF (e.g. "08-09-2026"). It should now show the Jalali equivalent.
+    """
+
+    def setUp(self):
+        self.client = APIClient()
+        self.buyer = User.objects.create(
+            phone='09121234567', username='09121234567', full_name='Buyer', role='buyer'
+        )
+        refresh = RefreshToken.for_user(self.buyer)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {refresh.access_token}')
+
+        self.order = Order.objects.create(buyer=self.buyer, total_price=Decimal('20.00'), status='delivered')
+        self.invoice = Invoice.objects.create(
+            order=self.order,
+            invoice_number='INV-000001',
+            buyer_name=self.buyer.full_name,
+            buyer_phone=self.buyer.phone,
+            items_snapshot=[],
+            total_price=Decimal('20.00'),
+        )
+        # issued_at is auto_now_add=True, so it must be overridden with a
+        # queryset update (bypassing save()) to pin it to a known date.
+        fixed_issued_at = datetime(2026, 9, 8, 12, 0, tzinfo=dt_timezone.utc)
+        Invoice.objects.filter(pk=self.invoice.pk).update(issued_at=fixed_issued_at)
+        self.invoice.refresh_from_db()
+
+    def test_invoice_pdf_contains_jalali_date_text(self):
+        url = reverse('order-invoice-pdf', args=[self.order.id])
+        # fa() reshapes/reorders characters for RTL rendering, which makes a
+        # substring check on the final PDF bytes unreliable. Patching fa()
+        # to be a passthrough lets us assert on the exact text handed to it
+        # (the real code path, before cosmetic reshaping) instead.
+        with patch('orders.views.fa', side_effect=lambda text: text) as mock_fa:
+            response = self.client.get(url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response['Content-Type'], 'application/pdf')
+
+        texts_passed_to_fa = [call.args[0] for call in mock_fa.call_args_list]
+        self.assertTrue(
+            any('۱۷ شهریور ۱۴۰۵' in text for text in texts_passed_to_fa),
+            f"Jalali date not found among texts rendered into the PDF: {texts_passed_to_fa}"
+        )
