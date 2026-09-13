@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -5,6 +7,19 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt.android)
+}
+
+// Real signing values live only in the developer's local, gitignored
+// android/keystore.properties (storeFile, storePassword, keyAlias, keyPassword).
+// When that file is absent — e.g. building in a fresh checkout or CI without
+// secrets — this stays an empty Properties() with placeholder fallbacks below,
+// so the build configures successfully instead of failing with a confusing
+// missing-file error. The resulting release build just won't be validly signed
+// until a real keystore.properties is provided.
+val keystoreProperties = Properties()
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(keystorePropertiesFile.inputStream())
 }
 
 android {
@@ -19,6 +34,15 @@ android {
         versionName = "1.0"
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = keystoreProperties.getProperty("storeFile")?.let { file(it) }
+            storePassword = keystoreProperties.getProperty("storePassword") ?: "placeholder"
+            keyAlias = keystoreProperties.getProperty("keyAlias") ?: "placeholder"
+            keyPassword = keystoreProperties.getProperty("keyPassword") ?: "placeholder"
+        }
+    }
+
     buildTypes {
         debug {
             // Temporarily pointed at a physical device via `adb reverse` instead of
@@ -26,7 +50,10 @@ android {
             buildConfigField("String", "BASE_URL", "\"http://127.0.0.1:8000/api/v1/\"")
         }
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            signingConfig = signingConfigs.getByName("release")
             // TODO: placeholder until the production API domain is decided
             buildConfigField("String", "BASE_URL", "\"https://api.plasticproducts.example.com/api/v1/\"")
         }
