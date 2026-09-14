@@ -11,6 +11,7 @@ import ir.codecrafter.plasticproducts.data.network.ErrorMessage
 import ir.codecrafter.plasticproducts.data.repository.AdminProductRepository
 import ir.codecrafter.plasticproducts.data.repository.AuthResult
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -51,7 +52,17 @@ class AdminProductListViewModel @Inject constructor(
     fun loadProducts() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
-            when (val result = adminProductRepository.getProducts(includeInactive = true)) {
+            val startTime = System.currentTimeMillis()
+            val result = adminProductRepository.getProducts(includeInactive = true)
+
+            // A fast (e.g. local/failed-fast) response would otherwise flip isLoading
+            // back off again within a few ms, too quick for the skeleton to register.
+            val elapsedMs = System.currentTimeMillis() - startTime
+            if (elapsedMs < MIN_LOADING_DURATION_MS) {
+                delay(MIN_LOADING_DURATION_MS - elapsedMs)
+            }
+
+            when (result) {
                 is AuthResult.Success -> _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     products = result.data,
@@ -112,5 +123,9 @@ class AdminProductListViewModel @Inject constructor(
         }
         AuthResult.NetworkError -> context.getString(R.string.error_network)
         is AuthResult.Success -> "" // never reached — callers only pass non-Success results here
+    }
+
+    private companion object {
+        const val MIN_LOADING_DURATION_MS = 300L
     }
 }

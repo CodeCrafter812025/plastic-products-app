@@ -11,6 +11,7 @@ import ir.codecrafter.plasticproducts.data.model.ProductFilter
 import ir.codecrafter.plasticproducts.data.network.ErrorMessage
 import ir.codecrafter.plasticproducts.data.repository.AuthResult
 import ir.codecrafter.plasticproducts.data.repository.ProductRepository
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -95,7 +96,17 @@ class ProductListViewModel @Inject constructor(
 
     private suspend fun loadProducts() {
         _uiState.update { it.copy(isLoading = true, errorMessage = null) }
-        when (val result = productRepository.getProducts(_uiState.value.filter)) {
+        val startTime = System.currentTimeMillis()
+        val result = productRepository.getProducts(_uiState.value.filter)
+
+        // A fast (e.g. local/failed-fast) response would otherwise flip isLoading
+        // back off again within a few ms, too quick for the skeleton to register.
+        val elapsedMs = System.currentTimeMillis() - startTime
+        if (elapsedMs < MIN_LOADING_DURATION_MS) {
+            delay(MIN_LOADING_DURATION_MS - elapsedMs)
+        }
+
+        when (result) {
             is AuthResult.Success -> _uiState.update { it.copy(isLoading = false, products = result.data) }
             is AuthResult.RateLimited -> _uiState.update {
                 it.copy(isLoading = false, errorMessage = result.message ?: context.getString(R.string.error_rate_limited))
@@ -118,5 +129,6 @@ class ProductListViewModel @Inject constructor(
 
     private companion object {
         const val SEARCH_DEBOUNCE_MS = 400L
+        const val MIN_LOADING_DURATION_MS = 300L
     }
 }
