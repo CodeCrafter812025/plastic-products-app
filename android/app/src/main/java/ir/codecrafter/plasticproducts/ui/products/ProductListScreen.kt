@@ -9,12 +9,14 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -23,10 +25,12 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -45,10 +49,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -259,7 +264,11 @@ fun ProductListScreen(
                             modifier = Modifier.align(Alignment.Center),
                         )
 
-                    else -> LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    else -> LazyVerticalGrid(
+                        columns = GridCells.Fixed(2),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
                         items(state.products, key = { it.id }) { product ->
                             ProductCard(product, onClick = { onProductClick(product.id) })
                         }
@@ -276,16 +285,15 @@ private fun ProductCard(product: Product, onClick: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
+        shape = RoundedCornerShape(12.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
     ) {
-        Row(
-            modifier = Modifier.padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
+        Column {
             val thumbnailUrl = product.imageUrls.firstOrNull()
             Box(
                 modifier = Modifier
-                    .size(64.dp)
-                    .clip(RoundedCornerShape(8.dp))
+                    .fillMaxWidth()
+                    .aspectRatio(1f)
                     .background(MaterialTheme.colorScheme.surfaceVariant),
             ) {
                 if (thumbnailUrl != null) {
@@ -298,18 +306,33 @@ private fun ProductCard(product: Product, onClick: () -> Unit) {
                 }
             }
 
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(start = 12.dp),
-            ) {
-                Text(text = product.title, style = MaterialTheme.typography.titleMedium)
-                Text(text = product.quality, style = MaterialTheme.typography.bodySmall)
+            Column(modifier = Modifier.padding(12.dp)) {
+                Text(
+                    text = product.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
                 Text(
                     text = stringResource(R.string.product_price_toman, product.price),
                     style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(top = 8.dp),
+                )
+                AssistChip(
+                    onClick = {},
+                    label = { Text(qualityLabel(product.quality)) },
+                    modifier = Modifier.padding(top = 8.dp),
                 )
             }
         }
     }
+}
+
+@Composable
+private fun qualityLabel(quality: String): String = when (quality) {
+    ProductQuality.PRIMARY -> stringResource(R.string.filter_quality_primary)
+    ProductQuality.RECYCLED -> stringResource(R.string.filter_quality_recycled)
+    else -> quality
 }
