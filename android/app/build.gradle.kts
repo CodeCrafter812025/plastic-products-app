@@ -111,6 +111,7 @@ dependencies {
     implementation(libs.androidx.hilt.navigation.compose)
 
     implementation(libs.coil.compose)
+    implementation(libs.androidx.core.splashscreen)
 
     testImplementation(libs.junit)
 }

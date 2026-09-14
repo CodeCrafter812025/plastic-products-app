@@ -5,6 +5,7 @@
     <string name="auth_welcome_title">به فروشگاه محصولات پلاستیکی خوش آمدید</string>
     <string name="btn_login">ورود</string>
     <string name="btn_register">ثبت‌نام</string>
+    <string name="content_description_app_logo">لوگوی برند</string>
 
     <!-- ui/auth/PhoneEntryScreen.kt -->
     <string name="title_login">ورود</string>
