@@ -90,9 +90,22 @@ class AdminReportsViewSet(viewsets.GenericViewSet):
     """
     permission_classes = [permissions.IsAuthenticated, IsAdminUserRole]
 
+    def get_permissions(self):
+        if self.action == 'visitor_performance':
+            return [permissions.IsAuthenticated()]
+        return [permissions.IsAuthenticated(), IsAdminUserRole()]
+
     @action(detail=False, methods=['get'], url_path='visitor-performance')
     def visitor_performance(self, request):
         visitors = User.objects.filter(role='visitor')
+
+        if request.user.role == 'visitor':
+            visitors = visitors.filter(pk=request.user.pk)
+        elif request.user.role != 'admin':
+            return Response(
+                {'error': 'شما دسترسی به این گزارش را ندارید.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
 
         delivered_subquery = Subquery(
             OrderAssignment.objects.filter(
