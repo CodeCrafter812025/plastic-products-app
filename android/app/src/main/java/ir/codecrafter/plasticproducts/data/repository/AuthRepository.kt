@@ -67,7 +67,7 @@ class AuthRepository @Inject constructor(
                 // AuthResult.Success(...) call inferring its own narrower T from just
                 // its argument, which is what was resolving to a too-wide type before.
                 val outcome: AuthResult<AuthOutcome> = if (response.isPinRequired) {
-                    AuthResult.Success(AuthOutcome.PinRequired(phone = response.phone ?: phone))
+                    AuthResult.Success<AuthOutcome>(AuthOutcome.PinRequired(phone = response.phone ?: phone))
                 } else {
                     val token = response.token
                     val user = response.user
@@ -78,7 +78,7 @@ class AuthRepository @Inject constructor(
                             userId = user.id,
                             role = user.role,
                         )
-                        AuthResult.Success(AuthOutcome.LoggedIn(user = user))
+                        AuthResult.Success<AuthOutcome>(AuthOutcome.LoggedIn(user = user))
                     } else {
                         AuthResult.Error(code = "PARSE_ERROR", message = null)
                     }
