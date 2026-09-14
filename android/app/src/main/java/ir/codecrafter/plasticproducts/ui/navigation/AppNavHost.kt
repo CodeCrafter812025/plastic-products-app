@@ -214,6 +214,7 @@ fun AppNavHost(navController: NavHostController = rememberNavController()) {
         composable(RootRoutes.VISITOR_ROOT) {
             VisitorOrderListScreen(
                 onOrderClick = { orderId -> navController.navigate(VisitorOrderRoutes.detail(orderId)) },
+                onProfileClick = { navController.navigate(RootRoutes.PROFILE) },
             )
         }
         composable(
