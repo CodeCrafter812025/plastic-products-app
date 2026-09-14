@@ -6,6 +6,7 @@
     <string name="btn_login">ورود</string>
     <string name="btn_register">ثبت‌نام</string>
     <string name="content_description_app_logo">لوگوی برند</string>
+    <string name="content_description_share_product">اشتراک‌گذاری محصول</string>
 
     <!-- ui/auth/PhoneEntryScreen.kt -->
     <string name="title_login">ورود</string>

@@ -1,6 +1,10 @@
 package ir.codecrafter.plasticproducts.ui.products
 
+import android.content.Intent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectTransformGestures
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -16,11 +20,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddShoppingCart
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -31,10 +37,15 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -115,6 +126,9 @@ private fun ProductDetailContent(
     onAddToCart: () -> Unit,
     onBackToList: () -> Unit,
 ) {
+    val context = LocalContext.current
+    val priceText = stringResource(R.string.product_price_toman, product.price)
+
     Column(modifier = Modifier.fillMaxSize()) {
         ImageGallery(imageUrls = product.imageUrls, contentDescription = product.title)
 
@@ -123,7 +137,31 @@ private fun ProductDetailContent(
                 .fillMaxWidth()
                 .padding(24.dp),
         ) {
-            Text(text = product.title, style = MaterialTheme.typography.headlineSmall)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = product.title,
+                    style = MaterialTheme.typography.headlineSmall,
+                    modifier = Modifier.weight(1f),
+                )
+                IconButton(
+                    onClick = {
+                        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(Intent.EXTRA_TEXT, "${product.title} - $priceText")
+                        }
+                        context.startActivity(Intent.createChooser(shareIntent, null))
+                    },
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Share,
+                        contentDescription = stringResource(R.string.content_description_share_product),
+                    )
+                }
+            }
 
             AssistChip(
                 onClick = {},
@@ -241,11 +279,22 @@ private fun ImageGallery(imageUrls: List<String>, contentDescription: String) {
             .fillMaxWidth()
             .height(240.dp),
     ) { page ->
+        var scale by remember { mutableFloatStateOf(1f) }
         AsyncImage(
             model = imageUrls[page],
             contentDescription = contentDescription,
             contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer(scaleX = scale, scaleY = scale)
+                .pointerInput(Unit) {
+                    detectTransformGestures { _, _, zoom, _ ->
+                        scale = (scale * zoom).coerceIn(1f, 3f)
+                    }
+                }
+                .pointerInput(Unit) {
+                    detectTapGestures(onDoubleTap = { scale = 1f })
+                },
         )
     }
 }
