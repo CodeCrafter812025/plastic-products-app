@@ -35,6 +35,8 @@ class User(AbstractUser):
     address = models.TextField(blank=True, null=True)
     role = models.CharField(max_length=20, choices=ROLE_CHOICES)
     is_active = models.BooleanField(default=True)
+    # فقط برای role=admin معنی دارد؛ مثل password با make_password/check_password هش می‌شود.
+    admin_pin = models.CharField(max_length=128, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
