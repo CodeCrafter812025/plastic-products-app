@@ -1,995 +1,162 @@
-# **لیست نهایی Endpoint ها**
-
-## **اپلیکیشن فروش محصولات پلاستیکی**
-
----
-
-## **۱) روش طراحی و قرارداد پاسخ**
-
-### **اصول کلی**
-
-* مسیرها بر پایه‌ی **Resource** طراحی شده‌اند، نه بر پایه‌ی فعل.  
-* از اسامی جمع استفاده شده است: `users`, `products`, `orders`.  
-* نسخه‌گذاری با `/api/v1` انجام شده است.  
-* همه‌ی داده‌ها با `application/json` تبادل می‌شوند، مگر Endpoint فاکتور PDF.  
-* احراز هویت با JWT انجام می‌شود.  
-* همه‌ی مسیرها به‌جز ثبت‌نام، ورود و مشاهده عمومی محصولات نیازمند توکن هستند.
-
-### **ساختار پاسخ استاندارد**
-
-#### **پاسخ موفق**
-
-{  
-  "success": true,  
-  "data": { ... },  
-  "message": "عملیات با موفقیت انجام شد",  
-  "timestamp": "2025-07-06T10:30:00Z"  
-}
-
-#### **پاسخ خطا**
-
-{  
-  "success": false,  
-  "error": {  
-    "code": "INVALID\_INPUT",  
-    "message": "شماره تلفن نامعتبر است",  
-    "details": { "phone": "شماره باید ۱۱ رقم باشد" }  
-  },  
-  "timestamp": "2025-07-06T10:30:00Z"  
-}
-
----
-
-## **۲) کدهای خطای استاندارد**
-
-| Code | توضیح |
-| ----- | ----- |
-| `INVALID_INPUT` | ورودی نامعتبر است |
-| `UNAUTHORIZED` | کاربر وارد نشده یا توکن نامعتبر است |
-| `FORBIDDEN` | کاربر دسترسی لازم را ندارد |
-| `NOT_FOUND` | منبع موردنظر پیدا نشد |
-| `CONFLICT` | تداخل با وضعیت فعلی یا داده تکراری |
-| `RATE_LIMIT_EXCEEDED` | تعداد درخواست بیش از حد مجاز است |
-| `OTP_EXPIRED` | کد OTP منقضی شده است |
-| `OTP_INVALID` | کد OTP اشتباه است |
-| `ACCOUNT_LOCKED` | حساب موقتاً قفل شده است |
-| `OUT_OF_STOCK` | موجودی کافی نیست |
-| `ORDER_STATUS_INVALID` | تغییر وضعیت سفارش مجاز نیست |
-| `SERVER_ERROR` | خطای داخلی سرور |
-
----
-
-# **۳) Endpoint ها**
-
----
-
-## **A) احراز هویت و نشست‌ها**
-
-### **1\) درخواست OTP**
-
-* **Method:** `POST`  
-* **Path:** `/api/v1/auth/otp/request`  
-* **Auth:** ندارد  
-* **Use Case:** UC-01, UC-02, UC-05, UC-46
-
-#### **Request Body**
-
-{  
-  "phone": "09123456789",  
-  "purpose": "register"  
-}
-
-#### **Purpose**
-
-* `register`  
-* `login`  
-* `change_phone`
-
-#### **پاسخ موفق**
-
-{  
-  "success": true,  
-  "data": {  
-    "message": "کد OTP به شماره شما ارسال شد",  
-    "expires\_in": 300  
-  }  
-}
-
-#### **خطاهای مهم**
-
-* `400 Bad Request`  
-* `409 Conflict`  
-* `429 Too Many Requests`  
-* `500 Internal Server Error`
-
----
-
-### **2\) تأیید OTP و ورود / ثبت‌نام**
-
-* **Method:** `POST`  
-* **Path:** `/api/v1/auth/otp/verify`  
-* **Auth:** ندارد  
-* **Use Case:** UC-01, UC-02, UC-22, UC-41, UC-47
-
-#### **Request Body**
-
-{  
-  "phone": "09123456789",  
-  "code": "12345",  
-  "purpose": "login",  
-  "full\_name": "علی قویدل"  
-}
-
-#### **پاسخ موفق**
-
-{  
-  "success": true,  
-  "data": {  
-    "token": "eyJhbGciOiJIUzI1NiIs...",  
-    "user": {  
-      "id": 1,  
-      "phone": "09123456789",  
-      "full\_name": "علی قویدل",  
-      "role": "buyer",  
-      "is\_active": true  
-    }  
-  }  
-}
-
-#### **خطاهای مهم**
-
-* `400 Bad Request`  
-* `403 Forbidden`  
-* `409 Conflict`
-
----
-
-### **3\) تمدید توکن**
-
-* **Method:** `POST`  
-* **Path:** `/api/v1/auth/refresh`  
-* **Auth:** دارد
-
-#### **پاسخ موفق**
-
-{  
-  "success": true,  
-  "data": {  
-    "token": "new.jwt.token"  
-  }  
-}
-
----
-
-### **4\) خروج از سیستم**
-
-* **Method:** `POST`  
-* **Path:** `/api/v1/auth/logout`  
-* **Auth:** دارد
-
-#### **پاسخ موفق**
-
-{  
-  "success": true,  
-  "data": {  
-    "message": "با موفقیت خارج شدید"  
-  }  
-}
-
----
-
-## **B) پروفایل کاربر**
-
-### **5\) مشاهده پروفایل**
-
-* **Method:** `GET`  
-* **Path:** `/api/v1/profile`  
-* **Auth:** دارد  
-* **Use Case:** UC-03
-
----
-
-### **6\) ویرایش پروفایل**
-
-* **Method:** `PUT`  
-* **Path:** `/api/v1/profile`  
-* **Auth:** دارد  
-* **Use Case:** UC-04
-
-#### **Request Body**
-
-{  
-  "full\_name": "علی محمدی",  
-  "address": "تهران، خیابان انقلاب، پلاک ۴۵"  
-}
-
----
-
-### **7\) تغییر شماره تلفن**
-
-* **Method:** `POST`  
-* **Path:** `/api/v1/profile/phone`  
-* **Auth:** دارد  
-* **Use Case:** UC-05
-
-#### **Request Body**
-
-{  
-  "new\_phone": "09123456788",  
-  "otp\_code": "67890"  
-}
-
----
-
-### **8\) ثبت درخواست حذف حساب کاربری**
-
-* **Method:** `POST`  
-* **Path:** `/api/v1/profile/deletion-request`  
-* **Auth:** دارد  
-* **Use Case:** UC-21
-
----
-
-### **9\) مشاهده وضعیت درخواست حذف حساب**
-
-* **Method:** `GET`  
-* **Path:** `/api/v1/profile/deletion-request`  
-* **Auth:** دارد  
-* **Use Case:** UC-21, UC-40
-
----
-
-## **C) آپلود فایل / تصویر**
-
-### **10\) آپلود تصویر**
-
-* **Method:** `POST`  
-* **Path:** `/api/v1/uploads/images`  
-* **Auth:** دارد  
-* **Use Case:** UC-24
-
-#### **Request**
-
-`multipart/form-data`
-
-#### **محدودیت‌ها**
-
-* فرمت‌های مجاز: `jpg`, `jpeg`, `png`, `webp`  
-* حداکثر حجم هر تصویر: 5 MB  
-* حداکثر تعداد تصویر در هر درخواست: 5 فایل
-
----
-
-## **D) محصولات**
-
-### **11\) ثبت محصول جدید**
-
-**Method:** `POST`  
-**Path:** `/api/v1/products`  
-**Auth:** دارد  
-**Role:** `admin`  
-**Use Case:** `UC-24`
-
-### **هدف**
-
-ثبت یک محصول جدید توسط ادمین.
-
-### **Request Body**
-
-{  
-  "**title**": "پلی‌اتیلن سنگین",  
-  "**price**": 25000,  
-  "**weight**": 25,  
-  "**color**": "شیری",  
-  "**quality**": "اولیه",  
-  "**description**": "مناسب برای تولید کیسه‌های ضخیم",  
-  "**stock**": 1000,  
-  "**image\_urls**": \["https://cdn.example.com/1.jpg"\]  
-}
-
-### **قوانین**
-
-* `image_urls` حداکثر ۵ URL دارد.  
-* هر URL باید معتبر باشد.  
-* اگر `image_urls` ارسال نشود، مقدار پیش‌فرض `[]` ذخیره می‌شود.
-
-### **پاسخ موفق**
-
-**Status:** `201 Created`
-
-{  
-  "success": true,  
-  "data": {  
-    "id": 1,  
-    "message": "محصول با موفقیت ثبت شد"  
-  },  
-  "timestamp": "2025-07-06T10:30:00Z"  
-}
-
----
-
-### **12\) لیست محصولات**
-
-* **Method:** `GET`  
-* **Path:** `/api/v1/products`  
-* **Auth:** ندارد  
-* **Use Case:** UC-06, UC-07, UC-08
-
-#### **Query Params**
-
-* `search`  
-* `quality`  
-* `color`  
-* `min_price`  
-* `max_price`  
-* `in_stock`  
-* `page`  
-* `limit`
-
-#### **توضیح `in_stock`**
-
-* `true` → فقط محصولات موجود  
-* `false` → فقط محصولات ناموجود  
-* خالی → همه محصولات
-
----
-
-### **13\) مشاهده جزئیات محصول**
-
-* **Method:** `GET`  
-* **Path:** `/api/v1/products/{id}`  
-* **Auth:** ندارد  
-* **Use Case:** UC-09, UC-10
-
----
-
-### **14\) ثبت محصول جدید**
-
-* **Method:** `POST`  
-* **Path:** `/api/v1/products`  
-* **Auth:** دارد  
-* **Role:** `admin`  
-* **Use Case:** UC-24
-
-#### **Request Body**
-
-{  
-  "title": "پلی‌اتیلن سنگین",  
-  "price": 25000,  
-  "weight": 25,  
-  "color": "شیری",  
-  "quality": "اولیه",  
-  "description": "مناسب برای تولید کیسه‌های ضخیم",  
-  "stock": 1000,  
-  "image\_urls": \["https://cdn.example.com/1.jpg"\]  
-}
-
----
-
-### **15\) ویرایش محصول**
-
-* **Method:** `PUT`  
-* **Path:** `/api/v1/products/{id}`  
-* **Auth:** دارد  
-* **Role:** `admin`  
-* **Use Case:** UC-25
-
----
-
-### **16\) تغییر قیمت محصول**
-
-* **Method:** `PATCH`  
-* **Path:** `/api/v1/products/{id}/price`  
-* **Auth:** دارد  
-* **Role:** `admin`  
-* **Use Case:** UC-26
-
-#### **Request Body**
-
-{ "price": 27000 }
-
----
-
-### **17\) تغییر موجودی محصول**
-
-* **Method:** `PATCH`  
-* **Path:** `/api/v1/products/{id}/stock`  
-* **Auth:** دارد  
-* **Role:** `admin`  
-* **Use Case:** UC-27
-
-#### **Request Body**
-
-{  
-  "stock": 1500,  
-  "reason": "restock"  
-}
-
----
-
-### **18\) فعال/غیرفعال کردن محصول**
-
-* **Method:** `PATCH`  
-* **Path:** `/api/v1/products/{id}/toggle`  
-* **Auth:** دارد  
-* **Role:** `admin`  
-* **Use Case:** UC-28
-
----
-
-### **19\) حذف محصول**
-
-* **Method:** `DELETE`  
-* **Path:** `/api/v1/products/{id}`  
-* **Auth:** دارد  
-* **Role:** `admin`  
-* **Use Case:** UC-29
-
-#### **پاسخ موفق**
-
-`204 No Content`
-
----
-
-### **20\) تاریخچه قیمت محصول**
-
-* **Method:** `GET`  
-* **Path:** `/api/v1/admin/products/{id}/price-history`  
-* **Auth:** دارد  
-* **Role:** `admin`  
-* **Use Case:** UC-38
-
----
-
-### **21\) تاریخچه موجودی محصول**
-
-* **Method:** `GET`  
-* **Path:** `/api/v1/admin/products/{id}/stock-history`  
-* **Auth:** دارد  
-* **Role:** `admin`  
-* **Use Case:** UC-38
-
----
-
-### **22\) تاریخچه کامل محصول**
-
-* **Method:** `GET`  
-* **Path:** `/api/v1/admin/products/{id}/history`  
-* **Auth:** دارد  
-* **Role:** `admin`  
-* **Use Case:** UC-38
-
----
-
-## **E) سبد خرید**
-
-### **23\) مشاهده سبد خرید**
-
-* **Method:** `GET`  
-* **Path:** `/api/v1/cart`  
-* **Auth:** دارد  
-* **Role:** `buyer`  
-* **Use Case:** UC-11, UC-12, UC-13, UC-14
-
----
-
-### **24\) افزودن آیتم به سبد**
-
-* **Method:** `POST`  
-* **Path:** `/api/v1/cart/items`  
-* **Auth:** دارد  
-* **Role:** `buyer`  
-* **Use Case:** UC-11
-
-#### **Request Body**
-
-{  
-  "product\_id": 1,  
-  "quantity": 100  
-}
-
----
-
-### **25\) تغییر مقدار آیتم سبد**
-
-* **Method:** `PUT`  
-* **Path:** `/api/v1/cart/items/{id}`  
-* **Auth:** دارد  
-* **Role:** `buyer`  
-* **Use Case:** UC-12
-
-#### **Request Body**
-
-{  
-  "quantity": 150  
-}
-
----
-
-### **26\) حذف آیتم از سبد**
-
-* **Method:** `DELETE`  
-* **Path:** `/api/v1/cart/items/{id}`  
-* **Auth:** دارد  
-* **Role:** `buyer`  
-* **Use Case:** UC-13
-
----
-
-### **27\) خالی کردن سبد**
-
-* **Method:** `DELETE`  
-* **Path:** `/api/v1/cart`  
-* **Auth:** دارد  
-* **Role:** `buyer`  
-* **Use Case:** UC-14
-
----
-
-## **F) سفارش‌ها**
-
-### **28\) ثبت سفارش جدید**
-
-* **Method:** `POST`  
-* **Path:** `/api/v1/orders`  
-* **Auth:** دارد  
-* **Role:** `buyer`  
-* **Use Case:** UC-15
-
----
-
-### **29\) مشاهده سفارش‌های من**
-
-* **Method:** `GET`  
-* **Path:** `/api/v1/orders`  
-* **Auth:** دارد  
-* **Role:** `buyer`  
-* **Use Case:** UC-18
-
-#### **Query Params**
-
-* `status`  
-* `page`  
-* `limit`
-
----
-
-### **30\) مشاهده جزئیات سفارش**
-
-* **Method:** `GET`  
-* **Path:** `/api/v1/orders/{id}`  
-* **Auth:** دارد  
-* **Use Case:** UC-19, UC-31, UC-43
-
----
-
-### **31\) ویرایش سفارش قبل از تخصیص**
-
-* **Method:** `PUT`  
-* **Path:** `/api/v1/orders/{id}`  
-* **Auth:** دارد  
-* **Role:** `buyer`  
-* **Use Case:** UC-16
-
-#### **Request Body**
-
-{  
-  "items": \[  
-    { "product\_id": 1, "quantity": 200 }  
-  \]  
-}
-
----
-
-### **32\) لغو سفارش قبل از تخصیص**
-
-* **Method:** `DELETE`  
-* **Path:** `/api/v1/orders/{id}`  
-* **Auth:** دارد  
-* **Role:** `buyer`  
-* **Use Case:** UC-17
-
----
-
-### **33\) مشاهده همه سفارش‌ها**
-
-* **Method:** `GET`  
-* **Path:** `/api/v1/admin/orders`  
-* **Auth:** دارد  
-* **Role:** `admin`  
-* **Use Case:** UC-30
-
-#### **Query Params**
-
-* `buyer_id`  
-* `visitor_id`  
-* `status`  
-* `page`  
-* `limit`
-
----
-
-### **34\) لغو سفارش توسط ادمین**
-
-* **Method:** `POST`  
-* **Path:** `/api/v1/admin/orders/{id}/cancel`  
-* **Auth:** دارد  
-* **Role:** `admin`  
-* **Use Case:** UC-33
-
-#### **Request Body**
-
-{  
-  "reason": "خطا در ثبت سفارش"  
-}
-
----
-
-## **G) تخصیص و وضعیت سفارش**
-
-### **35\) تخصیص سفارش به ویزیتور**
-
-* **Method:** `POST`  
-* **Path:** `/api/v1/admin/orders/{id}/assign`  
-* **Auth:** دارد  
-* **Role:** `admin`  
-* **Use Case:** UC-32
-
-#### **Request Body**
-
-{  
-  "visitor\_id": 5,  
-  "reason": "ویزیتور اصلی در دسترس نبود"  
-}
-
----
-
-### **36\) مشاهده سفارش‌های تخصیص‌یافته به ویزیتور**
-
-* **Method:** `GET`  
-* **Path:** `/api/v1/visitor/orders`  
-* **Auth:** دارد  
-* **Role:** `visitor`  
-* **Use Case:** UC-42
-
-#### **Query Params**
-
-* `status`  
-* `page`  
-* `limit`
-
----
-
-### **37\) تغییر وضعیت سفارش توسط ویزیتور**
-
-* **Method:** `PUT`  
-* **Path:** `/api/v1/visitor/orders/{id}/status`  
-* **Auth:** دارد  
-* **Role:** `visitor`  
-* **Use Case:** UC-44, UC-45
-
-#### **Request Body**
-
-{  
-  "status": "loading"  
-}
-
-#### **مقادیر مجاز**
-
-* `loading`  
-* `delivered`
-
----
-
-### **38\) تاریخچه وضعیت سفارش**
-
-* **Method:** `GET`  
-* **Path:** `/api/v1/admin/orders/{id}/status-history`  
-* **Auth:** دارد  
-* **Role:** `admin`  
-* **Use Case:** UC-39
-
----
-
-## **H) مدیریت کاربران و ویزیتورها**
-
-### **39\) مدیریت کاربران**
-
-* **Method:** `GET`  
-* **Path:** `/api/v1/admin/users`  
-* **Auth:** دارد  
-* **Role:** `admin`  
-* **Use Case:** UC-34
-
-#### **Query Params**
-
-* `search`  
-* `role`  
-* `is_active`  
-* `page`  
-* `limit`
-
----
-
-### **40\) فعال/غیرفعال کردن کاربر**
-
-* **Method:** `PATCH`  
-* **Path:** `/api/v1/admin/users/{id}/toggle`  
-* **Auth:** دارد  
-* **Role:** `admin`  
-* **Use Case:** UC-34
-
----
-
-### **41\) ایجاد ویزیتور جدید**
-
-* **Method:** `POST`  
-* **Path:** `/api/v1/admin/visitors`  
-* **Auth:** دارد  
-* **Role:** `admin`  
-* **Use Case:** UC-35
-
-#### **Request Body**
-
-{  
-  "phone": "09123456788",  
-  "full\_name": "رضا کریمی"  
-}
-
----
-
-### **42\) فعال/غیرفعال کردن ویزیتور**
-
-* **Method:** `PATCH`  
-* **Path:** `/api/v1/admin/visitors/{id}/toggle`  
-* **Auth:** دارد  
-* **Role:** `admin`  
-* **Use Case:** UC-35
-
----
-
-### **43\) مشاهده عملکرد ویزیتور**
-
-* **Method:** `GET`  
-* **Path:** `/api/v1/admin/visitors/{id}/performance`  
-* **Auth:** دارد  
-* **Role:** `admin`  
-* **Use Case:** UC-36
-
----
-
-## **I) درخواست حذف حساب**
-
-### **44\) لیست درخواست‌های حذف حساب**
-
-* **Method:** `GET`  
-* **Path:** `/api/v1/admin/deletion-requests`  
-* **Auth:** دارد  
-* **Role:** `admin`  
-* **Use Case:** UC-40
-
-#### **Query Params**
-
-* `status`  
-* `page`  
-* `limit`
-
----
-
-### **45\) بررسی درخواست حذف حساب**
-
-* **Method:** `PATCH`  
-* **Path:** `/api/v1/admin/deletion-requests/{id}`  
-* **Auth:** دارد  
-* **Role:** `admin`  
-* **Use Case:** UC-40
-
-#### **Request Body**
-
-{  
-  "status": "approved",  
-  "admin\_note": "درخواست تأیید شد"  
-}
-
-#### **مقادیر مجاز**
-
-* `approved`  
-* `rejected`
-
----
-
-## **J) گزارش‌ها**
-
-### **46\) مشاهده گزارش‌ها**
-
-* **Method:** `GET`  
-* **Path:** `/api/v1/admin/reports`  
-* **Auth:** دارد  
-* **Role:** `admin`  
-* **Use Case:** UC-37
-
-#### **Query Params**
-
-* `type`  
-* `start_date`  
-* `end_date`
-
-#### **مقادیر `type`**
-
-* `sales`  
-* `users`  
-* `products`  
-* `visitors`  
-* `inventory`  
-* `price_changes`
-
----
-
-### **`47)`داشبورد مدیریتی**
-
-**`Method`**`` : `GET` ``  
-
-**`Path`**`` : `/api/v1/admin/dashboard` ``  
-
-**`Auth`**`: دارد`  
-
-**`Role`**`: admin`  
-
-**`Use Case`**`: UC-23`
-
-**`هدف`**
-
-`نمایش خلاصه وضعیت سیستم برای مدیر.`
-
-**`پاسخ موفق`**
-
-**`Status`**`` : `200 OK` ``
-
-```` ```json ````
-
-`{`
-
-  `"success": true,`
-
-  `"data": {`
-
-    `"summary": {`
-
-      `"total_users": 120,`
-
-      `"active_users": 98,`
-
-      `"total_products": 45,`
-
-      `"out_of_stock_products": 3,`
-
-      `"pending_orders": 12,`
-
-      `"assigned_orders": 8,`
-
-      `"delivered_orders": 260,`
-
-      `"today_revenue": 12500000`
-
-    `}`
-
-  `},`
-
-  `"timestamp": "2025-07-06T10:30:00Z"`
-
-`}`
-
-```` ``` ```` 
-
----
-
-## **K) اعلان‌ها**
-
-### **48\) مشاهده اعلان‌های من**
-
-* **Method:** `GET`  
-* **Path:** `/api/v1/notifications`  
-* **Auth:** دارد  
-* **Use Case:** UC-20, UC-51
-
----
-
-### **49\) علامت‌گذاری اعلان به‌عنوان خوانده‌شده**
-
-* **Method:** `PATCH`  
-* **Path:** `/api/v1/notifications/{id}/read`  
-* **Auth:** دارد  
-* **Use Case:** UC-20, UC-51
-
----
-
-### **50\) علامت‌گذاری همه اعلان‌ها به‌عنوان خوانده‌شده**
-
-* **Method:** `PATCH`  
-* **Path:** `/api/v1/notifications/read-all`  
-* **Auth:** دارد
-
----
-
-## **L) تنظیمات سیستمی**
-
-### **51\) دریافت تنظیمات سیستم**
-
-* **Method:** `GET`  
-* **Path:** `/api/v1/system/settings`  
-* **Auth:** ندارد  
-* **Use Case:** UC-10
-
-#### **پاسخ نمونه**
-
-{  
-  "success": true,  
-  "data": {  
-    "factory\_phone": "021-12345678"  
-  }  
-}
-
----
-
-### **52\) ویرایش تنظیمات سیستم**
-
-* **Method:** `PATCH`  
-* **Path:** `/api/v1/admin/system-settings/{key}`  
-* **Auth:** دارد  
-* **Role:** `admin`
-
-#### **Request Body**
-
-{  
-  "value": "021-87654321"  
-}
-
----
-
-## **M) فاز بعد / اختیاری**
-
-### **53\) دریافت فاکتور PDF**
-
-* **Method:** `GET`  
-* **Path:** `/api/v1/orders/{id}/invoice`  
-* **Auth:** دارد  
-* **Access:** خریدار صاحب سفارش یا ادمین  
-* **Use Case:** UC-53  
-* **Output:** `application/pdf`
-
----
-
-# **۴) محدودیت‌های مهم**
-
-## **فیلتر محصولات**
-
-پارامتر `in_stock` اضافه شد و به این صورت کار می‌کند:
-
-* `true` → فقط محصولات موجود  
-* `false` → فقط محصولات ناموجود  
-* خالی → همه محصولات
-
-## **آپلود تصویر**
-
-* فرمت مجاز: `jpg`, `jpeg`, `png`, `webp`  
-* حداکثر حجم: 5MB  
-* حداکثر تعداد: 5 تصویر در هر درخواست
-
-## **اعلان‌ها**
-
-* `read` برای یک اعلان  
-* `read-all` برای همه اعلان‌ها
-
----
-
-# **۵) جمع‌بندی**
-
-این نسخه نسبت به نسخه قبلی کامل‌تر است چون:
-
-* `in_stock` به فیلتر محصولات اضافه شد  
-* `read-all` برای اعلان‌ها اضافه شد  
-* محدودیت‌های آپلود تصویر مشخص شد  
-* جدول کدهای خطا اضافه شد  
-* endpoint فاکتور PDF هم به بخش اختیاری/فاز بعد اضافه شد  
-* endpointهای حذف حساب برای ادمین کامل شدند
-
+# لیست کامل Endpointها
+
+این سند مستقیماً از کد origin/main در تاریخ 2026-09-14 استخراج شده.
+
+جزئیات کامل هر endpoint (بدنه‌ی دقیق درخواست، شکل دقیق پاسخ، خطاهای
+واقعی، یافته‌های رفتاری) در `api-specification.md` است؛ این فایل فقط
+یک فهرست سریع (مسیر + متد + دسترسی) است، برای مرور کلی.
+
+> توضیح ستون «Auth»: «-» یعنی بدون نیاز به توکن. «هر کاربر» یعنی هر
+> کاربر لاگین‌شده (JWT معتبر)، صرف‌نظر از نقش. «admin» یعنی
+> `IsAdminUserRole` (role=admin) الزامی است.
+>
+> علامت **⚠️** یعنی این endpoint یک رفتار واقعی-ولی-غیرمنتظره دارد که
+> در `api-specification.md` با جزئیات توضیح داده شده (مثلاً حذف واقعی
+> به‌جای غیرفعال‌سازی، یا endpointی که عملاً کار نمی‌کند).
+
+## Auth — پیشوند `/api/v1/auth/`
+
+| متد | مسیر | Auth |
+|---|---|---|
+| POST | `/auth/otp/request/` | - |
+| POST | `/auth/otp/verify/` | - (به‌جز `purpose=change_phone`: هر کاربر) |
+| POST | `/auth/verify-admin-pin/` | - |
+
+## Users — پیشوند `/api/v1/users/`
+
+| متد | مسیر | Auth |
+|---|---|---|
+| GET | `/users/` | هر کاربر |
+| POST | `/users/` | هر کاربر — ⚠️ عملاً همیشه با ۵۰۰ خام شکست می‌خورد |
+| GET | `/users/{id}/` | هر کاربر (فقط خودش، مگر admin) |
+| PUT | `/users/{id}/` | هر کاربر — ⚠️ تغییر `phone` به مقدار تکراری، ۵۰۰ خام می‌دهد |
+| PATCH | `/users/{id}/` | هر کاربر — همان ⚠️ بالا |
+| DELETE | `/users/{id}/` | هر کاربر — ⚠️ حذف واقعی و دائمی حساب، نه غیرفعال‌سازی؛ هر کاربر می‌تواند حساب خودش را پاک کند |
+| POST | `/users/{id}/toggle/` | admin |
+| POST | `/users/create_visitor/` | admin |
+| POST | `/users/set-admin-pin/` | admin (فقط برای خودش) |
+
+## Deletion Requests — پیشوند `/api/v1/deletion-requests/`
+
+| متد | مسیر | Auth |
+|---|---|---|
+| GET | `/deletion-requests/` | هر کاربر |
+| POST | `/deletion-requests/` | هر کاربر |
+| GET | `/deletion-requests/{id}/` | هر کاربر (خودش، مگر admin) |
+| PUT | `/deletion-requests/{id}/` | هر کاربر |
+| PATCH | `/deletion-requests/{id}/` | هر کاربر |
+| DELETE | `/deletion-requests/{id}/` | هر کاربر |
+| POST | `/deletion-requests/{id}/review/` | admin |
+
+## Products — پیشوند `/api/v1/products/`
+
+| متد | مسیر | Auth |
+|---|---|---|
+| GET | `/products/` | - |
+| POST | `/products/` | admin |
+| GET | `/products/{id}/` | - (محصول غیرفعال فقط برای admin) |
+| PUT | `/products/{id}/` | admin |
+| PATCH | `/products/{id}/` | admin |
+| DELETE | `/products/{id}/` | admin — اگر در سفارش/تاریخچه استفاده شده باشد، ۴۰۰ به‌جای موفقیت |
+| PATCH | `/products/{id}/price/` | admin |
+| PATCH | `/products/{id}/stock/` | admin — ⚠️ `reason` هیچ اعتبارسنجی‌ای ندارد |
+| PATCH | `/products/{id}/toggle/` | admin |
+| POST | `/products/{id}/upload_image/` | admin — ⚠️ مسیر با زیرخط، بدون محدودیت حجم فایل |
+
+## Price / Stock Histories (فقط‌خواندنی)
+
+| متد | مسیر | Auth |
+|---|---|---|
+| GET | `/price-histories/` | هر کاربر — ⚠️ کل تاریخچه‌ی همه‌ی محصولات، بدون فیلتر |
+| GET | `/price-histories/{id}/` | هر کاربر |
+| GET | `/stock-histories/` | هر کاربر — همان ⚠️ بالا |
+| GET | `/stock-histories/{id}/` | هر کاربر |
+
+## Cart — پیشوند `/api/v1/cart/`
+
+| متد | مسیر | Auth |
+|---|---|---|
+| GET | `/cart/` | هر کاربر |
+| POST | `/cart/` | هر کاربر |
+| PUT | `/cart/{id}/` | هر کاربر — ⚠️ `product_id` در بدنه نادیده گرفته می‌شود |
+| PATCH | `/cart/{id}/` | هر کاربر — ⚠️ کاملاً همان PUT است (partial واقعی نیست) |
+| DELETE | `/cart/{id}/` | هر کاربر |
+| DELETE | `/cart/clear/` | هر کاربر |
+
+(توجه: `GET /cart/{id}/` اصلاً وجود ندارد.)
+
+## Orders — پیشوند `/api/v1/orders/`
+
+| متد | مسیر | Auth |
+|---|---|---|
+| GET | `/orders/` | هر کاربر (طبق نقش) — بدون فیلتر query param |
+| POST | `/orders/` | هر کاربر — از سبد خرید فعلی |
+| GET | `/orders/{id}/` | هر کاربر (طبق دسترسی) |
+| PUT | `/orders/{id}/` | هر کاربر — ⚠️ بدون هیچ فیلد قابل‌نوشتن، عملاً بی‌اثر |
+| PATCH | `/orders/{id}/` | هر کاربر — همان ⚠️ بالا |
+| DELETE | `/orders/{id}/` | هر کاربر (طبق دسترسی) — ⚠️ حذف فیزیکی کامل سفارش، نه لغو |
+| DELETE | `/orders/{id}/cancel/` | خریدار (فقط `pending`) |
+| PUT/PATCH | `/orders/{id}/edit_items/` | هر کاربر (فقط `pending`) — مسیر با زیرخط |
+| POST | `/orders/{id}/cancel_admin/` | admin (فقط `assigned`/`loading`) — مسیر با زیرخط |
+| GET | `/orders/{id}/status_history/` | خریدار/ویزیتور تخصیص‌یافته/admin — مسیر با زیرخط |
+| GET | `/orders/{id}/invoice/` | خریدار/ویزیتور تخصیص‌یافته/admin |
+| GET | `/orders/{id}/invoice_pdf/` | همان بالا — ⚠️ خروجی PDF خام، بدون envelope؛ تاریخ صدور به شمسی |
+
+## Order Assignments — پیشوند `/api/v1/order-assignments/`
+
+| متد | مسیر | Auth |
+|---|---|---|
+| GET | `/order-assignments/` | هر کاربر (admin: همه، visitor: خودش، بقیه: خالی) |
+| POST | `/order-assignments/` | admin (فقط سفارش `pending`) |
+| GET | `/order-assignments/{id}/` | هر کاربر (طبق دسترسی بالا) |
+| PUT | `/order-assignments/{id}/` | admin — ⚠️ ویرایش خام، بدون اثر روی وضعیت سفارش |
+| PATCH | `/order-assignments/{id}/` | admin — همان ⚠️ بالا |
+| DELETE | `/order-assignments/{id}/` | admin — بدون اثر روی وضعیت سفارش |
+
+## Visitor Order Status — پیشوند `/api/v1/visitor/orders/`
+
+| متد | مسیر | Auth |
+|---|---|---|
+| PATCH | `/visitor/orders/{id}/status/` | ویزیتور تخصیص‌یافته (فقط `loading`/`delivered`) |
+
+## System Settings — پیشوند `/api/v1/system-settings/`
+
+| متد | مسیر | Auth |
+|---|---|---|
+| GET | `/system-settings/` | - |
+| POST | `/system-settings/` | admin |
+| GET | `/system-settings/{key}/` | - (توجه: `{key}` رشته است، نه id عددی) |
+| PUT | `/system-settings/{key}/` | admin |
+| PATCH | `/system-settings/{key}/` | admin |
+| DELETE | `/system-settings/{key}/` | admin |
+
+## Notifications — پیشوند `/api/v1/notifications/`
+
+| متد | مسیر | Auth |
+|---|---|---|
+| GET | `/notifications/` | هر کاربر (فقط خودش) |
+| GET | `/notifications/{id}/` | هر کاربر (فقط خودش) |
+| POST/PUT/PATCH/DELETE | `/notifications/` یا `/notifications/{id}/` | همیشه ۴۰۵، حتی برای admin |
+| POST | `/notifications/{id}/mark_read/` | هر کاربر — مسیر با زیرخط |
+| POST | `/notifications/mark_all_read/` | هر کاربر — مسیر با زیرخط |
+
+## Admin Reports — پیشوند `/api/v1/admin-reports/`
+
+| متد | مسیر | Auth |
+|---|---|---|
+| GET | `/admin-reports/visitor-performance/` | admin (همه) یا visitor (فقط خودش)؛ بقیه ۴۰۳ |
+| GET | `/admin-reports/order-counts/` | admin |
+| GET | `/admin-reports/revenue/` | admin — `from`/`to` الزامی |
+| GET | `/admin-reports/top-products/` | admin — `limit` اختیاری |
+| GET | `/admin-reports/low-stock/` | admin — `threshold` اختیاری |
+| GET | `/admin-reports/signups/` | admin — `period` اختیاری |
+
+## خارج از `/api/v1/`
+
+| متد | مسیر | توضیح |
+|---|---|---|
+| POST | `/api/token/refresh/` | simplejwt پیش‌فرض — ⚠️ احتمال شکست به‌خاطر نبود `token_blacklist` در `INSTALLED_APPS` |
+| GET | `/api/schema/` | OpenAPI schema خام (بدون envelope) |
+| GET | `/api/docs/` | Swagger UI (HTML) |
+| * | `/admin/` | پنل جنگو، خارج از این REST API |
+| GET | `/media/...` | فایل‌های رسانه، فقط در `DEBUG=True` |
