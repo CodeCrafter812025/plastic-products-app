@@ -191,15 +191,17 @@ fun ProfileScreen(
                         .padding(top = 16.dp),
                 )
 
-                if (state.pinErrorMessage != null) {
+                val pinErrorMessage = state.pinErrorMessage
+                val pinSuccessMessage = state.pinSuccessMessage
+                if (pinErrorMessage != null) {
                     Text(
-                        text = state.pinErrorMessage,
+                        text = pinErrorMessage,
                         color = MaterialTheme.colorScheme.error,
                         modifier = Modifier.padding(top = 16.dp),
                     )
-                } else if (state.pinSuccessMessage != null) {
+                } else if (pinSuccessMessage != null) {
                     Text(
-                        text = state.pinSuccessMessage,
+                        text = pinSuccessMessage,
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.padding(top = 16.dp),
                     )

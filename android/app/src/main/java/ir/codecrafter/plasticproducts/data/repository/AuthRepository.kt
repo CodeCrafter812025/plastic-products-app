@@ -62,7 +62,11 @@ class AuthRepository @Inject constructor(
         return when (result) {
             is AuthResult.Success -> {
                 val response = result.data
-                if (response.isPinRequired) {
+                // Explicitly typed so each branch below is checked against
+                // AuthResult<AuthOutcome> (expected-type inference) instead of each
+                // AuthResult.Success(...) call inferring its own narrower T from just
+                // its argument, which is what was resolving to a too-wide type before.
+                val outcome: AuthResult<AuthOutcome> = if (response.isPinRequired) {
                     AuthResult.Success(AuthOutcome.PinRequired(phone = response.phone ?: phone))
                 } else {
                     val token = response.token
@@ -79,6 +83,7 @@ class AuthRepository @Inject constructor(
                         AuthResult.Error(code = "PARSE_ERROR", message = null)
                     }
                 }
+                outcome
             }
             is AuthResult.RateLimited -> result
             is AuthResult.Error -> result
