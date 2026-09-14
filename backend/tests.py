@@ -115,6 +115,7 @@ class OTPFlowTests(APITestCase):
         payload = {'phone': new_phone, 'code': code, 'purpose': 'change_phone'}
         response = self.client.post(self.verify_url, payload)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('refresh_token', response.data)
         user.refresh_from_db()
         self.assertEqual(user.phone, new_phone)
         self.assertEqual(user.username, new_phone)
