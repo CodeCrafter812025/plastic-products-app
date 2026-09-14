@@ -3,6 +3,6 @@
     <style name="Theme.Splash" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">#00695C</item>
         <item name="windowSplashScreenAnimatedIcon">@drawable/logo_brand</item>
-        <item name="postSplashScreenTheme">@android:style/Theme.DeviceDefault.DayNight.NoActionBar</item>
+        <item name="postSplashScreenTheme">@android:style/Theme.DeviceDefault.NoActionBar</item>
     </style>
 </resources>
