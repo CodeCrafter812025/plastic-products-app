@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ir.codecrafter.plasticproducts.data.network.ErrorMessage
+import ir.codecrafter.plasticproducts.data.repository.AuthOutcome
 import ir.codecrafter.plasticproducts.data.repository.AuthRepository
 import ir.codecrafter.plasticproducts.data.repository.AuthResult
 import kotlinx.coroutines.Job
@@ -35,10 +36,16 @@ data class AuthUiState(
     val isRateLimited: Boolean = false,
     val rateLimitMessage: String? = null,
     val resendCooldownSecondsRemaining: Int = 0,
+    val pinCode: String = "",
+    val isVerifyingPin: Boolean = false,
+    val pinError: String? = null,
 )
 
 sealed class AuthNavigationEvent {
     data class VerifiedSuccessfully(val role: String) : AuthNavigationEvent()
+
+    /** An admin with a PIN set — verifyOtp() alone wasn't enough, verifyAdminPin() is needed next. */
+    data class PinRequired(val phone: String) : AuthNavigationEvent()
 }
 
 private const val RESEND_COOLDOWN_SECONDS = 60
@@ -82,6 +89,10 @@ class AuthViewModel @Inject constructor(
 
     fun onFullNameChange(value: String) {
         _uiState.value = _uiState.value.copy(fullName = value)
+    }
+
+    fun onPinCodeChange(value: String) {
+        _uiState.value = _uiState.value.copy(pinCode = value, pinError = null)
     }
 
     fun requestOtp(onSent: () -> Unit) {
@@ -148,7 +159,14 @@ class AuthViewModel @Inject constructor(
             when (result) {
                 is AuthResult.Success -> {
                     _uiState.value = _uiState.value.copy(isVerifyingOtp = false)
-                    _navigationEvents.send(AuthNavigationEvent.VerifiedSuccessfully(result.data.user.role))
+                    when (val outcome = result.data) {
+                        is AuthOutcome.LoggedIn ->
+                            _navigationEvents.send(AuthNavigationEvent.VerifiedSuccessfully(outcome.user.role))
+                        is AuthOutcome.PinRequired -> {
+                            _uiState.value = _uiState.value.copy(phone = outcome.phone)
+                            _navigationEvents.send(AuthNavigationEvent.PinRequired(outcome.phone))
+                        }
+                    }
                 }
                 is AuthResult.RateLimited -> {
                     _uiState.value = _uiState.value.copy(isVerifyingOtp = false, otpError = RATE_LIMIT_MESSAGE)
@@ -158,6 +176,30 @@ class AuthViewModel @Inject constructor(
                 }
                 AuthResult.NetworkError -> {
                     _uiState.value = _uiState.value.copy(isVerifyingOtp = false, otpError = NETWORK_ERROR_MESSAGE)
+                }
+            }
+        }
+    }
+
+    /** Second step for an admin with a PIN set, after verifyOtp() sent AuthNavigationEvent.PinRequired. */
+    fun verifyAdminPin() {
+        val state = _uiState.value
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isVerifyingPin = true, pinError = null)
+            val result = authRepository.verifyAdminPin(phone = state.phone, pin = state.pinCode)
+            when (result) {
+                is AuthResult.Success -> {
+                    _uiState.value = _uiState.value.copy(isVerifyingPin = false)
+                    _navigationEvents.send(AuthNavigationEvent.VerifiedSuccessfully(result.data.user.role))
+                }
+                is AuthResult.RateLimited -> {
+                    _uiState.value = _uiState.value.copy(isVerifyingPin = false, pinError = RATE_LIMIT_MESSAGE)
+                }
+                is AuthResult.Error -> {
+                    _uiState.value = _uiState.value.copy(isVerifyingPin = false, pinError = describePinError(result))
+                }
+                AuthResult.NetworkError -> {
+                    _uiState.value = _uiState.value.copy(isVerifyingPin = false, pinError = NETWORK_ERROR_MESSAGE)
                 }
             }
         }
@@ -192,6 +234,25 @@ class AuthViewModel @Inject constructor(
             "ACCOUNT_LOCKED" -> "حساب شما موقتاً قفل شده است."
             "ACCOUNT_INACTIVE" -> "حساب شما غیرفعال است."
             "PHONE_NOT_REGISTERED" -> "این شماره ثبت‌نام نشده است. ابتدا ثبت‌نام کنید."
+            null -> "خطایی رخ داد. دوباره تلاش کنید."
+            else -> raw
+        }
+    }
+
+    /**
+     * verify_admin_pin() in backend/users/views.py returns ACCOUNT_INACTIVE as the same
+     * bare code as verify_otp (translated the same way as describeError() above); every
+     * other error it sends back is already a human-readable Persian sentence
+     * (e.g. "شماره تلفن یا PIN نامعتبر است."), so it's shown as-is.
+     */
+    private fun describePinError(error: AuthResult.Error): String {
+        val raw = when (val message = error.message) {
+            is ErrorMessage.StringMessage -> message.value
+            is ErrorMessage.FieldErrors -> message.fields.values.flatten().firstOrNull()
+            null -> null
+        }
+        return when (raw) {
+            "ACCOUNT_INACTIVE" -> "حساب شما غیرفعال است."
             null -> "خطایی رخ داد. دوباره تلاش کنید."
             else -> raw
         }

@@ -1,7 +1,9 @@
 package ir.codecrafter.plasticproducts.data.repository
 
 import ir.codecrafter.plasticproducts.data.local.TokenManager
+import ir.codecrafter.plasticproducts.data.model.AdminPinVerifyBody
 import ir.codecrafter.plasticproducts.data.model.AuthResponse
+import ir.codecrafter.plasticproducts.data.model.AuthUser
 import ir.codecrafter.plasticproducts.data.model.OtpRequestBody
 import ir.codecrafter.plasticproducts.data.model.OtpRequestResponse
 import ir.codecrafter.plasticproducts.data.model.OtpVerifyBody
@@ -32,6 +34,12 @@ sealed class AuthResult<out T> {
     data object NetworkError : AuthResult<Nothing>()
 }
 
+/** verify_otp()'s login branch resolves to one of these two outcomes — see VerifyOtpResponse. */
+sealed class AuthOutcome {
+    data class LoggedIn(val user: AuthUser) : AuthOutcome()
+    data class PinRequired(val phone: String) : AuthOutcome()
+}
+
 @Singleton
 class AuthRepository @Inject constructor(
     private val authApi: AuthApi,
@@ -47,10 +55,40 @@ class AuthRepository @Inject constructor(
         code: String,
         purpose: String,
         fullName: String? = null,
-    ): AuthResult<AuthResponse> {
+    ): AuthResult<AuthOutcome> {
         val result = safeCall {
             authApi.verifyOtp(OtpVerifyBody(phone = phone, code = code, purpose = purpose, fullName = fullName))
         }
+        return when (result) {
+            is AuthResult.Success -> {
+                val response = result.data
+                if (response.isPinRequired) {
+                    AuthResult.Success(AuthOutcome.PinRequired(phone = response.phone ?: phone))
+                } else {
+                    val token = response.token
+                    val user = response.user
+                    if (token != null && user != null) {
+                        tokenManager.saveSession(
+                            accessToken = token,
+                            refreshToken = response.refreshToken,
+                            userId = user.id,
+                            role = user.role,
+                        )
+                        AuthResult.Success(AuthOutcome.LoggedIn(user = user))
+                    } else {
+                        AuthResult.Error(code = "PARSE_ERROR", message = null)
+                    }
+                }
+            }
+            is AuthResult.RateLimited -> result
+            is AuthResult.Error -> result
+            AuthResult.NetworkError -> result
+        }
+    }
+
+    /** Second factor for an admin whose verifyOtp() call above returned AuthOutcome.PinRequired. */
+    suspend fun verifyAdminPin(phone: String, pin: String): AuthResult<AuthResponse> {
+        val result = safeCall { authApi.verifyAdminPin(AdminPinVerifyBody(phone = phone, pin = pin)) }
         if (result is AuthResult.Success) {
             val auth = result.data
             tokenManager.saveSession(

@@ -22,6 +22,10 @@
     <string name="btn_resend_code">ارسال مجدد کد</string>
     <string name="btn_verify">تأیید</string>
 
+    <!-- ui/auth/AdminPinScreen.kt -->
+    <string name="msg_enter_admin_pin">برای ورود، کد PIN خود را وارد کنید</string>
+    <string name="label_admin_pin">کد PIN</string>
+
     <!-- ui/profile/ProfileScreen.kt -->
     <string name="title_profile">پروفایل</string>
     <string name="label_address">آدرس</string>
@@ -29,6 +33,15 @@
 
     <!-- ui/profile/ProfileViewModel.kt -->
     <string name="msg_profile_saved">تغییرات ذخیره شد</string>
+
+    <!-- ui/profile/ProfileScreen.kt (admin PIN section) -->
+    <string name="title_admin_pin_section">تنظیم کد PIN</string>
+    <string name="label_new_pin">PIN جدید</string>
+    <string name="label_confirm_pin">تکرار PIN</string>
+    <string name="btn_save_pin">ثبت</string>
+    <string name="error_admin_pin_too_short">کد PIN باید حداقل ۴ رقم باشد.</string>
+    <string name="error_admin_pin_mismatch">کد PIN و تکرار آن یکسان نیستند.</string>
+    <string name="msg_admin_pin_saved">کد PIN با موفقیت ذخیره شد.</string>
 
     <!-- ui/products/ProductListScreen.kt -->
     <string name="label_product_search">جستجوی محصول</string>

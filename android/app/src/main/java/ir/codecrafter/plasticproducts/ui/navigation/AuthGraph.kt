@@ -10,6 +10,7 @@ import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
+import ir.codecrafter.plasticproducts.ui.auth.AdminPinScreen
 import ir.codecrafter.plasticproducts.ui.auth.AuthChoiceScreen
 import ir.codecrafter.plasticproducts.ui.auth.AuthViewModel
 import ir.codecrafter.plasticproducts.ui.auth.OtpVerifyScreen
@@ -20,6 +21,7 @@ object AuthRoutes {
     const val CHOICE = "auth_choice"
     const val PHONE_ENTRY = "auth_phone_entry"
     const val OTP_VERIFY = "auth_otp_verify"
+    const val ADMIN_PIN = "auth_admin_pin"
 }
 
 /**
@@ -67,6 +69,19 @@ fun NavGraphBuilder.authGraph(
                 onFullNameChange = viewModel::onFullNameChange,
                 onResend = viewModel::resendOtp,
                 onSubmit = viewModel::verifyOtp,
+                onVerified = onAuthenticated,
+                onPinRequired = { navController.navigate(AuthRoutes.ADMIN_PIN) },
+            )
+        }
+
+        composable(AuthRoutes.ADMIN_PIN) { backStackEntry ->
+            val viewModel = sharedAuthViewModel(navController, backStackEntry)
+            val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+            AdminPinScreen(
+                state = uiState,
+                navigationEvents = viewModel.navigationEvents,
+                onPinChange = viewModel::onPinCodeChange,
+                onSubmit = viewModel::verifyAdminPin,
                 onVerified = onAuthenticated,
             )
         }

@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material3.AlertDialog
@@ -30,6 +31,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -157,6 +159,69 @@ fun ProfileScreen(
                     )
                 } else {
                     Text(stringResource(R.string.btn_save))
+                }
+            }
+
+            if (state.role == "admin") {
+                Text(
+                    text = stringResource(R.string.title_admin_pin_section),
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(top = 32.dp),
+                )
+
+                OutlinedTextField(
+                    value = state.newPin,
+                    onValueChange = viewModel::onNewPinChange,
+                    label = { Text(stringResource(R.string.label_new_pin)) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 16.dp),
+                )
+
+                OutlinedTextField(
+                    value = state.confirmPin,
+                    onValueChange = viewModel::onConfirmPinChange,
+                    label = { Text(stringResource(R.string.label_confirm_pin)) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 16.dp),
+                )
+
+                if (state.pinErrorMessage != null) {
+                    Text(
+                        text = state.pinErrorMessage,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(top = 16.dp),
+                    )
+                } else if (state.pinSuccessMessage != null) {
+                    Text(
+                        text = state.pinSuccessMessage,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(top = 16.dp),
+                    )
+                }
+
+                Button(
+                    onClick = viewModel::setAdminPin,
+                    enabled = !state.isSavingPin,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
+                        .padding(top = 16.dp),
+                ) {
+                    if (state.isSavingPin) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.onPrimary,
+                        )
+                    } else {
+                        Text(stringResource(R.string.btn_save_pin))
+                    }
                 }
             }
 

@@ -1,11 +1,13 @@
 package ir.codecrafter.plasticproducts.data.network
 
+import ir.codecrafter.plasticproducts.data.model.AdminPinVerifyBody
 import ir.codecrafter.plasticproducts.data.model.AuthResponse
 import ir.codecrafter.plasticproducts.data.model.OtpRequestBody
 import ir.codecrafter.plasticproducts.data.model.OtpRequestResponse
 import ir.codecrafter.plasticproducts.data.model.OtpVerifyBody
 import ir.codecrafter.plasticproducts.data.model.RefreshTokenBody
 import ir.codecrafter.plasticproducts.data.model.TokenPair
+import ir.codecrafter.plasticproducts.data.model.VerifyOtpResponse
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.POST
@@ -17,7 +19,11 @@ interface AuthApi {
     suspend fun requestOtp(@Body body: OtpRequestBody): Response<ApiEnvelope<OtpRequestResponse>>
 
     @POST("auth/otp/verify/")
-    suspend fun verifyOtp(@Body body: OtpVerifyBody): Response<ApiEnvelope<AuthResponse>>
+    suspend fun verifyOtp(@Body body: OtpVerifyBody): Response<ApiEnvelope<VerifyOtpResponse>>
+
+    /** Second factor after verify_otp() returns requires_pin=true for an admin with a PIN set. */
+    @POST("auth/verify-admin-pin/")
+    suspend fun verifyAdminPin(@Body body: AdminPinVerifyBody): Response<ApiEnvelope<AuthResponse>>
 
     /**
      * TokenRefreshView is registered directly at /api/token/refresh/ in

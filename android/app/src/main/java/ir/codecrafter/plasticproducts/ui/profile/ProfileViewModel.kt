@@ -22,15 +22,23 @@ data class ProfileUiState(
     val phone: String = "",
     val fullName: String = "",
     val address: String = "",
+    val role: String = "",
     val isLoading: Boolean = true,
     val isSaving: Boolean = false,
     val errorMessage: String? = null,
     val saveSuccessMessage: String? = null,
+    val newPin: String = "",
+    val confirmPin: String = "",
+    val isSavingPin: Boolean = false,
+    val pinErrorMessage: String? = null,
+    val pinSuccessMessage: String? = null,
 )
 
 sealed class ProfileEvent {
     data object LoggedOut : ProfileEvent()
 }
+
+private const val MIN_ADMIN_PIN_LENGTH = 4
 
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
@@ -65,6 +73,7 @@ class ProfileViewModel @Inject constructor(
                         phone = profile.phone,
                         fullName = profile.fullName.orEmpty(),
                         address = profile.address.orEmpty(),
+                        role = profile.role,
                     )
                 }
                 else -> _uiState.value = _uiState.value.copy(
@@ -104,6 +113,42 @@ class ProfileViewModel @Inject constructor(
                 else -> _uiState.value = _uiState.value.copy(
                     isSaving = false,
                     errorMessage = describeFailure(result),
+                )
+            }
+        }
+    }
+
+    fun onNewPinChange(value: String) {
+        _uiState.value = _uiState.value.copy(newPin = value, pinErrorMessage = null, pinSuccessMessage = null)
+    }
+
+    fun onConfirmPinChange(value: String) {
+        _uiState.value = _uiState.value.copy(confirmPin = value, pinErrorMessage = null, pinSuccessMessage = null)
+    }
+
+    fun setAdminPin() {
+        val state = _uiState.value
+        if (state.newPin.length < MIN_ADMIN_PIN_LENGTH) {
+            _uiState.value = state.copy(pinErrorMessage = context.getString(R.string.error_admin_pin_too_short))
+            return
+        }
+        if (state.newPin != state.confirmPin) {
+            _uiState.value = state.copy(pinErrorMessage = context.getString(R.string.error_admin_pin_mismatch))
+            return
+        }
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isSavingPin = true, pinErrorMessage = null, pinSuccessMessage = null)
+            val result = profileRepository.setAdminPin(state.newPin)
+            when (result) {
+                is AuthResult.Success -> _uiState.value = _uiState.value.copy(
+                    isSavingPin = false,
+                    newPin = "",
+                    confirmPin = "",
+                    pinSuccessMessage = context.getString(R.string.msg_admin_pin_saved),
+                )
+                else -> _uiState.value = _uiState.value.copy(
+                    isSavingPin = false,
+                    pinErrorMessage = describeFailure(result),
                 )
             }
         }
