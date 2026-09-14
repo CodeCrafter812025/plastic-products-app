@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -31,7 +32,6 @@ import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -63,6 +63,7 @@ import ir.codecrafter.plasticproducts.data.model.Product
 import ir.codecrafter.plasticproducts.data.model.ProductQuality
 import ir.codecrafter.plasticproducts.ui.cart.CartViewModel
 import ir.codecrafter.plasticproducts.ui.common.ErrorWithRetry
+import ir.codecrafter.plasticproducts.ui.common.SkeletonBox
 import ir.codecrafter.plasticproducts.ui.notifications.NotificationListViewModel
 
 @Composable
@@ -247,7 +248,15 @@ fun ProductListScreen(
             ) {
                 when {
                     state.isLoading && state.products.isEmpty() ->
-                        CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                        LazyVerticalGrid(
+                            columns = GridCells.Fixed(2),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
+                            items(6) {
+                                ProductCardSkeleton()
+                            }
+                        }
 
                     state.errorMessage != null ->
                         ErrorWithRetry(
@@ -324,6 +333,40 @@ private fun ProductCard(product: Product, onClick: () -> Unit) {
                     onClick = {},
                     label = { Text(qualityLabel(product.quality)) },
                     modifier = Modifier.padding(top = 8.dp),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProductCardSkeleton() {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+    ) {
+        Column {
+            SkeletonBox(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(1f),
+                shape = RoundedCornerShape(0.dp),
+            )
+
+            Column(modifier = Modifier.padding(12.dp)) {
+                SkeletonBox(
+                    modifier = Modifier
+                        .fillMaxWidth(0.8f)
+                        .height(16.dp),
+                    shape = RoundedCornerShape(4.dp),
+                )
+                SkeletonBox(
+                    modifier = Modifier
+                        .fillMaxWidth(0.5f)
+                        .height(14.dp)
+                        .padding(top = 8.dp),
+                    shape = RoundedCornerShape(4.dp),
                 )
             }
         }

@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -54,6 +55,7 @@ import coil.compose.AsyncImage
 import ir.codecrafter.plasticproducts.R
 import ir.codecrafter.plasticproducts.data.model.Product
 import ir.codecrafter.plasticproducts.ui.common.ErrorWithRetry
+import ir.codecrafter.plasticproducts.ui.common.SkeletonBox
 
 @Composable
 fun AdminProductListScreen(
@@ -141,7 +143,11 @@ fun AdminProductListScreen(
             ) {
                 when {
                     state.isLoading && state.products.isEmpty() ->
-                        CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                        LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            items(5) {
+                                AdminProductRowSkeleton()
+                            }
+                        }
 
                     state.errorMessage != null ->
                         ErrorWithRetry(
@@ -197,6 +203,48 @@ fun AdminProductListScreen(
                 }
             },
         )
+    }
+}
+
+@Composable
+private fun AdminProductRowSkeleton() {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                SkeletonBox(
+                    modifier = Modifier.size(56.dp),
+                    shape = RoundedCornerShape(8.dp),
+                )
+
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(start = 12.dp),
+                ) {
+                    SkeletonBox(
+                        modifier = Modifier
+                            .fillMaxWidth(0.7f)
+                            .height(16.dp),
+                        shape = RoundedCornerShape(4.dp),
+                    )
+                    SkeletonBox(
+                        modifier = Modifier
+                            .fillMaxWidth(0.4f)
+                            .height(14.dp)
+                            .padding(top = 8.dp),
+                        shape = RoundedCornerShape(4.dp),
+                    )
+                }
+            }
+
+            SkeletonBox(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(40.dp)
+                    .padding(top = 12.dp),
+                shape = RoundedCornerShape(4.dp),
+            )
+        }
     }
 }
 
