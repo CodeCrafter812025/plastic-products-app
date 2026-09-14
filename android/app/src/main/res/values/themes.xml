@@ -2,7 +2,7 @@
 <resources>
     <style name="Theme.Splash" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">#00695C</item>
-        <item name="windowSplashScreenAnimatedIcon">@drawable/logo_brand</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_icon_wrapper</item>
         <item name="windowSplashScreenIconBackgroundColor">@android:color/transparent</item>
         <item name="postSplashScreenTheme">@android:style/Theme.DeviceDefault.NoActionBar</item>
     </style>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Wraps logo_brand (an irregular, non-square PNG) centered and shrunk to ~70%
+     (202dp of the 288dp icon canvas, per the splash screen sizing guideline) on
+     a fully transparent layer, so the platform never has to guess a background
+     shape around the logo's own edges. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:width="202dp"
+        android:height="202dp"
+        android:gravity="center"
+        android:drawable="@drawable/logo_brand" />
+</layer-list>
