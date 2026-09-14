@@ -85,9 +85,14 @@ class AuthRepository @Inject constructor(
                 }
                 outcome
             }
-            is AuthResult.RateLimited -> result
-            is AuthResult.Error -> result
-            AuthResult.NetworkError -> result
+            // AuthResult<out T> makes AuthResult<Nothing> a genuine runtime-safe subtype
+            // of AuthResult<AuthOutcome> (these three carry no T-typed data at all), but
+            // the when-expression's own branch-LUB inference doesn't apply that variance
+            // here — confirmed by compiler: without the cast, the whole `when` (this
+            // return statement) infers as AuthResult<Any>, not AuthResult<AuthOutcome>.
+            is AuthResult.RateLimited -> result as AuthResult<AuthOutcome>
+            is AuthResult.Error -> result as AuthResult<AuthOutcome>
+            AuthResult.NetworkError -> result as AuthResult<AuthOutcome>
         }
     }
 
