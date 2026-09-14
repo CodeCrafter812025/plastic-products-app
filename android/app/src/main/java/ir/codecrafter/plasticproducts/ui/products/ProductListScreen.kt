@@ -2,6 +2,7 @@ package ir.codecrafter.plasticproducts.ui.products
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -28,6 +30,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -92,15 +95,19 @@ fun ProductListScreen(
                 .padding(horizontal = 24.dp, vertical = 16.dp),
         ) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.End,
             ) {
                 TextButton(onClick = onNotificationsClick) {
-                    Icon(
-                        imageVector = Icons.Default.Notifications,
-                        contentDescription = stringResource(R.string.btn_notifications),
-                        modifier = Modifier.size(ButtonDefaults.IconSize),
-                    )
+                    IconButton(onClick = onNotificationsClick) {
+                        Icon(
+                            imageVector = Icons.Default.Notifications,
+                            contentDescription = stringResource(R.string.btn_notifications),
+                            modifier = Modifier.size(28.dp),
+                        )
+                    }
                     Spacer(modifier = Modifier.size(ButtonDefaults.IconSpacing))
                     val unreadCount = notificationState.notifications.count { !it.isRead }
                     BadgedBox(badge = {
@@ -112,20 +119,24 @@ fun ProductListScreen(
                     }
                 }
                 TextButton(onClick = onMyOrdersClick) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ReceiptLong,
-                        contentDescription = stringResource(R.string.btn_my_orders),
-                        modifier = Modifier.size(ButtonDefaults.IconSize),
-                    )
+                    IconButton(onClick = onMyOrdersClick) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ReceiptLong,
+                            contentDescription = stringResource(R.string.btn_my_orders),
+                            modifier = Modifier.size(28.dp),
+                        )
+                    }
                     Spacer(modifier = Modifier.size(ButtonDefaults.IconSpacing))
                     Text(stringResource(R.string.btn_my_orders))
                 }
                 TextButton(onClick = onCartClick) {
-                    Icon(
-                        imageVector = Icons.Default.ShoppingCart,
-                        contentDescription = stringResource(R.string.btn_cart),
-                        modifier = Modifier.size(ButtonDefaults.IconSize),
-                    )
+                    IconButton(onClick = onCartClick) {
+                        Icon(
+                            imageVector = Icons.Default.ShoppingCart,
+                            contentDescription = stringResource(R.string.btn_cart),
+                            modifier = Modifier.size(28.dp),
+                        )
+                    }
                     Spacer(modifier = Modifier.size(ButtonDefaults.IconSpacing))
                     BadgedBox(badge = {
                         if (cartState.items.isNotEmpty()) {
@@ -136,11 +147,13 @@ fun ProductListScreen(
                     }
                 }
                 TextButton(onClick = onProfileClick) {
-                    Icon(
-                        imageVector = Icons.Default.Person,
-                        contentDescription = stringResource(R.string.btn_profile),
-                        modifier = Modifier.size(ButtonDefaults.IconSize),
-                    )
+                    IconButton(onClick = onProfileClick) {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = stringResource(R.string.btn_profile),
+                            modifier = Modifier.size(28.dp),
+                        )
+                    }
                     Spacer(modifier = Modifier.size(ButtonDefaults.IconSpacing))
                     Text(stringResource(R.string.btn_profile))
                 }
