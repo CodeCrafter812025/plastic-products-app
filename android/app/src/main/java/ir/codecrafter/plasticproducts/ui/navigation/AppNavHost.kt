@@ -229,6 +229,7 @@ fun AppNavHost(navController: NavHostController = rememberNavController()) {
                 onUsersClick = { navController.navigate(AdminUserRoutes.LIST) },
                 onOrdersClick = { navController.navigate(AdminOrderRoutes.LIST) },
                 onDashboardClick = { navController.navigate(AdminDashboardRoutes.HOME) },
+                onProfileClick = { navController.navigate(RootRoutes.PROFILE) },
             )
         }
         composable(AdminOrderRoutes.LIST) {
