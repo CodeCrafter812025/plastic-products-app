@@ -4,6 +4,7 @@ from decimal import Decimal
 from unittest.mock import patch, MagicMock
 from datetime import timedelta
 from django.contrib.auth import get_user_model
+from django.contrib.auth.hashers import make_password
 from django.utils import timezone
 from django.urls import reverse
 from rest_framework.test import APITestCase, APITransactionTestCase, APIClient
@@ -177,6 +178,89 @@ class OTPFlowTests(APITestCase):
         response = self.client.post(self.verify_url, payload)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['error'], 'OTP_INVALID')
+
+
+class AdminPinLoginTests(APITestCase):
+    def setUp(self):
+        cache.clear()
+        self.client = APIClient()
+        self.request_url = reverse('auth-request-otp')
+        self.verify_url = reverse('auth-verify-otp')
+        self.verify_pin_url = reverse('auth-verify-admin-pin')
+        self.set_pin_url = reverse('user-set-admin-pin')
+
+        self.admin_phone = '09120000009'
+        self.admin = User.objects.create(
+            phone=self.admin_phone, username=self.admin_phone, full_name='Admin', role='admin'
+        )
+
+    def tearDown(self):
+        cache.clear()
+
+    def _login_otp_response(self, phone):
+        response = self.client.post(self.request_url, {'phone': phone, 'purpose': 'login'})
+        code = response.data['code']
+        return self.client.post(self.verify_url, {'phone': phone, 'code': code, 'purpose': 'login'})
+
+    def test_admin_without_pin_gets_full_token(self):
+        response = self._login_otp_response(self.admin_phone)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('token', response.data)
+        self.assertIn('refresh_token', response.data)
+        self.assertNotIn('requires_pin', response.data)
+
+    def test_admin_with_pin_gets_requires_pin_not_token(self):
+        self.admin.admin_pin = make_password('1234')
+        self.admin.save()
+
+        response = self._login_otp_response(self.admin_phone)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data.get('requires_pin'))
+        self.assertEqual(response.data.get('phone'), self.admin_phone)
+        self.assertNotIn('token', response.data)
+        self.assertNotIn('refresh_token', response.data)
+
+    def test_verify_admin_pin_with_correct_pin_returns_token(self):
+        self.admin.admin_pin = make_password('1234')
+        self.admin.save()
+
+        response = self.client.post(self.verify_pin_url, {'phone': self.admin_phone, 'pin': '1234'})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('token', response.data)
+        self.assertIn('refresh_token', response.data)
+
+    def test_verify_admin_pin_with_wrong_pin_returns_generic_error(self):
+        self.admin.admin_pin = make_password('1234')
+        self.admin.save()
+
+        response = self.client.post(self.verify_pin_url, {'phone': self.admin_phone, 'pin': '9999'})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertNotIn('token', response.data)
+
+    def test_set_admin_pin_by_non_admin_returns_403(self):
+        buyer_phone = '09121234567'
+        buyer = User.objects.create(phone=buyer_phone, username=buyer_phone, full_name='Buyer', role='buyer')
+        refresh = RefreshToken.for_user(buyer)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {refresh.access_token}')
+
+        response = self.client.post(self.set_pin_url, {'pin': '1234'})
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_buyer_login_always_gets_full_token(self):
+        buyer_phone = '09121234567'
+        User.objects.create(phone=buyer_phone, username=buyer_phone, full_name='Buyer', role='buyer')
+        response = self._login_otp_response(buyer_phone)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('token', response.data)
+        self.assertNotIn('requires_pin', response.data)
+
+    def test_visitor_login_always_gets_full_token(self):
+        visitor_phone = '09131234567'
+        User.objects.create(phone=visitor_phone, username=visitor_phone, full_name='Visitor', role='visitor')
+        response = self._login_otp_response(visitor_phone)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('token', response.data)
+        self.assertNotIn('requires_pin', response.data)
 
 
 class CartOrderTests(APITestCase):

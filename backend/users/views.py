@@ -6,6 +6,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from django.contrib.auth import get_user_model
+from django.contrib.auth.hashers import make_password, check_password
 from django.utils import timezone
 from datetime import timedelta
 import random
@@ -22,6 +23,16 @@ User = get_user_model()
 
 def generate_otp():
     return f"{random.randint(10000, 99999)}"
+
+def build_token_response(user):
+    """ساخت پاسخ JWT (access + refresh) مشترک بین verify_otp و verify-admin-pin."""
+    from rest_framework_simplejwt.tokens import RefreshToken
+    refresh = RefreshToken.for_user(user)
+    return {
+        'token': str(refresh.access_token),
+        'refresh_token': str(refresh),
+        'user': UserSerializer(user).data,
+    }
 
 class AuthViewSet(viewsets.GenericViewSet):
     permission_classes = [AllowAny]
@@ -122,17 +133,36 @@ class AuthViewSet(viewsets.GenericViewSet):
         if not user.is_active:
             return Response({'error': 'ACCOUNT_INACTIVE'}, status=status.HTTP_403_FORBIDDEN)
 
-        from rest_framework_simplejwt.tokens import RefreshToken
-        refresh = RefreshToken.for_user(user)
-        access_token = str(refresh.access_token)
-        refresh_token = str(refresh)
+        if purpose == 'login' and user.role == 'admin' and user.admin_pin:
+            return Response({'requires_pin': True, 'phone': phone})
 
-        user_serializer = UserSerializer(user)
-        return Response({
-            'token': access_token,
-            'refresh_token': refresh_token,
-            'user': user_serializer.data
-        })
+        return Response(build_token_response(user))
+
+    @action(detail=False, methods=['post'], url_path='verify-admin-pin')
+    def verify_admin_pin(self, request):
+        """
+        مرحله‌ی دوم ورود برای ادمین‌هایی که admin_pin ست کرده‌اند: بعد از
+        دریافت requires_pin=true از verify_otp، همین phone را با pin به
+        اینجا می‌فرستند تا access/refresh token واقعی صادر شود.
+        """
+        phone = request.data.get('phone')
+        pin = request.data.get('pin')
+        if not phone or not pin:
+            return Response({'error': 'phone و pin الزامی هستند.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = User.objects.get(phone=phone, role='admin')
+        except User.DoesNotExist:
+            user = None
+
+        # پیام یکسان چه شماره اشتباه باشد چه PIN، تا وجود/عدم‌وجود شماره فاش نشود.
+        if user is None or not user.admin_pin or not check_password(pin, user.admin_pin):
+            return Response({'error': 'شماره تلفن یا PIN نامعتبر است.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not user.is_active:
+            return Response({'error': 'ACCOUNT_INACTIVE'}, status=status.HTTP_403_FORBIDDEN)
+
+        return Response(build_token_response(user))
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -141,7 +171,7 @@ class UserViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_permissions(self):
-        if self.action in ['toggle_active', 'create_visitor']:
+        if self.action in ['toggle_active', 'create_visitor', 'set_admin_pin']:
             return [IsAdminUserRole()]
         return [IsAuthenticated()]
 
@@ -177,6 +207,22 @@ class UserViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
         return Response(UserSerializer(user).data, status=status.HTTP_201_CREATED)
+
+    @action(detail=False, methods=['post'], url_path='set-admin-pin')
+    def set_admin_pin(self, request):
+        """
+        Admin-only action letting the logged-in admin set/change their own
+        login PIN (never someone else's).
+        """
+        pin = request.data.get('pin')
+        if not pin or not str(pin).isdigit() or len(str(pin)) < 4:
+            return Response(
+                {'error': 'PIN باید حداقل ۴ رقم و فقط شامل عدد باشد.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        request.user.admin_pin = make_password(str(pin))
+        request.user.save(update_fields=['admin_pin'])
+        return Response({'message': 'PIN با موفقیت تنظیم شد.'})
 
 
 class AccountDeletionRequestViewSet(viewsets.ModelViewSet):
