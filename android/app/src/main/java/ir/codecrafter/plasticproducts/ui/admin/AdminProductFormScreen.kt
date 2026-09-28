@@ -1,10 +1,11 @@
-package ir.codecrafter.plasticproducts.ui.admin
+﻿package ir.codecrafter.plasticproducts.ui.admin
 
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,6 +19,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
@@ -49,6 +51,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import ir.codecrafter.plasticproducts.R
+import ir.codecrafter.plasticproducts.data.model.ProductCategory
 import ir.codecrafter.plasticproducts.data.model.ProductQuality
 import ir.codecrafter.plasticproducts.data.model.StockChangeReason
 import ir.codecrafter.plasticproducts.ui.common.ErrorWithRetry
@@ -126,10 +129,6 @@ private fun AdminProductFormContent(
                 }
             }
         }
-        // The full-page error branch above only covers a failed *initial* load (title
-        // still blank). If a later reload fails after the form already has data, that
-        // error would otherwise be silently dropped — this keeps the form usable while
-        // still surfacing it, instead of only the transient ActionFailed snackbar.
         if (state.errorMessage != null && state.title.isNotBlank()) {
             item {
                 ErrorWithRetry(
@@ -147,6 +146,80 @@ private fun AdminProductFormContent(
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )
+        }
+        item {
+            Text(
+                text = "\u0627\u0646\u062a\u062e\u0627\u0628 \u0633\u0631\u06cc\u0639 \u062f\u0633\u062a\u0647\u200c\u0628\u0646\u062f\u06cc \u0627\u0635\u0644\u06cc:",
+                style = MaterialTheme.typography.labelLarge,
+            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 4.dp)
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                ProductCategory.ALL.forEach { cat ->
+                    FilterChip(
+                        selected = state.category == cat,
+                        onClick = { viewModel.onCategoryChange(cat) },
+                        label = { Text(cat) },
+                    )
+                }
+            }
+        }
+        item {
+            OutlinedTextField(
+                value = state.category,
+                onValueChange = viewModel::onCategoryChange,
+                label = { Text("\u062f\u0633\u062a\u0647\u200c\u0628\u0646\u062f\u06cc \u0627\u0635\u0644\u06cc (Category)") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+        item {
+            OutlinedTextField(
+                value = state.subCategory,
+                onValueChange = viewModel::onSubCategoryChange,
+                label = { Text("\u0632\u06cc\u0631\u062f\u0633\u062a\u0647 / \u06a9\u0627\u0631\u0628\u0631\u062f (\u0645\u062b\u0644\u0627\u064b: \u062f\u0627\u0631\u0648\u062e\u0627\u0646\u0647\u060c \u0639\u0645\u0648\u0645\u06cc\u060c \u0631\u0648\u0645\u06cc\u0632\u06cc)") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+        item {
+            OutlinedTextField(
+                value = state.brand,
+                onValueChange = viewModel::onBrandChange,
+                label = { Text("\u0628\u0631\u0646\u062f (\u0645\u062b\u0644\u0627\u064b: QLean\u060c \u0639\u0633\u0644 \u067e\u0644\u0627\u0633\u062a\u060c \u06af\u0644\u0631\u06cc\u0632)") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+        item {
+            OutlinedTextField(
+                value = state.unitLabel,
+                onValueChange = viewModel::onUnitLabelChange,
+                label = { Text("\u0648\u0627\u062d\u062f \u0634\u0645\u0627\u0631\u0634 (\u0645\u062b\u0644\u0627\u064b: \u06a9\u06cc\u0644\u0648\u06cc\u06cc\u060c \u067e\u06a9 500 \u0639\u062f\u062f\u06cc\u060c \u0628\u0633\u062a\u0647\u200c\u0627\u06cc)") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+        item {
+            OutlinedTextField(
+                value = state.packagingInfo,
+                onValueChange = viewModel::onPackagingInfoChange,
+                label = { Text("\u062a\u0648\u0636\u06cc\u062d\u0627\u062a \u0646\u062d\u0648\u0647 \u0639\u0631\u0636\u0647 \u0648 \u0628\u0633\u062a\u0647\u200c\u0628\u0646\u062f\u06cc") },
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text("\u0646\u0645\u0627\u06cc\u0634 \u062a\u06af \u00ab\u067e\u0631\u0641\u0631\u0648\u0634\u00bb \u0631\u0648\u06cc \u0645\u062d\u0635\u0648\u0644", modifier = Modifier.weight(1f))
+                Switch(checked = state.isBestseller, onCheckedChange = viewModel::onIsBestsellerChange)
+            }
         }
         item {
             OutlinedTextField(
@@ -229,9 +302,6 @@ private fun AdminProductFormContent(
                 )
             }
         }
-        // isActive only has meaning once a product exists to toggle — in create mode
-        // it's always sent as true (see AdminProductFormViewModel.save()) and there's
-        // nothing useful to show here yet.
         if (state.isEditMode) {
             item {
                 Row(
@@ -290,13 +360,6 @@ private fun AdminProductFormContent(
     }
 }
 
-/**
- * Only shown in edit mode — upload_image needs a real product id (see
- * AdminProductFormViewModel.uploadImage's KDoc). No per-image delete button
- * here: products/views.py upload_image() only ever appends to image_urls,
- * there is no endpoint to remove a single image — a real server limitation,
- * not something left out of this screen by mistake.
- */
 @Composable
 private fun ProductImagesSection(
     productTitle: String,
@@ -316,7 +379,6 @@ private fun ProductImagesSection(
                     .height(80.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                // Each URL is itself already a natural unique key here.
                 items(imageUrls, key = { it }) { url ->
                     AsyncImage(
                         model = url,
@@ -362,7 +424,6 @@ private fun ProductImagesSection(
     }
 }
 
-/** Read-only in edit mode — price changes go through PATCH products/{id}/price/, not the general form save. */
 @Composable
 private fun ProductPriceRow(price: String, isUpdating: Boolean, onConfirm: (String) -> Unit) {
     var showDialog by remember { mutableStateOf(false) }
@@ -421,7 +482,6 @@ private fun ChangePriceDialog(onConfirm: (String) -> Unit, onDismiss: () -> Unit
     )
 }
 
-/** Read-only in edit mode — stock changes go through PATCH products/{id}/stock/, not the general form save. */
 @Composable
 private fun ProductStockRow(
     stock: String,

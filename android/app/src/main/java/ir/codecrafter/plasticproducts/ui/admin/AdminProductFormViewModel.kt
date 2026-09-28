@@ -1,4 +1,4 @@
-package ir.codecrafter.plasticproducts.ui.admin
+﻿package ir.codecrafter.plasticproducts.ui.admin
 
 import android.content.Context
 import android.net.Uri
@@ -36,15 +36,19 @@ data class AdminProductFormUiState(
     val isEditMode: Boolean = false,
     val title: String = "",
     val price: String = "",
-    val weight: String = "",
+    val weight: String = "1",
     val color: String = "",
-    val quality: String? = null,
+    val quality: String? = "\u0627\u0648\u0644\u06cc\u0647",
     val description: String = "",
     val stock: String = "",
     val isActive: Boolean = true,
-    /** Only populated/meaningful in edit mode — create mode has no product id to upload images against yet. */
+    val category: String = "",
+    val subCategory: String = "",
+    val brand: String = "",
+    val unitLabel: String = "",
+    val packagingInfo: String = "",
+    val isBestseller: Boolean = false,
     val imageUrls: List<String> = emptyList(),
-    /** Only meaningful in edit mode, while the existing product is being fetched to prefill the form. */
     val isLoading: Boolean = false,
     val isSaving: Boolean = false,
     val isUploadingImage: Boolean = false,
@@ -58,14 +62,6 @@ sealed class AdminProductFormEvent {
     data object Saved : AdminProductFormEvent()
 }
 
-/**
- * Shared by both AdminProductRoutes.CREATE (no productId nav arg — savedStateHandle
- * yields null) and AdminProductRoutes.EDIT_PATTERN (productId present). Edit mode
- * prefills via ProductRepository.getProductDetail() — GET products/{id}/, which
- * (unlike the list action) already returns inactive products to an admin caller
- * with no extra query param needed (see AdminProductApi.getProducts's KDoc for the
- * list-action contrast).
- */
 @HiltViewModel
 class AdminProductFormViewModel @Inject constructor(
     private val adminProductRepository: AdminProductRepository,
@@ -86,7 +82,6 @@ class AdminProductFormViewModel @Inject constructor(
         productId?.let(::loadProduct)
     }
 
-    /** Re-runs the edit-mode prefill load — a no-op in create mode, where there's no productId to reload. */
     fun retryLoad() {
         productId?.let(::loadProduct)
     }
@@ -108,6 +103,12 @@ class AdminProductFormViewModel @Inject constructor(
                             description = product.description,
                             stock = product.stock,
                             isActive = product.isActive,
+                            category = product.category.orEmpty(),
+                            subCategory = product.subCategory.orEmpty(),
+                            brand = product.brand.orEmpty(),
+                            unitLabel = product.unitLabel.orEmpty(),
+                            packagingInfo = product.packagingInfo.orEmpty(),
+                            isBestseller = product.isBestseller,
                             imageUrls = product.imageUrls,
                         )
                     }
@@ -118,28 +119,20 @@ class AdminProductFormViewModel @Inject constructor(
     }
 
     fun onTitleChange(value: String) = _uiState.update { it.copy(title = value) }
-
     fun onPriceChange(value: String) = _uiState.update { it.copy(price = value) }
-
     fun onWeightChange(value: String) = _uiState.update { it.copy(weight = value) }
-
     fun onColorChange(value: String) = _uiState.update { it.copy(color = value) }
-
     fun onQualityChange(value: String) = _uiState.update { it.copy(quality = value) }
-
     fun onDescriptionChange(value: String) = _uiState.update { it.copy(description = value) }
-
     fun onStockChange(value: String) = _uiState.update { it.copy(stock = value) }
-
     fun onIsActiveChange(value: Boolean) = _uiState.update { it.copy(isActive = value) }
+    fun onCategoryChange(value: String) = _uiState.update { it.copy(category = value) }
+    fun onSubCategoryChange(value: String) = _uiState.update { it.copy(subCategory = value) }
+    fun onBrandChange(value: String) = _uiState.update { it.copy(brand = value) }
+    fun onUnitLabelChange(value: String) = _uiState.update { it.copy(unitLabel = value) }
+    fun onPackagingInfoChange(value: String) = _uiState.update { it.copy(packagingInfo = value) }
+    fun onIsBestsellerChange(value: Boolean) = _uiState.update { it.copy(isBestseller = value) }
 
-    /**
-     * In edit mode, saves through ProductUpdateBody (no price/stock — those go
-     * through updatePrice()/updateStock() below, each with its own dedicated
-     * endpoint and history record). In create mode there's no id yet for those
-     * dedicated endpoints, so the full ProductWriteBody (including price/stock)
-     * is still required here.
-     */
     fun save() {
         val state = _uiState.value
         val quality = state.quality ?: return
@@ -155,6 +148,12 @@ class AdminProductFormViewModel @Inject constructor(
                         quality = quality,
                         description = state.description.trim(),
                         isActive = state.isActive,
+                        category = state.category.trim().ifBlank { null },
+                        subCategory = state.subCategory.trim().ifBlank { null },
+                        brand = state.brand.trim().ifBlank { null },
+                        unitLabel = state.unitLabel.trim().ifBlank { null },
+                        packagingInfo = state.packagingInfo.trim().ifBlank { null },
+                        isBestseller = state.isBestseller,
                     ),
                 )
             } else {
@@ -168,6 +167,12 @@ class AdminProductFormViewModel @Inject constructor(
                         description = state.description.trim(),
                         stock = state.stock.trim(),
                         isActive = true,
+                        category = state.category.trim().ifBlank { null },
+                        subCategory = state.subCategory.trim().ifBlank { null },
+                        brand = state.brand.trim().ifBlank { null },
+                        unitLabel = state.unitLabel.trim().ifBlank { null },
+                        packagingInfo = state.packagingInfo.trim().ifBlank { null },
+                        isBestseller = state.isBestseller,
                     ),
                 )
             }
@@ -184,7 +189,6 @@ class AdminProductFormViewModel @Inject constructor(
         }
     }
 
-    /** Only callable in edit mode — see save()'s KDoc for why price changes go through this dedicated endpoint instead. */
     fun updatePrice(newPrice: String) {
         val id = productId ?: return
         viewModelScope.launch {
@@ -202,7 +206,6 @@ class AdminProductFormViewModel @Inject constructor(
         }
     }
 
-    /** Only callable in edit mode — see save()'s KDoc for why stock changes go through this dedicated endpoint instead. */
     fun updateStock(newStock: String, reason: StockChangeReason) {
         val id = productId ?: return
         viewModelScope.launch {
@@ -220,10 +223,6 @@ class AdminProductFormViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Only callable in edit mode (productId != null) — the UI only shows the
-     * "افزودن تصویر" button once a real product id exists to upload against.
-     */
     fun uploadImage(uri: Uri) {
         val id = productId ?: return
         viewModelScope.launch {
@@ -246,13 +245,6 @@ class AdminProductFormViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Runs on Dispatchers.IO (called via withContext from uploadImage()). The
-     * filename must carry a real extension — products/views.py upload_image()
-     * validates request.FILES['image'].name's extension against an allow-list
-     * (jpg/jpeg/png/gif/webp), and a content:// URI's own path never reliably
-     * carries one, so it's derived from the MIME type instead.
-     */
     private fun buildImagePart(uri: Uri): MultipartBody.Part? {
         return try {
             val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() } ?: return null
@@ -274,6 +266,6 @@ class AdminProductFormViewModel @Inject constructor(
             null -> context.getString(R.string.error_generic)
         }
         AuthResult.NetworkError -> context.getString(R.string.error_network)
-        is AuthResult.Success -> "" // never reached — callers only pass non-Success results here
+        is AuthResult.Success -> ""
     }
 }

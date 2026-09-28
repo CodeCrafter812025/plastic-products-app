@@ -1,4 +1,4 @@
-package ir.codecrafter.plasticproducts.data.network
+﻿package ir.codecrafter.plasticproducts.data.network
 
 import ir.codecrafter.plasticproducts.data.model.Product
 import retrofit2.Response
@@ -8,14 +8,12 @@ import retrofit2.http.Query
 
 interface ProductApi {
 
-    /**
-     * GET /products/ is not paginated: ProductViewSet has no pagination_class and
-     * settings.py sets no DEFAULT_PAGINATION_CLASS, so envelope.data here is a
-     * plain array, not {count, next, previous, results}.
-     */
     @GET("products/")
     suspend fun getProducts(
         @Query("search") search: String? = null,
+        @Query("category") category: String? = null,
+        @Query("brand") brand: String? = null,
+        @Query("is_bestseller") isBestseller: Boolean? = null,
         @Query("quality") quality: String? = null,
         @Query("color") color: String? = null,
         @Query("min_price") minPrice: String? = null,

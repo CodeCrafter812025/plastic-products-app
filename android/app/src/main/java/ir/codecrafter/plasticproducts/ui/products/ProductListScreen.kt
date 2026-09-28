@@ -1,4 +1,4 @@
-package ir.codecrafter.plasticproducts.ui.products
+﻿package ir.codecrafter.plasticproducts.ui.products
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -22,10 +22,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material.icons.automirrored.filled.ReceiptLong
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
@@ -38,6 +39,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -60,6 +62,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import ir.codecrafter.plasticproducts.R
 import ir.codecrafter.plasticproducts.data.model.Product
+import ir.codecrafter.plasticproducts.data.model.ProductCategory
 import ir.codecrafter.plasticproducts.data.model.ProductQuality
 import ir.codecrafter.plasticproducts.ui.cart.CartViewModel
 import ir.codecrafter.plasticproducts.ui.common.ErrorWithRetry
@@ -82,11 +85,6 @@ fun ProductListScreen(
     val notificationState by notificationListViewModel.uiState.collectAsStateWithLifecycle()
     var showMoreFilters by remember { mutableStateOf(false) }
 
-    // cartViewModel/notificationListViewModel are scoped to this destination's own
-    // back stack entry, so their init{} only loads once, the first time this screen
-    // is created — re-run both every time this screen is (re)composed (i.e. every
-    // time the user navigates back to it) so the badge counts don't go stale after
-    // changes made on other screens.
     LaunchedEffect(Unit) {
         cartViewModel.loadCart()
         notificationListViewModel.loadNotifications()
@@ -98,7 +96,7 @@ fun ProductListScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(horizontal = 24.dp, vertical = 16.dp),
+                .padding(horizontal = 16.dp, vertical = 12.dp),
         ) {
             Row(
                 modifier = Modifier
@@ -111,7 +109,7 @@ fun ProductListScreen(
                         Icon(
                             imageVector = Icons.Default.Notifications,
                             contentDescription = stringResource(R.string.btn_notifications),
-                            modifier = Modifier.size(28.dp),
+                            modifier = Modifier.size(26.dp),
                         )
                     }
                     Spacer(modifier = Modifier.size(ButtonDefaults.IconSpacing))
@@ -129,7 +127,7 @@ fun ProductListScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ReceiptLong,
                             contentDescription = stringResource(R.string.btn_my_orders),
-                            modifier = Modifier.size(28.dp),
+                            modifier = Modifier.size(26.dp),
                         )
                     }
                     Spacer(modifier = Modifier.size(ButtonDefaults.IconSpacing))
@@ -140,7 +138,7 @@ fun ProductListScreen(
                         Icon(
                             imageVector = Icons.Default.ShoppingCart,
                             contentDescription = stringResource(R.string.btn_cart),
-                            modifier = Modifier.size(28.dp),
+                            modifier = Modifier.size(26.dp),
                         )
                     }
                     Spacer(modifier = Modifier.size(ButtonDefaults.IconSpacing))
@@ -157,7 +155,7 @@ fun ProductListScreen(
                         Icon(
                             imageVector = Icons.Default.Person,
                             contentDescription = stringResource(R.string.btn_profile),
-                            modifier = Modifier.size(28.dp),
+                            modifier = Modifier.size(26.dp),
                         )
                     }
                     Spacer(modifier = Modifier.size(ButtonDefaults.IconSpacing))
@@ -173,38 +171,44 @@ fun ProductListScreen(
                 modifier = Modifier.fillMaxWidth(),
             )
 
-            Row(
-                modifier = Modifier.padding(top = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                FilterChip(
-                    selected = state.filter.quality == null,
-                    onClick = { viewModel.onQualityChange(null) },
-                    label = { Text(stringResource(R.string.filter_quality_all)) },
-                )
-                FilterChip(
-                    selected = state.filter.quality == ProductQuality.PRIMARY,
-                    onClick = { viewModel.onQualityChange(ProductQuality.PRIMARY) },
-                    label = { Text(stringResource(R.string.filter_quality_primary)) },
-                )
-                FilterChip(
-                    selected = state.filter.quality == ProductQuality.RECYCLED,
-                    onClick = { viewModel.onQualityChange(ProductQuality.RECYCLED) },
-                    label = { Text(stringResource(R.string.filter_quality_recycled)) },
-                )
-            }
-
+            // نوار افقی انتخاب دسته‌بندی‌های ۷گانه کاتالوگ + فیلتر پرفروش‌ها
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 8.dp),
+                    .padding(top = 10.dp)
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(stringResource(R.string.filter_in_stock_only), modifier = Modifier.weight(1f))
-                Switch(
-                    checked = state.filter.inStock == true,
-                    onCheckedChange = viewModel::onInStockOnlyChange,
+                FilterChip(
+                    selected = state.filter.category == null && state.filter.isBestseller != true,
+                    onClick = {
+                        viewModel.onCategoryChange(null)
+                        viewModel.onBestsellerToggle(false)
+                    },
+                    label = { Text("\u0647\u0645\u0647 \u062f\u0633\u062a\u0647\u200c\u0647\u0627") },
                 )
+                FilterChip(
+                    selected = state.filter.isBestseller == true,
+                    onClick = { viewModel.onBestsellerToggle(state.filter.isBestseller != true) },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Star,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                        )
+                    },
+                    label = { Text("\u067e\u0631\u0641\u0631\u0648\u0634\u200c\u0647\u0627") },
+                )
+                ProductCategory.ALL.forEach { cat ->
+                    FilterChip(
+                        selected = state.filter.category == cat,
+                        onClick = {
+                            viewModel.onCategoryChange(if (state.filter.category == cat) null else cat)
+                        },
+                        label = { Text(cat) },
+                    )
+                }
             }
 
             TextButton(onClick = { showMoreFilters = !showMoreFilters }) {
@@ -218,33 +222,62 @@ fun ProductListScreen(
             }
 
             if (showMoreFilters) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    OutlinedTextField(
-                        value = state.filter.minPrice.orEmpty(),
-                        onValueChange = viewModel::onMinPriceChange,
-                        label = { Text(stringResource(R.string.label_min_price)) },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.weight(1f),
-                    )
-                    OutlinedTextField(
-                        value = state.filter.maxPrice.orEmpty(),
-                        onValueChange = viewModel::onMaxPriceChange,
-                        label = { Text(stringResource(R.string.label_max_price)) },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.weight(1f),
-                    )
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FilterChip(
+                            selected = state.filter.quality == null,
+                            onClick = { viewModel.onQualityChange(null) },
+                            label = { Text(stringResource(R.string.filter_quality_all)) },
+                        )
+                        FilterChip(
+                            selected = state.filter.quality == ProductQuality.PRIMARY,
+                            onClick = { viewModel.onQualityChange(ProductQuality.PRIMARY) },
+                            label = { Text(stringResource(R.string.filter_quality_primary)) },
+                        )
+                        FilterChip(
+                            selected = state.filter.quality == ProductQuality.RECYCLED,
+                            onClick = { viewModel.onQualityChange(ProductQuality.RECYCLED) },
+                            label = { Text(stringResource(R.string.filter_quality_recycled)) },
+                        )
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(stringResource(R.string.filter_in_stock_only), modifier = Modifier.weight(1f))
+                        Switch(
+                            checked = state.filter.inStock == true,
+                            onCheckedChange = viewModel::onInStockOnlyChange,
+                        )
+                    }
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        OutlinedTextField(
+                            value = state.filter.minPrice.orEmpty(),
+                            onValueChange = viewModel::onMinPriceChange,
+                            label = { Text(stringResource(R.string.label_min_price)) },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier.weight(1f),
+                        )
+                        OutlinedTextField(
+                            value = state.filter.maxPrice.orEmpty(),
+                            onValueChange = viewModel::onMaxPriceChange,
+                            label = { Text(stringResource(R.string.label_max_price)) },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
                 }
             }
 
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(top = 16.dp),
+                    .padding(top = 8.dp),
             ) {
                 when {
                     state.isLoading && state.products.isEmpty() ->
@@ -302,7 +335,7 @@ private fun ProductCard(product: Product, onClick: () -> Unit) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .aspectRatio(1f)
+                    .aspectRatio(1.1f)
                     .background(MaterialTheme.colorScheme.surfaceVariant),
             ) {
                 if (thumbnailUrl != null) {
@@ -313,26 +346,55 @@ private fun ProductCard(product: Product, onClick: () -> Unit) {
                         modifier = Modifier.fillMaxSize(),
                     )
                 }
+                if (product.isBestseller) {
+                    Surface(
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        shape = RoundedCornerShape(bottomEnd = 8.dp),
+                        modifier = Modifier.align(Alignment.TopStart),
+                    ) {
+                        Text(
+                            text = "\u2605 \u067e\u0631\u0641\u0631\u0648\u0634",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        )
+                    }
+                }
             }
 
             Column(modifier = Modifier.padding(12.dp)) {
                 Text(
                     text = product.title,
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
+
+                if (!product.brand.isNullOrBlank()) {
+                    Text(
+                        text = "\u0628\u0631\u0646\u062f: ${product.brand}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.secondary,
+                        modifier = Modifier.padding(top = 4.dp),
+                    )
+                } else if (!product.subCategory.isNullOrBlank()) {
+                    Text(
+                        text = "\u06a9\u0627\u0631\u0628\u0631\u062f: ${product.subCategory}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 4.dp),
+                    )
+                }
+
+                val unitText = product.unitLabel?.takeIf { it.isNotBlank() } ?: "\u0648\u0627\u062d\u062f"
                 Text(
-                    text = stringResource(R.string.product_price_toman, product.price),
+                    text = "${stringResource(R.string.product_price_toman, product.price)} / $unitText",
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(top = 8.dp),
-                )
-                AssistChip(
-                    onClick = {},
-                    label = { Text(qualityLabel(product.quality)) },
-                    modifier = Modifier.padding(top = 8.dp),
+                    modifier = Modifier.padding(top = 6.dp),
                 )
             }
         }
@@ -350,7 +412,7 @@ private fun ProductCardSkeleton() {
             SkeletonBox(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .aspectRatio(1f),
+                    .aspectRatio(1.1f),
                 shape = RoundedCornerShape(0.dp),
             )
 
@@ -371,11 +433,4 @@ private fun ProductCardSkeleton() {
             }
         }
     }
-}
-
-@Composable
-private fun qualityLabel(quality: String): String = when (quality) {
-    ProductQuality.PRIMARY -> stringResource(R.string.filter_quality_primary)
-    ProductQuality.RECYCLED -> stringResource(R.string.filter_quality_recycled)
-    else -> quality
 }

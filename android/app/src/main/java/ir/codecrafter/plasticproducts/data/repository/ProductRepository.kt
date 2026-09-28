@@ -1,4 +1,4 @@
-package ir.codecrafter.plasticproducts.data.repository
+﻿package ir.codecrafter.plasticproducts.data.repository
 
 import ir.codecrafter.plasticproducts.data.model.Product
 import ir.codecrafter.plasticproducts.data.model.ProductFilter
@@ -13,7 +13,6 @@ import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/** Reuses AuthRepository's AuthResult<T> — see ProfileRepository for the same choice. */
 @Singleton
 class ProductRepository @Inject constructor(
     private val productApi: ProductApi,
@@ -24,6 +23,9 @@ class ProductRepository @Inject constructor(
         safeCall {
             productApi.getProducts(
                 search = filter.search,
+                category = filter.category,
+                brand = filter.brand,
+                isBestseller = filter.isBestseller,
                 quality = filter.quality,
                 color = filter.color,
                 minPrice = filter.minPrice,

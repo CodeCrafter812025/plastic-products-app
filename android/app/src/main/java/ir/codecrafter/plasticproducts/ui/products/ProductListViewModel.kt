@@ -1,4 +1,4 @@
-package ir.codecrafter.plasticproducts.ui.products
+﻿package ir.codecrafter.plasticproducts.ui.products
 
 import android.content.Context
 import androidx.lifecycle.ViewModel
@@ -41,11 +41,6 @@ class ProductListViewModel @Inject constructor(
     val uiState: StateFlow<ProductListUiState> = _uiState.asStateFlow()
 
     private val searchQuery = MutableStateFlow("")
-
-    // Every filter/search change funnels a request through here rather than
-    // launching loadProducts() directly, so collectLatest below can cancel a
-    // still-in-flight request when a newer one comes in — otherwise a slow
-    // response to an older filter could land after and overwrite a newer one.
     private val reloadRequests = MutableSharedFlow<Unit>(replay = 1)
 
     init {
@@ -69,6 +64,11 @@ class ProductListViewModel @Inject constructor(
         searchQuery.value = text
     }
 
+    fun onCategoryChange(category: String?) = updateFilter { it.copy(category = category) }
+
+    fun onBestsellerToggle(onlyBestsellers: Boolean) =
+        updateFilter { it.copy(isBestseller = if (onlyBestsellers) true else null) }
+
     fun onQualityChange(quality: String?) = updateFilter { it.copy(quality = quality) }
 
     fun onInStockOnlyChange(inStockOnly: Boolean) =
@@ -78,13 +78,6 @@ class ProductListViewModel @Inject constructor(
 
     fun onMaxPriceChange(value: String) = updateFilter { it.copy(maxPrice = value.ifBlank { null }) }
 
-    /**
-     * Re-runs the last filter/search through the same debounce-safe request
-     * path as a filter change — used for both the error state's retry button
-     * and the refresh-on-return call from ProductListScreen. loadProducts()
-     * itself stays private since every load must go through reloadRequests
-     * so collectLatest can cancel a stale in-flight request.
-     */
     fun retryLoad() {
         reloadRequests.tryEmit(Unit)
     }
@@ -99,8 +92,6 @@ class ProductListViewModel @Inject constructor(
         val startTime = System.currentTimeMillis()
         val result = productRepository.getProducts(_uiState.value.filter)
 
-        // A fast (e.g. local/failed-fast) response would otherwise flip isLoading
-        // back off again within a few ms, too quick for the skeleton to register.
         val elapsedMs = System.currentTimeMillis() - startTime
         if (elapsedMs < MIN_LOADING_DURATION_MS) {
             delay(MIN_LOADING_DURATION_MS - elapsedMs)
