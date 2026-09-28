@@ -50,6 +50,20 @@ class ProductViewSet(viewsets.ModelViewSet):
                     Q(title__icontains=search) | Q(description__icontains=search)
                 )
 
+            # ... کدهای قبلی فیلتر ...
+            category = self.request.query_params.get('category')
+            if category:
+                queryset = queryset.filter(category__icontains=category)
+
+            brand = self.request.query_params.get('brand')
+            if brand:
+                queryset = queryset.filter(brand__icontains=brand)
+
+            is_bestseller = self.request.query_params.get('is_bestseller')
+            if is_bestseller is not None:
+                if is_bestseller.lower() in ['true', '1', 'yes']:
+                    queryset = queryset.filter(is_bestseller=True)
+            
             quality = self.request.query_params.get('quality')
             if quality:
                 if quality in ['اولیه', 'بازیافتی']:

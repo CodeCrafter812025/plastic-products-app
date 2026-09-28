@@ -12,6 +12,8 @@ class ProductSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'title', 'price', 'weight', 'color', 'quality',
             'description', 'image_urls', 'stock', 'is_active',
+            # فیلدهای جدید:
+            'category', 'sub_category', 'brand', 'unit_label', 'packaging_info', 'is_bestseller',
             'created_by', 'created_by_name', 'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'created_by', 'created_at', 'updated_at']
