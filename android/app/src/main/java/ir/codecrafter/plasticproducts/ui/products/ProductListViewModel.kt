@@ -11,6 +11,7 @@ import ir.codecrafter.plasticproducts.data.model.ProductFilter
 import ir.codecrafter.plasticproducts.data.network.ErrorMessage
 import ir.codecrafter.plasticproducts.data.repository.AuthResult
 import ir.codecrafter.plasticproducts.data.repository.ProductRepository
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,6 +32,7 @@ data class ProductListUiState(
     val errorMessage: String? = null,
 )
 
+@OptIn(FlowPreview::class)
 @HiltViewModel
 class ProductListViewModel @Inject constructor(
     private val productRepository: ProductRepository,
@@ -123,3 +125,4 @@ class ProductListViewModel @Inject constructor(
         const val MIN_LOADING_DURATION_MS = 300L
     }
 }
+
