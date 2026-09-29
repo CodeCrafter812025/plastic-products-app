@@ -126,6 +126,16 @@ raw_products = [
     ("\u0641\u0631\u06cc\u0632\u0631 \u062a\u0648\u067e\u06cc / \u0631\u0648\u0644\u06cc (250 \u0639\u062f\u062f\u06cc)", C_FREEZE, "\u0641\u0631\u06cc\u0632\u0631 \u062a\u0648\u067e\u06cc (\u0631\u0648\u0644\u06cc)", "", U_ROLL250F, "\u0631\u0648\u0644 250 \u0639\u062f\u062f\u06cc \u067e\u0631\u0641\u0631\u0648\u0634", 95000, True),
 ]
 
+cat_images = {
+    C_NAYLEX: ["/media/cat_naylex.png"],
+    C_TISSUE: ["/media/cat_tissue.png"],
+    C_CUP:    ["/media/cat_cup.png"],
+    C_TRASH:  ["/media/cat_trash.png"],
+    C_SOFREH: ["/media/cat_sofreh.png"],
+    C_ZIP:    ["/media/cat_ziplock.png"],
+    C_FREEZE: ["/media/cat_freezer.png"],
+}
+
 for title, cat, sub, brand, unit, pack, price, best in raw_products:
     Product.objects.create(
         title=title,
@@ -140,6 +150,7 @@ for title, cat, sub, brand, unit, pack, price, best in raw_products:
         quality=Q_PRIMARY,
         stock=500,
         is_bestseller=best,
+        image_urls=cat_images.get(cat, []),
         created_by=admin1
     )
 
