@@ -1,4 +1,4 @@
-package ir.codecrafter.plasticproducts.ui.cart
+﻿package ir.codecrafter.plasticproducts.ui.cart
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -16,11 +17,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -30,6 +34,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -41,6 +46,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -50,7 +56,9 @@ import coil.compose.AsyncImage
 import ir.codecrafter.plasticproducts.R
 import ir.codecrafter.plasticproducts.data.model.CartItem
 import ir.codecrafter.plasticproducts.ui.common.ErrorWithRetry
+import ir.codecrafter.plasticproducts.util.PriceFormatter
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CartScreen(
     onBackToProducts: () -> Unit,
@@ -74,7 +82,22 @@ fun CartScreen(
         }
     }
 
-    Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) { paddingValues: PaddingValues ->
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.btn_cart), fontWeight = FontWeight.Bold) },
+                navigationIcon = {
+                    IconButton(onClick = onBackToProducts) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.btn_back_to_list),
+                        )
+                    }
+                },
+            )
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+    ) { paddingValues: PaddingValues ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -115,35 +138,48 @@ fun CartScreen(
                         }
                     }
 
-                    Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
-                        Text(
-                            text = stringResource(R.string.label_cart_total, state.total),
-                            style = MaterialTheme.typography.titleMedium,
-                        )
-
-                        if (placeOrderError != null) {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        ),
+                        shape = RoundedCornerShape(14.dp),
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
                             Text(
-                                text = placeOrderError.orEmpty(),
-                                color = MaterialTheme.colorScheme.error,
-                                modifier = Modifier.padding(top = 8.dp),
+                                text = stringResource(R.string.label_cart_total, PriceFormatter.format(state.total)),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary,
                             )
-                        }
 
-                        Button(
-                            onClick = viewModel::placeOrder,
-                            enabled = state.items.isNotEmpty() && !isPlacingOrder,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 8.dp),
-                        ) {
-                            if (isPlacingOrder) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(20.dp),
-                                    strokeWidth = 2.dp,
-                                    color = MaterialTheme.colorScheme.onPrimary,
+                            if (placeOrderError != null) {
+                                Text(
+                                    text = placeOrderError.orEmpty(),
+                                    color = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.padding(top = 8.dp),
                                 )
-                            } else {
-                                Text(stringResource(R.string.btn_place_order))
+                            }
+
+                            Button(
+                                onClick = viewModel::placeOrder,
+                                enabled = state.items.isNotEmpty() && !isPlacingOrder,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 12.dp)
+                                    .height(48.dp),
+                            ) {
+                                if (isPlacingOrder) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(20.dp),
+                                        strokeWidth = 2.dp,
+                                        color = MaterialTheme.colorScheme.onPrimary,
+                                    )
+                                } else {
+                                    Text(stringResource(R.string.btn_place_order), style = MaterialTheme.typography.titleMedium)
+                                }
                             }
                         }
                     }
@@ -193,7 +229,8 @@ fun CartScreen(
                 Column {
                     Text(stringResource(R.string.label_order_id_value, orderResult.orderId.toString()))
                     Text(
-                        text = stringResource(R.string.label_order_total_value, orderResult.totalPrice),
+                        text = stringResource(R.string.label_order_total_value, PriceFormatter.format(orderResult.totalPrice)),
+                        fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(top = 4.dp),
                     )
                 }
@@ -226,9 +263,11 @@ private fun CartItemRow(
     onQuantityChange: (String) -> Unit,
     onRemove: () -> Unit,
 ) {
-    var quantityText by remember(item.id, item.quantity) { mutableStateOf(item.quantity) }
+    val cleanQty = PriceFormatter.formatQuantity(item.quantity)
+    var quantityText by remember(item.id, item.quantity) { mutableStateOf(cleanQty) }
+    val unitLabel = item.productDetail.unitLabel?.takeIf { it.isNotBlank() } ?: "\u0648\u0627\u062d\u062f"
 
-    Card(modifier = Modifier.fillMaxWidth()) {
+    Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp)) {
         Row(
             modifier = Modifier.padding(12.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -236,7 +275,7 @@ private fun CartItemRow(
             val thumbnailUrl = item.productDetail.imageUrls.firstOrNull()
             Box(
                 modifier = Modifier
-                    .size(64.dp)
+                    .size(68.dp)
                     .clip(RoundedCornerShape(8.dp))
                     .background(MaterialTheme.colorScheme.surfaceVariant),
             ) {
@@ -255,9 +294,13 @@ private fun CartItemRow(
                     .weight(1f)
                     .padding(start = 12.dp),
             ) {
-                Text(text = item.productDetail.title, style = MaterialTheme.typography.titleMedium)
+                Text(
+                    text = item.productDetail.title,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                )
 
-                val quantityChanged = quantityText.trim() != item.quantity.trim()
+                val quantityChanged = quantityText.trim() != cleanQty
 
                 Row(
                     modifier = Modifier
@@ -268,16 +311,13 @@ private fun CartItemRow(
                     OutlinedTextField(
                         value = quantityText,
                         onValueChange = { quantityText = it },
-                        label = { Text(stringResource(R.string.label_cart_quantity)) },
+                        label = { Text("${stringResource(R.string.label_cart_quantity)} \u0628\u0631 \u062d\u0633\u0628 $unitLabel") },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Decimal,
                             imeAction = ImeAction.Done,
                         ),
                         keyboardActions = KeyboardActions(
-                            // A second, optional path to the same onQuantityChange call the
-                            // "اعمال" button below triggers — kept for anyone who does use the
-                            // keyboard's Done action, not a replacement for the button.
                             onDone = { if (quantityChanged) onQuantityChange(quantityText) },
                         ),
                         modifier = Modifier.weight(1f),
@@ -294,8 +334,10 @@ private fun CartItemRow(
                 }
 
                 Text(
-                    text = stringResource(R.string.label_cart_item_subtotal, item.subtotal),
+                    text = stringResource(R.string.label_cart_item_subtotal, PriceFormatter.format(item.subtotal)),
                     style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(top = 8.dp),
                 )
             }
@@ -304,6 +346,7 @@ private fun CartItemRow(
                 Icon(
                     imageVector = Icons.Default.Delete,
                     contentDescription = stringResource(R.string.btn_remove_from_cart),
+                    tint = MaterialTheme.colorScheme.error,
                 )
             }
         }

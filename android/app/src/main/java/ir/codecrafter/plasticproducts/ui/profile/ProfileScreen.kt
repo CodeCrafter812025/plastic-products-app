@@ -1,27 +1,33 @@
-package ir.codecrafter.plasticproducts.ui.profile
+﻿package ir.codecrafter.plasticproducts.ui.profile
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -31,6 +37,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -38,9 +45,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ir.codecrafter.plasticproducts.R
 import ir.codecrafter.plasticproducts.ui.common.ErrorWithRetry
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
     onLoggedOut: () -> Unit,
+    onBackClick: () -> Unit = {},
     viewModel: ProfileViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -54,7 +63,26 @@ fun ProfileScreen(
         }
     }
 
-    Scaffold { paddingValues: PaddingValues ->
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        text = stringResource(R.string.title_profile),
+                        fontWeight = FontWeight.Bold,
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = onBackClick) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.btn_back_to_list),
+                        )
+                    }
+                },
+            )
+        },
+    ) { paddingValues: PaddingValues ->
         if (state.isLoading) {
             Box(
                 modifier = Modifier
@@ -67,11 +95,6 @@ fun ProfileScreen(
             return@Scaffold
         }
 
-        // Phone is only ever blank before a successful load fills the form — so an
-        // errorMessage alongside a blank phone means the *initial* load itself failed,
-        // not a save attempt (save failures happen once the form already has data).
-        // Showing a blank form with an error underneath would be more confusing than
-        // this full-page retry state.
         if (state.errorMessage != null && state.phone.isBlank()) {
             Box(
                 modifier = Modifier
@@ -92,22 +115,16 @@ fun ProfileScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+                .verticalScroll(rememberScrollState())
                 .padding(24.dp),
         ) {
-            Text(
-                text = stringResource(R.string.title_profile),
-                style = MaterialTheme.typography.headlineSmall,
-            )
-
             OutlinedTextField(
                 value = state.phone,
                 onValueChange = {},
                 label = { Text(stringResource(R.string.label_phone_number)) },
                 enabled = false,
                 singleLine = true,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 24.dp),
+                modifier = Modifier.fillMaxWidth(),
             )
 
             OutlinedTextField(
@@ -166,6 +183,7 @@ fun ProfileScreen(
                 Text(
                     text = stringResource(R.string.title_admin_pin_section),
                     style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(top = 32.dp),
                 )
 

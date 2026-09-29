@@ -1,4 +1,4 @@
-package ir.codecrafter.plasticproducts.ui.products
+﻿package ir.codecrafter.plasticproducts.ui.products
 
 import android.content.Context
 import androidx.lifecycle.SavedStateHandle
@@ -8,6 +8,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import ir.codecrafter.plasticproducts.R
 import ir.codecrafter.plasticproducts.data.model.Product
+import ir.codecrafter.plasticproducts.data.model.ProductFilter
 import ir.codecrafter.plasticproducts.data.network.ErrorMessage
 import ir.codecrafter.plasticproducts.data.repository.AuthResult
 import ir.codecrafter.plasticproducts.data.repository.CartRepository
@@ -18,14 +19,16 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 data class ProductDetailUiState(
     val product: Product? = null,
+    val variants: List<Product> = emptyList(),
     val isLoading: Boolean = true,
     val errorMessage: String? = null,
-    val quantityInput: String = "",
+    val quantityInput: String = "1",
     val isAddingToCart: Boolean = false,
     val addToCartError: String? = null,
 )
@@ -42,7 +45,7 @@ class ProductDetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
-    private val productId: Int = checkNotNull(savedStateHandle[ProductRoutes.PRODUCT_ID_ARG])
+    private val initialProductId: Int = checkNotNull(savedStateHandle[ProductRoutes.PRODUCT_ID_ARG])
 
     private val _uiState = MutableStateFlow(ProductDetailUiState())
     val uiState: StateFlow<ProductDetailUiState> = _uiState.asStateFlow()
@@ -56,38 +59,82 @@ class ProductDetailViewModel @Inject constructor(
 
     fun loadProduct() {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
-            when (val result = productRepository.getProductDetail(productId)) {
-                is AuthResult.Success -> _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    product = result.data,
-                )
-                else -> _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    errorMessage = describeFailure(result),
-                )
+            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            when (val result = productRepository.getProductDetail(initialProductId)) {
+                is AuthResult.Success -> {
+                    val fetchedProduct = result.data
+                    val category = fetchedProduct.category?.takeIf { it.isNotBlank() }
+                    val familyVariants = if (category != null) {
+                        when (val famResult = productRepository.getProducts(ProductFilter(category = category))) {
+                            is AuthResult.Success -> famResult.data
+                            else -> listOf(fetchedProduct)
+                        }
+                    } else {
+                        listOf(fetchedProduct)
+                    }
+
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            product = fetchedProduct,
+                            variants = familyVariants,
+                        )
+                    }
+                }
+                else -> _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = describeFailure(result),
+                    )
+                }
             }
         }
     }
 
+    fun onSelectVariant(variant: Product) {
+        _uiState.update {
+            it.copy(
+                product = variant,
+                addToCartError = null,
+            )
+        }
+    }
+
     fun onQuantityInputChange(value: String) {
-        _uiState.value = _uiState.value.copy(quantityInput = value, addToCartError = null)
+        _uiState.update { it.copy(quantityInput = value, addToCartError = null) }
+    }
+
+    fun incrementQuantity() {
+        val current = _uiState.value.quantityInput.trim().toBigDecimalOrNull() ?: java.math.BigDecimal.ZERO
+        val next = current.add(java.math.BigDecimal.ONE).stripTrailingZeros().toPlainString()
+        onQuantityInputChange(next)
+    }
+
+    fun decrementQuantity() {
+        val current = _uiState.value.quantityInput.trim().toBigDecimalOrNull() ?: java.math.BigDecimal.ONE
+        if (current > java.math.BigDecimal.ONE) {
+            val prev = current.subtract(java.math.BigDecimal.ONE).stripTrailingZeros().toPlainString()
+            onQuantityInputChange(prev)
+        }
     }
 
     fun addToCart() {
-        val quantity = _uiState.value.quantityInput
+        val quantity = _uiState.value.quantityInput.trim()
+        val selectedProductId = _uiState.value.product?.id ?: initialProductId
         if (quantity.isBlank()) return
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isAddingToCart = true, addToCartError = null)
-            when (val result = cartRepository.addItem(productId = productId, quantity = quantity)) {
+            _uiState.update { it.copy(isAddingToCart = true, addToCartError = null) }
+            when (val result = cartRepository.addItem(productId = selectedProductId, quantity = quantity)) {
                 is AuthResult.Success -> {
-                    _uiState.value = _uiState.value.copy(isAddingToCart = false, quantityInput = "")
+                    _uiState.update { it.copy(isAddingToCart = false) }
                     _events.send(ProductDetailEvent.AddedToCart)
                 }
-                else -> _uiState.value = _uiState.value.copy(
-                    isAddingToCart = false,
-                    addToCartError = describeFailure(result),
-                )
+                else -> _uiState.update {
+                    it.copy(
+                        isAddingToCart = false,
+                        addToCartError = describeFailure(result),
+                    )
+                }
             }
         }
     }
@@ -101,6 +148,6 @@ class ProductDetailViewModel @Inject constructor(
             null -> context.getString(R.string.error_generic)
         }
         AuthResult.NetworkError -> context.getString(R.string.error_network)
-        is AuthResult.Success -> "" // never reached — callers only pass non-Success results here
+        is AuthResult.Success -> ""
     }
 }

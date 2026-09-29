@@ -22,10 +22,27 @@ import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.math.BigDecimal
 import javax.inject.Inject
+
+/**
+ * نماینده یک گروه محصول (مثلاً «نایلکس دسته‌دار شفاف») در صفحه اصلی
+ * تا از تکرار چندباره کارت‌های هم‌نام جلوگیری شود.
+ */
+data class ProductGroupItem(
+    val representative: Product,
+    val familyTitle: String,
+    val variantCount: Int,
+    val minPrice: String,
+    val maxPrice: String,
+    val hasBestseller: Boolean,
+    val brandsSummary: String?,
+    val subCategoriesSummary: String?,
+)
 
 data class ProductListUiState(
     val products: List<Product> = emptyList(),
+    val groupedProducts: List<ProductGroupItem> = emptyList(),
     val searchText: String = "",
     val filter: ProductFilter = ProductFilter(),
     val isLoading: Boolean = false,
@@ -100,7 +117,17 @@ class ProductListViewModel @Inject constructor(
         }
 
         when (result) {
-            is AuthResult.Success -> _uiState.update { it.copy(isLoading = false, products = result.data) }
+            is AuthResult.Success -> {
+                val rawList = result.data
+                val grouped = buildGroupedProducts(rawList)
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        products = rawList,
+                        groupedProducts = grouped,
+                    )
+                }
+            }
             is AuthResult.RateLimited -> _uiState.update {
                 it.copy(isLoading = false, errorMessage = result.message ?: context.getString(R.string.error_rate_limited))
             }
@@ -110,6 +137,33 @@ class ProductListViewModel @Inject constructor(
             AuthResult.NetworkError -> _uiState.update {
                 it.copy(isLoading = false, errorMessage = context.getString(R.string.error_network))
             }
+        }
+    }
+
+    private fun buildGroupedProducts(products: List<Product>): List<ProductGroupItem> {
+        val groupedMap = products.groupBy { product ->
+            product.category?.takeIf { it.isNotBlank() } ?: "single_${product.id}"
+        }
+        return groupedMap.map { (key, variants) ->
+            val sortedByBest = variants.sortedByDescending { it.isBestseller }
+            val rep = sortedByBest.first()
+            val familyTitle = if (key.startsWith("single_")) rep.title else key
+            val prices = variants.mapNotNull { it.price.toBigDecimalOrNull() }
+            val minP = prices.minOrNull()?.toPlainString() ?: rep.price
+            val maxP = prices.maxOrNull()?.toPlainString() ?: rep.price
+            val brands = variants.mapNotNull { it.brand?.takeIf(String::isNotBlank) }.distinct()
+            val subs = variants.mapNotNull { it.subCategory?.takeIf(String::isNotBlank) }.distinct()
+
+            ProductGroupItem(
+                representative = rep,
+                familyTitle = familyTitle,
+                variantCount = variants.size,
+                minPrice = minP,
+                maxPrice = maxP,
+                hasBestseller = variants.any { it.isBestseller },
+                brandsSummary = brands.takeIf { it.isNotEmpty() }?.joinToString("\u060c "),
+                subCategoriesSummary = subs.takeIf { it.isNotEmpty() }?.take(3)?.joinToString("\u060c "),
+            )
         }
     }
 
@@ -125,4 +179,3 @@ class ProductListViewModel @Inject constructor(
         const val MIN_LOADING_DURATION_MS = 300L
     }
 }
-
