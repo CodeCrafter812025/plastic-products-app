@@ -1,4 +1,4 @@
-package ir.codecrafter.plasticproducts.ui.orders
+﻿package ir.codecrafter.plasticproducts.ui.orders
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -40,7 +40,14 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ir.codecrafter.plasticproducts.R
 import ir.codecrafter.plasticproducts.data.model.OrderItem
 import ir.codecrafter.plasticproducts.ui.common.ErrorWithRetry
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Icon
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OrderEditScreen(
     onBackToProducts: () -> Unit,
@@ -58,7 +65,17 @@ fun OrderEditScreen(
         }
     }
 
-    Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) { paddingValues: PaddingValues ->
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.btn_edit_order), fontWeight = androidx.compose.ui.text.font.FontWeight.Bold) },
+                navigationIcon = {
+                    IconButton(onClick = { /* Attached later in NavHost */ }) {
+                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+                    }
+                }
+            )
+        },snackbarHost = { SnackbarHost(snackbarHostState) }) { paddingValues: PaddingValues ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -134,6 +151,7 @@ fun OrderEditScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun OrderEditItemRow(
     item: OrderItem,

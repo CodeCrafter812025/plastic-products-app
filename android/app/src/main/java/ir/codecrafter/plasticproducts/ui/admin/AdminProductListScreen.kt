@@ -1,14 +1,12 @@
-package ir.codecrafter.plasticproducts.ui.admin
+﻿package ir.codecrafter.plasticproducts.ui.admin
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -16,20 +14,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.People
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -38,6 +32,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -49,6 +44,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -57,14 +53,13 @@ import ir.codecrafter.plasticproducts.R
 import ir.codecrafter.plasticproducts.data.model.Product
 import ir.codecrafter.plasticproducts.ui.common.ErrorWithRetry
 import ir.codecrafter.plasticproducts.ui.common.SkeletonBox
+import ir.codecrafter.plasticproducts.util.PriceFormatter
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminProductListScreen(
     onAddProductClick: () -> Unit,
     onProductClick: (Int) -> Unit,
-    onUsersClick: () -> Unit,
-    onOrdersClick: () -> Unit,
-    onDashboardClick: () -> Unit,
     onProfileClick: () -> Unit,
     viewModel: AdminProductListViewModel = hiltViewModel(),
 ) {
@@ -80,71 +75,35 @@ fun AdminProductListScreen(
         }
     }
 
-    // This composable's content is torn down and rebuilt fresh every time the user
-    // navigates away and back (e.g. returning here after saving the create/edit
-    // form), the same way ProductListScreen re-runs cartViewModel.loadCart() — so
-    // this reruns loadProducts() on every return, keeping the list from going stale
-    // after a create/edit/toggle/delete made on another screen.
     LaunchedEffect(Unit) { viewModel.loadProducts() }
 
-    Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) { paddingValues: PaddingValues ->
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("\u0645\u062d\u0635\u0648\u0644\u0627\u062a", fontWeight = FontWeight.Bold) },
+            )
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { paddingValues: PaddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
                 .padding(16.dp),
         ) {
-            // Horizontally scrollable so this row keeps working as more access-point
-            // buttons get added over time, instead of overflowing/clipping silently.
-            Row(
-                modifier = Modifier.horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            Button(
+                onClick = onAddProductClick,
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Button(onClick = onAddProductClick) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = stringResource(R.string.btn_add_new_product),
-                        modifier = Modifier.size(ButtonDefaults.IconSize),
-                    )
-                    Spacer(modifier = Modifier.size(ButtonDefaults.IconSpacing))
-                    Text(stringResource(R.string.btn_add_new_product))
-                }
-                TextButton(onClick = onUsersClick) {
-                    Icon(
-                        imageVector = Icons.Default.People,
-                        contentDescription = stringResource(R.string.btn_users),
-                        modifier = Modifier.size(ButtonDefaults.IconSize),
-                    )
-                    Spacer(modifier = Modifier.size(ButtonDefaults.IconSpacing))
-                    Text(stringResource(R.string.btn_users))
-                }
-                TextButton(onClick = onOrdersClick) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ReceiptLong,
-                        contentDescription = stringResource(R.string.btn_orders),
-                        modifier = Modifier.size(ButtonDefaults.IconSize),
-                    )
-                    Spacer(modifier = Modifier.size(ButtonDefaults.IconSpacing))
-                    Text(stringResource(R.string.btn_orders))
-                }
-                TextButton(onClick = onDashboardClick) {
-                    Icon(
-                        imageVector = Icons.Default.Dashboard,
-                        contentDescription = stringResource(R.string.btn_dashboard),
-                        modifier = Modifier.size(ButtonDefaults.IconSize),
-                    )
-                    Spacer(modifier = Modifier.size(ButtonDefaults.IconSpacing))
-                    Text(stringResource(R.string.btn_dashboard))
-                }
-                TextButton(onClick = onProfileClick) {
-                    Icon(
-                        imageVector = Icons.Default.Person,
-                        contentDescription = stringResource(R.string.btn_profile),
-                        modifier = Modifier.size(ButtonDefaults.IconSize),
-                    )
-                    Spacer(modifier = Modifier.size(ButtonDefaults.IconSpacing))
-                    Text(stringResource(R.string.btn_profile))
-                }
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = stringResource(R.string.btn_add_new_product),
+                    modifier = Modifier.size(ButtonDefaults.IconSize),
+                )
+                Text(
+                    text = stringResource(R.string.btn_add_new_product),
+                    modifier = Modifier.padding(start = 8.dp)
+                )
             }
 
             Box(
@@ -155,9 +114,7 @@ fun AdminProductListScreen(
                 when {
                     state.isLoading && state.products.isEmpty() ->
                         LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                            items(5) {
-                                AdminProductRowSkeleton()
-                            }
+                            items(5) { AdminProductRowSkeleton() }
                         }
 
                     state.errorMessage != null ->
@@ -176,8 +133,6 @@ fun AdminProductListScreen(
                         )
 
                     else -> LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        // Only one item type in this LazyColumn today, so a key collision
-                        // isn't possible yet — prefixed anyway to match the standing habit.
                         items(state.products, key = { "product_${it.id}" }) { product ->
                             AdminProductRow(
                                 product = product,
@@ -226,33 +181,23 @@ private fun AdminProductRowSkeleton() {
                     modifier = Modifier.size(56.dp),
                     shape = RoundedCornerShape(8.dp),
                 )
-
                 Column(
                     modifier = Modifier
                         .weight(1f)
                         .padding(start = 12.dp),
                 ) {
                     SkeletonBox(
-                        modifier = Modifier
-                            .fillMaxWidth(0.7f)
-                            .height(16.dp),
+                        modifier = Modifier.fillMaxWidth(0.7f).height(16.dp),
                         shape = RoundedCornerShape(4.dp),
                     )
                     SkeletonBox(
-                        modifier = Modifier
-                            .fillMaxWidth(0.4f)
-                            .height(14.dp)
-                            .padding(top = 8.dp),
+                        modifier = Modifier.fillMaxWidth(0.4f).height(14.dp).padding(top = 8.dp),
                         shape = RoundedCornerShape(4.dp),
                     )
                 }
             }
-
             SkeletonBox(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(40.dp)
-                    .padding(top = 12.dp),
+                modifier = Modifier.fillMaxWidth().height(40.dp).padding(top = 12.dp),
                 shape = RoundedCornerShape(4.dp),
             )
         }
@@ -291,7 +236,6 @@ private fun AdminProductRow(
                         )
                     }
                 }
-
                 Column(
                     modifier = Modifier
                         .weight(1f)
@@ -300,20 +244,12 @@ private fun AdminProductRow(
                     Text(
                         text = product.title,
                         style = MaterialTheme.typography.titleMedium,
-                        color = if (product.isActive) {
-                            MaterialTheme.colorScheme.onSurface
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        },
+                        color = if (product.isActive) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Text(
-                        text = stringResource(R.string.product_price_toman, product.price),
+                        text = stringResource(R.string.product_price_toman, PriceFormatter.format(product.price)),
                         style = MaterialTheme.typography.bodyMedium,
-                        color = if (product.isActive) {
-                            MaterialTheme.colorScheme.onSurface
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        },
+                        color = if (product.isActive) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     if (!product.isActive) {
                         Text(
@@ -324,7 +260,6 @@ private fun AdminProductRow(
                     }
                 }
             }
-
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -344,11 +279,7 @@ private fun AdminProductRow(
                         )
                     } else {
                         Text(
-                            if (product.isActive) {
-                                stringResource(R.string.btn_deactivate_product)
-                            } else {
-                                stringResource(R.string.btn_activate_product)
-                            }
+                            if (product.isActive) stringResource(R.string.btn_deactivate_product) else stringResource(R.string.btn_activate_product)
                         )
                     }
                 }

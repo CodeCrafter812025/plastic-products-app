@@ -1,4 +1,4 @@
-package ir.codecrafter.plasticproducts.ui.notifications
+﻿package ir.codecrafter.plasticproducts.ui.notifications
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -32,8 +32,15 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ir.codecrafter.plasticproducts.R
 import ir.codecrafter.plasticproducts.data.model.Notification
 import ir.codecrafter.plasticproducts.ui.common.ErrorWithRetry
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Icon
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import ir.codecrafter.plasticproducts.util.PersianDateFormatter
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NotificationListScreen(
     onOrderClick: (Int) -> Unit,
@@ -51,7 +58,17 @@ fun NotificationListScreen(
         }
     }
 
-    Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) { paddingValues: PaddingValues ->
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.btn_notifications), fontWeight = androidx.compose.ui.text.font.FontWeight.Bold) },
+                navigationIcon = {
+                    IconButton(onClick = { /* Attached later in NavHost */ }) {
+                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+                    }
+                }
+            )
+        },snackbarHost = { SnackbarHost(snackbarHostState) }) { paddingValues: PaddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -104,6 +121,7 @@ fun NotificationListScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun NotificationRow(notification: Notification, onClick: () -> Unit) {
     Card(

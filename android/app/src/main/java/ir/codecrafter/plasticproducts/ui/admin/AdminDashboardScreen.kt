@@ -1,4 +1,4 @@
-package ir.codecrafter.plasticproducts.ui.admin
+﻿package ir.codecrafter.plasticproducts.ui.admin
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -9,8 +9,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
@@ -24,7 +26,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -35,8 +40,8 @@ import ir.codecrafter.plasticproducts.data.model.TopProduct
 import ir.codecrafter.plasticproducts.ui.common.ErrorWithRetry
 import ir.codecrafter.plasticproducts.ui.common.JalaliDatePickerDialog
 import ir.codecrafter.plasticproducts.util.PersianDateFormatter
-
-private val ORDER_STATUSES = listOf("pending", "assigned", "loading", "delivered", "cancelled")
+import ir.codecrafter.plasticproducts.util.PriceFormatter
+import java.util.Locale
 
 @Composable
 fun AdminDashboardScreen(
@@ -61,15 +66,7 @@ fun AdminDashboardScreen(
                             message = state.orderCountsError.orEmpty(),
                             onRetry = viewModel::loadOrderCounts,
                         )
-                        else -> Column {
-                            ORDER_STATUSES.forEach { status ->
-                                Text(
-                                    text = "${statusLabel(status)}: ${state.orderCounts[status] ?: 0}",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    modifier = Modifier.padding(vertical = 2.dp),
-                                )
-                            }
-                        }
+                        else -> OrderStatusGrid(counts = state.orderCounts)
                     }
                 }
             }
@@ -166,11 +163,89 @@ fun AdminDashboardScreen(
 }
 
 @Composable
+private fun OrderStatusGrid(counts: Map<String, Int>) {
+    // طراحی مدرن کارت‌های رنگی برای داشبورد ادمین
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            StatusCard(
+                label = "\u062b\u0628\u062a \u0634\u062f\u0647",
+                count = counts["pending"] ?: 0,
+                bgColor = Color(0xFFFFF8E1),
+                textColor = Color(0xFFF57F17),
+                modifier = Modifier.weight(1f)
+            )
+            StatusCard(
+                label = "\u062a\u062e\u0635\u06cc\u0635 \u06cc\u0627\u0641\u062a\u0647",
+                count = counts["assigned"] ?: 0,
+                bgColor = Color(0xFFE3F2FD),
+                textColor = Color(0xFF1565C0),
+                modifier = Modifier.weight(1f)
+            )
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            StatusCard(
+                label = "\u062f\u0631 \u062d\u0627\u0644 \u0627\u0631\u0633\u0627\u0644",
+                count = counts["loading"] ?: 0,
+                bgColor = Color(0xFFF3E5F5),
+                textColor = Color(0xFF6A1B9A),
+                modifier = Modifier.weight(1f)
+            )
+            StatusCard(
+                label = "\u062a\u062d\u0648\u06cc\u0644 \u0634\u062f\u0647",
+                count = counts["delivered"] ?: 0,
+                bgColor = Color(0xFFE8F5E9),
+                textColor = Color(0xFF2E7D32),
+                modifier = Modifier.weight(1f)
+            )
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            StatusCard(
+                label = "\u0644\u063a\u0648 \u0634\u062f\u0647",
+                count = counts["cancelled"] ?: 0,
+                bgColor = Color(0xFFFFEBEE),
+                textColor = Color(0xFFC62828),
+                modifier = Modifier.weight(1f)
+            )
+            Box(modifier = Modifier.weight(1f)) // Empty box to keep grid aligned
+        }
+    }
+}
+
+@Composable
+private fun StatusCard(label: String, count: Int, bgColor: Color, textColor: Color, modifier: Modifier = Modifier) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = bgColor),
+        shape = RoundedCornerShape(12.dp),
+        modifier = modifier
+    ) {
+        Column(
+            modifier = Modifier.padding(14.dp).fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = count.toString(),
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+                color = textColor
+            )
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Bold,
+                color = textColor,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+        }
+    }
+}
+
+@Composable
 private fun DashboardSection(title: String, content: @Composable () -> Unit) {
     Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Text(text = title, style = MaterialTheme.typography.titleMedium)
-            Box(modifier = Modifier.padding(top = 8.dp)) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(text = title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Box(modifier = Modifier.padding(top = 12.dp)) {
                 content()
             }
         }
@@ -196,23 +271,27 @@ private fun SectionEmpty() {
 
 @Composable
 private fun TopProductRow(product: TopProduct) {
-    Column(modifier = Modifier.padding(vertical = 4.dp)) {
-        Text(text = product.productTitle, style = MaterialTheme.typography.bodyLarge)
+    Column(modifier = Modifier.padding(vertical = 6.dp)) {
+        Text(text = product.productTitle, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
         Text(
-            text = stringResource(R.string.label_quantity_sold_value, product.totalQuantitySold),
+            // رفع مشکل فرمت اعشاری و اضافه کردن هزارگان
+            text = stringResource(R.string.label_quantity_sold_value, PriceFormatter.formatQuantity(product.totalQuantitySold.toString())),
             style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.primary,
         )
     }
 }
 
 @Composable
 private fun LowStockRow(product: LowStockProduct) {
-    Column(modifier = Modifier.padding(vertical = 4.dp)) {
-        Text(text = product.title, style = MaterialTheme.typography.bodyLarge)
+    Column(modifier = Modifier.padding(vertical = 6.dp)) {
+        Text(text = product.title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
         Text(
-            text = stringResource(R.string.label_product_stock_value, product.stock),
+            // رفع مشکل فرمت اعشاری
+            text = stringResource(R.string.label_product_stock_value, PriceFormatter.formatQuantity(product.stock.toString())),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.error,
+            fontWeight = FontWeight.Bold,
         )
     }
 }
@@ -271,9 +350,12 @@ private fun RevenueSection(
             )
         } else if (totalRevenue != null) {
             Text(
-                text = stringResource(R.string.label_revenue_value, totalRevenue),
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.padding(top = 8.dp),
+                // نمایش سه‌رقم سه‌رقم درآمد
+                text = stringResource(R.string.label_revenue_value, PriceFormatter.format(totalRevenue)),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(top = 12.dp),
             )
         }
     }
@@ -298,7 +380,6 @@ private fun RevenueSection(
     }
 }
 
-/** The Jalali (year, month) of a "YYYY-MM-DD..." Gregorian ISO string, or null if it can't be parsed. */
 private fun isoToJalaliMonth(isoDate: String): Pair<Int, Int>? = try {
     val parts = isoDate.substring(0, 10).split("-")
     val (jy, jm, _) = PersianDateFormatter.gregorianToJalali(parts[0].toInt(), parts[1].toInt(), parts[2].toInt())
@@ -307,18 +388,7 @@ private fun isoToJalaliMonth(isoDate: String): Pair<Int, Int>? = try {
     null
 }
 
-/** Produces the YYYY-MM-DD Gregorian string that admin-reports/revenue/ expects from a Jalali (jy, jm, jd). */
 private fun jalaliToIsoDate(jy: Int, jm: Int, jd: Int): String {
     val (gy, gm, gd) = PersianDateFormatter.jalaliToGregorian(jy, jm, jd)
     return "%04d-%02d-%02d".format(gy, gm, gd)
-}
-
-@Composable
-private fun statusLabel(status: String): String = when (status) {
-    "pending" -> stringResource(R.string.status_pending)
-    "assigned" -> stringResource(R.string.status_assigned)
-    "loading" -> stringResource(R.string.status_loading)
-    "delivered" -> stringResource(R.string.status_delivered)
-    "cancelled" -> stringResource(R.string.status_cancelled)
-    else -> status
 }

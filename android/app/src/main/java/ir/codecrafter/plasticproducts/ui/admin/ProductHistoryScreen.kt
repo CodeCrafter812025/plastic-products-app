@@ -1,4 +1,4 @@
-package ir.codecrafter.plasticproducts.ui.admin
+﻿package ir.codecrafter.plasticproducts.ui.admin
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -33,8 +33,15 @@ import ir.codecrafter.plasticproducts.data.model.PriceHistory
 import ir.codecrafter.plasticproducts.data.model.StockChangeReason
 import ir.codecrafter.plasticproducts.data.model.StockHistory
 import ir.codecrafter.plasticproducts.ui.common.ErrorWithRetry
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Icon
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import ir.codecrafter.plasticproducts.util.PersianDateFormatter
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProductHistoryScreen(viewModel: ProductHistoryViewModel = hiltViewModel()) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -84,6 +91,7 @@ fun ProductHistoryScreen(viewModel: ProductHistoryViewModel = hiltViewModel()) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun PriceHistoryList(entries: List<PriceHistory>) {
     if (entries.isEmpty()) {
@@ -125,6 +133,7 @@ private fun PriceHistoryList(entries: List<PriceHistory>) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun StockHistoryList(entries: List<StockHistory>) {
     if (entries.isEmpty()) {
@@ -171,6 +180,7 @@ private fun StockHistoryList(entries: List<StockHistory>) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun stockReasonLabel(reason: StockChangeReason): String = when (reason) {
     StockChangeReason.INITIAL -> stringResource(R.string.stock_reason_initial)

@@ -1,27 +1,39 @@
-package ir.codecrafter.plasticproducts.ui.admin
+﻿package ir.codecrafter.plasticproducts.ui.admin
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -30,7 +42,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -38,6 +53,7 @@ import ir.codecrafter.plasticproducts.R
 import ir.codecrafter.plasticproducts.data.model.AdminUser
 import ir.codecrafter.plasticproducts.ui.common.ErrorWithRetry
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminUserListScreen(
     onViewVisitorPerformance: (Int) -> Unit,
@@ -55,11 +71,16 @@ fun AdminUserListScreen(
         }
     }
 
-    // Same refresh-on-return pattern as AdminProductListScreen — keeps the list
-    // from going stale after creating a visitor or navigating away and back.
     LaunchedEffect(Unit) { viewModel.loadUsers() }
 
-    Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) { paddingValues: PaddingValues ->
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.btn_users), fontWeight = FontWeight.Bold) },
+            )
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { paddingValues: PaddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -162,32 +183,61 @@ private fun AdminUserRow(
     onToggleActive: () -> Unit,
     onViewPerformance: () -> Unit,
 ) {
+    val context = LocalContext.current
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .let { if (!user.isActive) it.background(MaterialTheme.colorScheme.surfaceVariant) else it },
+        shape = RoundedCornerShape(12.dp)
     ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Text(
-                text = user.fullName.orEmpty(),
-                style = MaterialTheme.typography.titleMedium,
-                color = if (user.isActive) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Text(
-                text = user.phone,
-                style = MaterialTheme.typography.bodyMedium,
-                color = if (user.isActive) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Text(
-                text = roleLabel(user.role),
-                style = MaterialTheme.typography.bodyMedium,
-                color = if (user.isActive) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+        Column(modifier = Modifier.padding(14.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = user.fullName.orEmpty(),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = if (user.isActive) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                UserRoleBadge(user.role)
+            }
+            
+            Row(
+                modifier = Modifier.padding(top = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = user.phone,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (user.isActive) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(modifier = Modifier.weight(1f))
+                IconButton(
+                    onClick = {
+                        val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:${user.phone}"))
+                        context.startActivity(intent)
+                    },
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Phone,
+                        contentDescription = "Call",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+            
             if (!user.isActive) {
                 Text(
                     text = stringResource(R.string.label_product_inactive_badge),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(top = 4.dp)
                 )
             }
 
@@ -197,10 +247,6 @@ private fun AdminUserRow(
                     .padding(top = 12.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                // The signed-in admin can't toggle their own account — the server
-                // rejects it (see AdminUserListViewModel's KDoc) — so this button is
-                // hidden entirely for that row rather than shown disabled with no
-                // explanation.
                 if (!isCurrentUser) {
                     Button(
                         onClick = onToggleActive,
@@ -215,11 +261,7 @@ private fun AdminUserRow(
                             )
                         } else {
                             Text(
-                                if (user.isActive) {
-                                    stringResource(R.string.btn_deactivate_product)
-                                } else {
-                                    stringResource(R.string.btn_activate_product)
-                                }
+                                if (user.isActive) stringResource(R.string.btn_deactivate_product) else stringResource(R.string.btn_activate_product)
                             )
                         }
                     }
@@ -231,6 +273,29 @@ private fun AdminUserRow(
                 }
             }
         }
+    }
+}
+
+@Composable
+fun UserRoleBadge(role: String) {
+    val (bgColor, textColor) = when (role) {
+        "admin" -> Color(0xFFFFEBEE) to Color(0xFFC62828)
+        "visitor" -> Color(0xFFE3F2FD) to Color(0xFF1565C0)
+        "buyer" -> Color(0xFFE8F5E9) to Color(0xFF2E7D32)
+        else -> Color.LightGray to Color.Black
+    }
+    
+    Surface(
+        color = bgColor,
+        shape = RoundedCornerShape(8.dp),
+    ) {
+        Text(
+            text = roleLabel(role),
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+            color = textColor,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+        )
     }
 }
 

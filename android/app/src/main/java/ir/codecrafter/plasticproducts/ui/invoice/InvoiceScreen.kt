@@ -1,4 +1,4 @@
-package ir.codecrafter.plasticproducts.ui.invoice
+﻿package ir.codecrafter.plasticproducts.ui.invoice
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,8 +31,16 @@ import ir.codecrafter.plasticproducts.R
 import ir.codecrafter.plasticproducts.data.model.Invoice
 import ir.codecrafter.plasticproducts.data.model.InvoiceItemSnapshot
 import ir.codecrafter.plasticproducts.ui.common.ErrorWithRetry
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Icon
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import ir.codecrafter.plasticproducts.util.PersianDateFormatter
+import ir.codecrafter.plasticproducts.util.PriceFormatter
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InvoiceScreen(
     viewModel: InvoiceViewModel = hiltViewModel(),
@@ -48,7 +56,17 @@ fun InvoiceScreen(
         }
     }
 
-    Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) { paddingValues: PaddingValues ->
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.btn_view_invoice), fontWeight = androidx.compose.ui.text.font.FontWeight.Bold) },
+                navigationIcon = {
+                    IconButton(onClick = { /* Attached later in NavHost */ }) {
+                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+                    }
+                }
+            )
+        },snackbarHost = { SnackbarHost(snackbarHostState) }) { paddingValues: PaddingValues ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -84,6 +102,7 @@ fun InvoiceScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun InvoiceContent(
     invoice: Invoice,
@@ -120,7 +139,7 @@ private fun InvoiceContent(
                     modifier = Modifier.padding(top = 4.dp),
                 )
                 Text(
-                    text = stringResource(R.string.label_order_total_value, invoice.totalPrice),
+                    text = stringResource(R.string.label_order_total_value, PriceFormatter.format(invoice.totalPrice)),
                     style = MaterialTheme.typography.bodyLarge,
                     modifier = Modifier.padding(top = 4.dp, bottom = 12.dp),
                 )
@@ -155,6 +174,7 @@ private fun InvoiceContent(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun InvoiceItemRow(item: InvoiceItemSnapshot) {
     Card(
@@ -165,17 +185,17 @@ private fun InvoiceItemRow(item: InvoiceItemSnapshot) {
         Column(modifier = Modifier.padding(12.dp)) {
             Text(text = item.title, style = MaterialTheme.typography.titleMedium)
             Text(
-                text = stringResource(R.string.label_order_item_quantity_value, item.quantity),
+                text = stringResource(R.string.label_order_item_quantity_value, PriceFormatter.formatQuantity(item.quantity)),
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(top = 4.dp),
             )
             Text(
-                text = stringResource(R.string.label_order_item_unit_price_value, item.unitPrice),
+                text = stringResource(R.string.label_order_item_unit_price_value, PriceFormatter.format(item.unitPrice)),
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(top = 4.dp),
             )
             Text(
-                text = stringResource(R.string.label_invoice_item_line_total_value, item.lineTotal),
+                text = stringResource(R.string.label_invoice_item_line_total_value, PriceFormatter.format(item.lineTotal)),
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(top = 4.dp),
             )

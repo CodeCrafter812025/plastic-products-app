@@ -1,12 +1,20 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- Wraps logo_brand (an irregular, non-square PNG) centered and shrunk to ~70%
-     (202dp of the 288dp icon canvas, per the splash screen sizing guideline) on
-     a fully transparent layer, so the platform never has to guess a background
-     shape around the logo's own edges. -->
+﻿<?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item
-        android:width="202dp"
-        android:height="202dp"
-        android:gravity="center"
-        android:drawable="@drawable/logo_brand" />
+    <!-- پس‌زمینه دایره‌ای با رنگ سبز و حاشیه طلایی -->
+    <item>
+        <shape android:shape="oval">
+            <solid android:color="#004D40" />
+            <stroke android:width="2dp" android:color="#FFCA28" />
+        </shape>
+    </item>
+    <!-- استفاده از inset برای ایجاد حاشیه داخلی تضمینی از هر 4 طرف -->
+    <item 
+        android:insetLeft="28dp" 
+        android:insetRight="28dp" 
+        android:insetTop="28dp" 
+        android:insetBottom="28dp">
+        <bitmap 
+            android:src="@drawable/logo_brand" 
+            android:gravity="center" />
+    </item>
 </layer-list>
