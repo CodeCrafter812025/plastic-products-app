@@ -1,20 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- پس‌زمینه دایره‌ای با رنگ سبز و حاشیه طلایی -->
-    <item>
-        <shape android:shape="oval">
-            <solid android:color="#004D40" />
-            <stroke android:width="2dp" android:color="#FFCA28" />
-        </shape>
-    </item>
-    <!-- استفاده از inset برای ایجاد حاشیه داخلی تضمینی از هر 4 طرف -->
-    <item 
-        android:insetLeft="28dp" 
-        android:insetRight="28dp" 
-        android:insetTop="28dp" 
-        android:insetBottom="28dp">
-        <bitmap 
-            android:src="@drawable/logo_brand" 
-            android:gravity="center" />
-    </item>
-</layer-list>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="#004D40" />
+</shape>
