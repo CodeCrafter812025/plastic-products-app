@@ -11,21 +11,21 @@ from orders.models import Order, OrderItem, CartItem, OrderAssignment, OrderStat
 
 print("1. Creating / Updating Users (2 Admins & 1 Visitor)...")
 admin1, _ = User.objects.update_or_create(
-    phone="09120000001",
+    phone="09334121868",
     defaults={
         "full_name": "\u0627\u062f\u0645\u06cc\u0646 \u0627\u0648\u0644 (\u0627\u0635\u0644\u06cc)",
         "role": "admin",
-        "username": "09120000001",
+        "username": "09334121868",
         "admin_pin": make_password("1234")
     }
 )
 
 admin2, _ = User.objects.update_or_create(
-    phone="09120000002",
+    phone="09035032922",
     defaults={
         "full_name": "\u0627\u062f\u0645\u06cc\u0646 \u062f\u0648\u0645",
         "role": "admin",
-        "username": "09120000002",
+        "username": "09035032922",
         "admin_pin": make_password("1234")
     }
 )
