@@ -1,0 +1,408 @@
+﻿package ir.codecrafter.plasticproducts.ui.admin
+
+import android.content.Intent
+import android.net.Uri
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import ir.codecrafter.plasticproducts.R
+import ir.codecrafter.plasticproducts.data.model.AdminUser
+import ir.codecrafter.plasticproducts.data.model.Order
+import ir.codecrafter.plasticproducts.ui.common.ErrorWithRetry
+import ir.codecrafter.plasticproducts.util.PriceFormatter
+
+private val ORDER_STATUSES = listOf("pending", "assigned", "loading", "delivered", "cancelled")
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AdminOrderListScreen(
+    onOrderClick: (Int) -> Unit,
+    onBackClick: () -> Unit = {},
+    viewModel: AdminOrderListViewModel = hiltViewModel(),
+) {
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+    var assignDialogOrder by remember { mutableStateOf<Order?>(null) }
+    var cancelDialogOrder by remember { mutableStateOf<Order?>(null) }
+
+    LaunchedEffect(viewModel) {
+        viewModel.events.collect { event ->
+            when (event) {
+                is AdminOrderListEvent.ActionFailed -> snackbarHostState.showSnackbar(event.message)
+                AdminOrderListEvent.Assigned -> assignDialogOrder = null
+            }
+        }
+    }
+
+    LaunchedEffect(Unit) { viewModel.loadOrders() }
+
+    LaunchedEffect(assignDialogOrder) {
+        if (assignDialogOrder != null) viewModel.loadActiveVisitors()
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.btn_orders), fontWeight = FontWeight.Bold) },
+            )
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { paddingValues: PaddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(16.dp),
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                FilterChip(
+                    selected = state.statusFilter == null,
+                    onClick = { viewModel.onStatusFilterChange(null) },
+                    label = { Text(stringResource(R.string.filter_quality_all)) },
+                )
+                ORDER_STATUSES.forEach { status ->
+                    FilterChip(
+                        selected = state.statusFilter == status,
+                        onClick = { viewModel.onStatusFilterChange(status) },
+                        label = { Text(statusLabel(status)) },
+                    )
+                }
+            }
+
+            val filteredOrders = state.orders.filter { state.statusFilter == null || it.status == state.statusFilter }
+
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(top = 16.dp),
+            ) {
+                when {
+                    state.isLoading && state.orders.isEmpty() ->
+                        CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+
+                    state.errorMessage != null ->
+                        ErrorWithRetry(
+                            message = state.errorMessage.orEmpty(),
+                            onRetry = viewModel::loadOrders,
+                            modifier = Modifier
+                                .align(Alignment.Center)
+                                .padding(24.dp),
+                        )
+
+                    filteredOrders.isEmpty() ->
+                        Text(
+                            text = stringResource(R.string.empty_admin_orders),
+                            modifier = Modifier.align(Alignment.Center),
+                        )
+
+                    else -> LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        items(filteredOrders, key = { "order_${it.id}" }) { order ->
+                            AdminOrderRow(
+                                order = order,
+                                isActionInProgress = state.actionInProgressOrderId == order.id,
+                                onClick = { onOrderClick(order.id) },
+                                onAssignClick = { assignDialogOrder = order },
+                                onCancelClick = { cancelDialogOrder = order },
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    assignDialogOrder?.let { order ->
+        AssignVisitorDialog(
+            visitors = state.activeVisitors,
+            isLoading = state.isLoadingVisitors,
+            errorMessage = state.visitorsErrorMessage,
+            isAssigning = state.isAssigning,
+            onConfirm = { visitorId -> viewModel.assignOrder(order.id, visitorId) },
+            onRetry = viewModel::loadActiveVisitors,
+            onDismiss = { assignDialogOrder = null },
+        )
+    }
+
+    cancelDialogOrder?.let { order ->
+        AlertDialog(
+            onDismissRequest = { cancelDialogOrder = null },
+            title = { Text(stringResource(R.string.btn_cancel_order)) },
+            text = { Text(stringResource(R.string.msg_cancel_order_admin_confirm)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.cancelOrderAdmin(order.id)
+                        cancelDialogOrder = null
+                    },
+                ) {
+                    Text(stringResource(R.string.btn_yes))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { cancelDialogOrder = null }) {
+                    Text(stringResource(R.string.btn_no))
+                }
+            },
+        )
+    }
+}
+
+@Composable
+private fun AdminOrderRow(
+    order: Order,
+    isActionInProgress: Boolean,
+    onClick: () -> Unit,
+    onAssignClick: () -> Unit,
+    onCancelClick: () -> Unit,
+) {
+    val context = LocalContext.current
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(12.dp),
+    ) {
+        Column(modifier = Modifier.padding(14.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stringResource(R.string.label_order_id_value, order.id.toString()),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                )
+                OrderStatusBadge(order.status)
+            }
+            
+            Row(
+                modifier = Modifier.padding(top = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stringResource(R.string.label_buyer_name_value, order.buyerName.orEmpty()),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Spacer(modifier = Modifier.weight(1f))
+                if (!order.buyerPhone.isNullOrBlank()) {
+                    IconButton(
+                        onClick = {
+                            val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:${order.buyerPhone}"))
+                            context.startActivity(intent)
+                        },
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Phone,
+                            contentDescription = "Call",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+            }
+            
+            Text(
+                text = stringResource(R.string.label_order_total_value, PriceFormatter.format(order.totalPrice)),
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(top = 4.dp),
+            )
+
+            if (order.status == "pending" || order.status == "assigned" || order.status == "loading") {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    if (order.status == "pending") {
+                        Button(
+                            onClick = onAssignClick,
+                            enabled = !isActionInProgress,
+                            modifier = Modifier.weight(1f),
+                        ) {
+                            Text(stringResource(R.string.btn_assign_to_visitor))
+                        }
+                    }
+                    if (order.status == "assigned" || order.status == "loading") {
+                        TextButton(
+                            onClick = onCancelClick,
+                            enabled = !isActionInProgress,
+                        ) {
+                            if (isActionInProgress) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(20.dp),
+                                    strokeWidth = 2.dp,
+                                )
+                            } else {
+                                Text(
+                                    text = stringResource(R.string.btn_cancel_order),
+                                    color = MaterialTheme.colorScheme.error,
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun OrderStatusBadge(status: String) {
+    val (bgColor, textColor) = when (status) {
+        "pending" -> Color(0xFFFFF8E1) to Color(0xFFF57F17)
+        "assigned" -> Color(0xFFE3F2FD) to Color(0xFF1565C0)
+        "loading" -> Color(0xFFF3E5F5) to Color(0xFF6A1B9A)
+        "delivered" -> Color(0xFFE8F5E9) to Color(0xFF2E7D32)
+        "cancelled" -> Color(0xFFFFEBEE) to Color(0xFFC62828)
+        else -> Color.LightGray to Color.Black
+    }
+    
+    Surface(
+        color = bgColor,
+        shape = RoundedCornerShape(8.dp),
+    ) {
+        Text(
+            text = statusLabel(status),
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+            color = textColor,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+        )
+    }
+}
+
+@Composable
+private fun AssignVisitorDialog(
+    visitors: List<AdminUser>,
+    isLoading: Boolean,
+    errorMessage: String?,
+    isAssigning: Boolean,
+    onConfirm: (Int) -> Unit,
+    onRetry: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var selectedVisitorId by remember { mutableStateOf<Int?>(null) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.title_select_visitor)) },
+        text = {
+            when {
+                isLoading -> Box(modifier = Modifier.fillMaxWidth()) {
+                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                }
+
+                errorMessage != null -> ErrorWithRetry(
+                    message = errorMessage,
+                    onRetry = onRetry,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+
+                visitors.isEmpty() -> Text(stringResource(R.string.empty_active_visitors))
+
+                else -> Column {
+                    visitors.forEach { visitor ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { selectedVisitorId = visitor.id },
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            RadioButton(
+                                selected = selectedVisitorId == visitor.id,
+                                onClick = { selectedVisitorId = visitor.id },
+                            )
+                            Column {
+                                Text(text = visitor.fullName.orEmpty(), style = MaterialTheme.typography.bodyLarge)
+                                Text(text = visitor.phone, style = MaterialTheme.typography.bodySmall)
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { selectedVisitorId?.let(onConfirm) },
+                enabled = selectedVisitorId != null && !isAssigning,
+            ) {
+                Text(stringResource(R.string.btn_save))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.btn_cancel))
+            }
+        },
+    )
+}
+
+@Composable
+private fun statusLabel(status: String): String = when (status) {
+    "pending" -> stringResource(R.string.status_pending)
+    "assigned" -> stringResource(R.string.status_assigned)
+    "loading" -> stringResource(R.string.status_loading)
+    "delivered" -> stringResource(R.string.status_delivered)
+    "cancelled" -> stringResource(R.string.status_cancelled)
+    else -> status
+}

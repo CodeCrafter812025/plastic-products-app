@@ -1,6 +1,8 @@
 package ir.codecrafter.plasticproducts.data.repository
 
 import ir.codecrafter.plasticproducts.data.local.TokenManager
+import ir.codecrafter.plasticproducts.data.model.SetAdminPinBody
+import ir.codecrafter.plasticproducts.data.model.SetAdminPinResponse
 import ir.codecrafter.plasticproducts.data.model.UpdateProfileBody
 import ir.codecrafter.plasticproducts.data.model.UserProfile
 import ir.codecrafter.plasticproducts.data.network.ApiEnvelope
@@ -37,6 +39,10 @@ class ProfileRepository @Inject constructor(
             ?: return AuthResult.Error(code = "NO_SESSION", message = null)
         return safeCall { userApi.updateUser(userId, UpdateProfileBody(fullName = fullName, address = address)) }
     }
+
+    /** Admin-only — lets the logged-in admin set/change their own login PIN. */
+    suspend fun setAdminPin(pin: String): AuthResult<SetAdminPinResponse> =
+        safeCall { userApi.setAdminPin(SetAdminPinBody(pin = pin)) }
 
     private suspend fun <T> safeCall(block: suspend () -> Response<ApiEnvelope<T>>): AuthResult<T> {
         return try {

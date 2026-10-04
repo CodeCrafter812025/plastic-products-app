@@ -46,3 +46,9 @@ coverage/
 htmlcov/
 .pytest_cache/
 .tox/
+
+# Keystore files
+android/keystore.properties
+android/release-key.jks
+*.jks
+*.keystore

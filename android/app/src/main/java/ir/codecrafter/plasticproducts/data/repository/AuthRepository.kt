@@ -1,7 +1,9 @@
 package ir.codecrafter.plasticproducts.data.repository
 
 import ir.codecrafter.plasticproducts.data.local.TokenManager
+import ir.codecrafter.plasticproducts.data.model.AdminPinVerifyBody
 import ir.codecrafter.plasticproducts.data.model.AuthResponse
+import ir.codecrafter.plasticproducts.data.model.AuthUser
 import ir.codecrafter.plasticproducts.data.model.OtpRequestBody
 import ir.codecrafter.plasticproducts.data.model.OtpRequestResponse
 import ir.codecrafter.plasticproducts.data.model.OtpVerifyBody
@@ -32,6 +34,12 @@ sealed class AuthResult<out T> {
     data object NetworkError : AuthResult<Nothing>()
 }
 
+/** verify_otp()'s login branch resolves to one of these two outcomes — see VerifyOtpResponse. */
+sealed class AuthOutcome {
+    data class LoggedIn(val user: AuthUser) : AuthOutcome()
+    data class PinRequired(val phone: String) : AuthOutcome()
+}
+
 @Singleton
 class AuthRepository @Inject constructor(
     private val authApi: AuthApi,
@@ -47,10 +55,50 @@ class AuthRepository @Inject constructor(
         code: String,
         purpose: String,
         fullName: String? = null,
-    ): AuthResult<AuthResponse> {
+    ): AuthResult<AuthOutcome> {
         val result = safeCall {
             authApi.verifyOtp(OtpVerifyBody(phone = phone, code = code, purpose = purpose, fullName = fullName))
         }
+        return when (result) {
+            is AuthResult.Success -> {
+                val response = result.data
+                // Explicitly typed so each branch below is checked against
+                // AuthResult<AuthOutcome> (expected-type inference) instead of each
+                // AuthResult.Success(...) call inferring its own narrower T from just
+                // its argument, which is what was resolving to a too-wide type before.
+                val outcome: AuthResult<AuthOutcome> = if (response.isPinRequired) {
+                    AuthResult.Success<AuthOutcome>(AuthOutcome.PinRequired(phone = response.phone ?: phone))
+                } else {
+                    val token = response.token
+                    val user = response.user
+                    if (token != null && user != null) {
+                        tokenManager.saveSession(
+                            accessToken = token,
+                            refreshToken = response.refreshToken,
+                            userId = user.id,
+                            role = user.role,
+                        )
+                        AuthResult.Success<AuthOutcome>(AuthOutcome.LoggedIn(user = user))
+                    } else {
+                        AuthResult.Error(code = "PARSE_ERROR", message = null)
+                    }
+                }
+                outcome
+            }
+            // AuthResult<out T> makes AuthResult<Nothing> a genuine runtime-safe subtype
+            // of AuthResult<AuthOutcome> (these three carry no T-typed data at all), but
+            // the when-expression's own branch-LUB inference doesn't apply that variance
+            // here — confirmed by compiler: without the cast, the whole `when` (this
+            // return statement) infers as AuthResult<Any>, not AuthResult<AuthOutcome>.
+            is AuthResult.RateLimited -> result as AuthResult<AuthOutcome>
+            is AuthResult.Error -> result as AuthResult<AuthOutcome>
+            AuthResult.NetworkError -> result as AuthResult<AuthOutcome>
+        }
+    }
+
+    /** Second factor for an admin whose verifyOtp() call above returned AuthOutcome.PinRequired. */
+    suspend fun verifyAdminPin(phone: String, pin: String): AuthResult<AuthResponse> {
+        val result = safeCall { authApi.verifyAdminPin(AdminPinVerifyBody(phone = phone, pin = pin)) }
         if (result is AuthResult.Success) {
             val auth = result.data
             tokenManager.saveSession(

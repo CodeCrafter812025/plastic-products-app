@@ -1,0 +1,181 @@
+﻿package ir.codecrafter.plasticproducts.ui.products
+
+import android.content.Context
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import ir.codecrafter.plasticproducts.R
+import ir.codecrafter.plasticproducts.data.model.Product
+import ir.codecrafter.plasticproducts.data.model.ProductFilter
+import ir.codecrafter.plasticproducts.data.network.ErrorMessage
+import ir.codecrafter.plasticproducts.data.repository.AuthResult
+import ir.codecrafter.plasticproducts.data.repository.ProductRepository
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import java.math.BigDecimal
+import javax.inject.Inject
+
+/**
+ * نماینده یک گروه محصول (مثلاً «نایلکس دسته‌دار شفاف») در صفحه اصلی
+ * تا از تکرار چندباره کارت‌های هم‌نام جلوگیری شود.
+ */
+data class ProductGroupItem(
+    val representative: Product,
+    val familyTitle: String,
+    val variantCount: Int,
+    val minPrice: String,
+    val maxPrice: String,
+    val hasBestseller: Boolean,
+    val brandsSummary: String?,
+    val subCategoriesSummary: String?,
+)
+
+data class ProductListUiState(
+    val products: List<Product> = emptyList(),
+    val groupedProducts: List<ProductGroupItem> = emptyList(),
+    val searchText: String = "",
+    val filter: ProductFilter = ProductFilter(),
+    val isLoading: Boolean = false,
+    val errorMessage: String? = null,
+)
+
+@OptIn(FlowPreview::class)
+@HiltViewModel
+class ProductListViewModel @Inject constructor(
+    private val productRepository: ProductRepository,
+    @ApplicationContext private val context: Context,
+) : ViewModel() {
+
+    private val _uiState = MutableStateFlow(ProductListUiState())
+    val uiState: StateFlow<ProductListUiState> = _uiState.asStateFlow()
+
+    private val searchQuery = MutableStateFlow("")
+    private val reloadRequests = MutableSharedFlow<Unit>(replay = 1)
+
+    init {
+        viewModelScope.launch {
+            searchQuery
+                .debounce(SEARCH_DEBOUNCE_MS)
+                .distinctUntilChanged()
+                .collectLatest { text ->
+                    _uiState.update { it.copy(filter = it.filter.copy(search = text.ifBlank { null })) }
+                    reloadRequests.emit(Unit)
+                }
+        }
+        viewModelScope.launch {
+            reloadRequests.collectLatest { loadProducts() }
+        }
+        reloadRequests.tryEmit(Unit)
+    }
+
+    fun onSearchTextChange(text: String) {
+        _uiState.update { it.copy(searchText = text) }
+        searchQuery.value = text
+    }
+
+    fun onCategoryChange(category: String?) = updateFilter { it.copy(category = category) }
+
+    fun onBestsellerToggle(onlyBestsellers: Boolean) =
+        updateFilter { it.copy(isBestseller = if (onlyBestsellers) true else null) }
+
+    fun onQualityChange(quality: String?) = updateFilter { it.copy(quality = quality) }
+
+    fun onInStockOnlyChange(inStockOnly: Boolean) =
+        updateFilter { it.copy(inStock = if (inStockOnly) true else null) }
+
+    fun onMinPriceChange(value: String) = updateFilter { it.copy(minPrice = value.ifBlank { null }) }
+
+    fun onMaxPriceChange(value: String) = updateFilter { it.copy(maxPrice = value.ifBlank { null }) }
+
+    fun retryLoad() {
+        reloadRequests.tryEmit(Unit)
+    }
+
+    private fun updateFilter(transform: (ProductFilter) -> ProductFilter) {
+        _uiState.update { it.copy(filter = transform(it.filter)) }
+        reloadRequests.tryEmit(Unit)
+    }
+
+    private suspend fun loadProducts() {
+        _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+        val startTime = System.currentTimeMillis()
+        val result = productRepository.getProducts(_uiState.value.filter)
+
+        val elapsedMs = System.currentTimeMillis() - startTime
+        if (elapsedMs < MIN_LOADING_DURATION_MS) {
+            delay(MIN_LOADING_DURATION_MS - elapsedMs)
+        }
+
+        when (result) {
+            is AuthResult.Success -> {
+                val rawList = result.data
+                val grouped = buildGroupedProducts(rawList)
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        products = rawList,
+                        groupedProducts = grouped,
+                    )
+                }
+            }
+            is AuthResult.RateLimited -> _uiState.update {
+                it.copy(isLoading = false, errorMessage = result.message ?: context.getString(R.string.error_rate_limited))
+            }
+            is AuthResult.Error -> _uiState.update {
+                it.copy(isLoading = false, errorMessage = describeError(result))
+            }
+            AuthResult.NetworkError -> _uiState.update {
+                it.copy(isLoading = false, errorMessage = context.getString(R.string.error_network))
+            }
+        }
+    }
+
+    private fun buildGroupedProducts(products: List<Product>): List<ProductGroupItem> {
+        val groupedMap = products.groupBy { product ->
+            product.category?.takeIf { it.isNotBlank() } ?: "single_${product.id}"
+        }
+        return groupedMap.map { (key, variants) ->
+            val sortedByBest = variants.sortedByDescending { it.isBestseller }
+            val rep = sortedByBest.first()
+            val familyTitle = if (key.startsWith("single_")) rep.title else key
+            val prices = variants.mapNotNull { it.price.toBigDecimalOrNull() }
+            val minP = prices.minOrNull()?.toPlainString() ?: rep.price
+            val maxP = prices.maxOrNull()?.toPlainString() ?: rep.price
+            val brands = variants.mapNotNull { it.brand?.takeIf(String::isNotBlank) }.distinct()
+            val subs = variants.mapNotNull { it.subCategory?.takeIf(String::isNotBlank) }.distinct()
+
+            ProductGroupItem(
+                representative = rep,
+                familyTitle = familyTitle,
+                variantCount = variants.size,
+                minPrice = minP,
+                maxPrice = maxP,
+                hasBestseller = variants.any { it.isBestseller },
+                brandsSummary = brands.takeIf { it.isNotEmpty() }?.joinToString("\u060c "),
+                subCategoriesSummary = subs.takeIf { it.isNotEmpty() }?.take(3)?.joinToString("\u060c "),
+            )
+        }
+    }
+
+    private fun describeError(error: AuthResult.Error): String = when (val message = error.message) {
+        is ErrorMessage.StringMessage -> message.value
+        is ErrorMessage.FieldErrors ->
+            message.fields.values.flatten().firstOrNull() ?: context.getString(R.string.error_generic)
+        null -> context.getString(R.string.error_generic)
+    }
+
+    private companion object {
+        const val SEARCH_DEBOUNCE_MS = 400L
+        const val MIN_LOADING_DURATION_MS = 300L
+    }
+}

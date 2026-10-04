@@ -1,11 +1,14 @@
 package ir.codecrafter.plasticproducts.data.network
 
+import ir.codecrafter.plasticproducts.data.model.SetAdminPinBody
+import ir.codecrafter.plasticproducts.data.model.SetAdminPinResponse
 import ir.codecrafter.plasticproducts.data.model.UpdateProfileBody
 import ir.codecrafter.plasticproducts.data.model.UserProfile
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.PATCH
+import retrofit2.http.POST
 import retrofit2.http.Path
 
 interface UserApi {
@@ -24,4 +27,8 @@ interface UserApi {
         @Path("id") id: Int,
         @Body body: UpdateProfileBody,
     ): Response<ApiEnvelope<UserProfile>>
+
+    /** Admin-only, acts on the logged-in admin's own account — no path id. */
+    @POST("users/set-admin-pin/")
+    suspend fun setAdminPin(@Body body: SetAdminPinBody): Response<ApiEnvelope<SetAdminPinResponse>>
 }

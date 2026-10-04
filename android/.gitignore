@@ -1,0 +1,4 @@
+# Release signing secrets — real values live only on the developer's machine.
+keystore.properties
+*.jks
+*.keystore

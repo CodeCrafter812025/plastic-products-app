@@ -75,8 +75,39 @@ object NetworkModule {
     @Singleton
     fun provideUserApi(retrofit: Retrofit): UserApi = retrofit.create(UserApi::class.java)
 
-
     @Provides
     @Singleton
     fun provideProductApi(retrofit: Retrofit): ProductApi = retrofit.create(ProductApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideCartApi(retrofit: Retrofit): CartApi = retrofit.create(CartApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideOrderApi(retrofit: Retrofit): OrderApi = retrofit.create(OrderApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideVisitorOrderApi(retrofit: Retrofit): VisitorOrderApi = retrofit.create(VisitorOrderApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideNotificationApi(retrofit: Retrofit): NotificationApi = retrofit.create(NotificationApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideAdminProductApi(retrofit: Retrofit): AdminProductApi = retrofit.create(AdminProductApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideAdminUserApi(retrofit: Retrofit): AdminUserApi = retrofit.create(AdminUserApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideAdminOrderApi(retrofit: Retrofit): AdminOrderApi = retrofit.create(AdminOrderApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideAdminReportsApi(retrofit: Retrofit): AdminReportsApi = retrofit.create(AdminReportsApi::class.java)
 }

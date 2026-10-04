@@ -1,0 +1,271 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- ui/auth/AuthChoiceScreen.kt -->
+    <string name="auth_welcome_title">به فروشگاه محصولات پلاستیکی خوش آمدید</string>
+    <string name="btn_login">ورود</string>
+    <string name="btn_register">ثبت‌نام</string>
+    <string name="content_description_app_logo">لوگوی برند</string>
+    <string name="content_description_share_product">اشتراک‌گذاری محصول</string>
+
+    <!-- ui/auth/PhoneEntryScreen.kt -->
+    <string name="title_login">ورود</string>
+    <string name="title_register">ثبت‌نام</string>
+    <string name="label_phone_number">شماره موبایل</string>
+    <string name="btn_send_code">ارسال کد</string>
+
+    <!-- ui/auth/OtpVerifyScreen.kt -->
+    <string name="otp_sent_to_phone_message">کد تأیید ارسال‌شده به %1$s را وارد کنید</string>
+    <string name="label_otp_code">کد تأیید</string>
+    <string name="label_full_name">نام کامل</string>
+    <string name="btn_resend_code_cooldown">ارسال مجدد کد (%1$d ثانیه)</string>
+    <string name="btn_resend_code">ارسال مجدد کد</string>
+    <string name="btn_verify">تأیید</string>
+
+    <!-- ui/auth/AdminPinScreen.kt -->
+    <string name="msg_enter_admin_pin">برای ورود، کد PIN خود را وارد کنید</string>
+    <string name="label_admin_pin">کد PIN</string>
+
+    <!-- ui/profile/ProfileScreen.kt -->
+    <string name="title_profile">پروفایل</string>
+    <string name="label_address">آدرس</string>
+    <string name="btn_save">ذخیره</string>
+
+    <!-- ui/profile/ProfileViewModel.kt -->
+    <string name="msg_profile_saved">تغییرات ذخیره شد</string>
+
+    <!-- ui/profile/ProfileScreen.kt (admin PIN section) -->
+    <string name="title_admin_pin_section">تنظیم کد PIN</string>
+    <string name="label_new_pin">PIN جدید</string>
+    <string name="label_confirm_pin">تکرار PIN</string>
+    <string name="btn_save_pin">ثبت</string>
+    <string name="error_admin_pin_too_short">کد PIN باید حداقل ۴ رقم باشد.</string>
+    <string name="error_admin_pin_mismatch">کد PIN و تکرار آن یکسان نیستند.</string>
+    <string name="msg_admin_pin_saved">کد PIN با موفقیت ذخیره شد.</string>
+
+    <!-- ui/products/ProductListScreen.kt -->
+    <string name="label_product_search">جستجوی محصول</string>
+    <string name="filter_quality_all">همه</string>
+    <string name="filter_quality_primary">اولیه</string>
+    <string name="filter_quality_recycled">بازیافتی</string>
+    <string name="filter_in_stock_only">فقط کالاهای موجود</string>
+    <string name="btn_more_filters">فیلتر بیشتر</string>
+    <string name="btn_close_more_filters">بستن فیلتر بیشتر</string>
+    <string name="label_min_price">حداقل قیمت</string>
+    <string name="label_max_price">حداکثر قیمت</string>
+    <string name="empty_products_list">محصولی یافت نشد</string>
+    <string name="product_price_toman">%1$s تومان</string>
+
+    <!-- ui/navigation/AppNavHost.kt -->
+    <string name="role_label_visitor">ویزیتور</string>
+    <string name="role_label_admin">ادمین</string>
+    <string name="placeholder_role_not_built_message">ورود موفق (%1$s) — این بخش هنوز ساخته نشده</string>
+    <string name="btn_profile">پروفایل</string>
+
+    <!-- ui/products/ProductDetailScreen.kt -->
+    <string name="btn_back_to_list">بازگشت به لیست</string>
+    <string name="label_color_value">رنگ: %1$s</string>
+    <string name="label_weight_value">وزن: %1$s</string>
+    <string name="label_stock_status_value">وضعیت موجودی: %1$s</string>
+    <string name="stock_status_available">موجود</string>
+    <string name="stock_status_unavailable">ناموجود</string>
+    <string name="label_description">توضیحات</string>
+
+    <!-- ui/products/ProductDetailViewModel.kt -->
+    <string name="error_rate_limited">تعداد درخواست‌ها بیش از حد مجاز است، کمی بعد امتحان کنید</string>
+    <string name="error_network">خطا در اتصال به اینترنت. دوباره تلاش کنید.</string>
+    <string name="error_generic">خطایی رخ داد. دوباره تلاش کنید.</string>
+
+    <!-- ui/common/ErrorWithRetry.kt -->
+    <string name="btn_retry">تلاش مجدد</string>
+    <string name="msg_loading_failed_generic">خطایی در بارگذاری رخ داد.</string>
+
+    <!-- ui/products/ProductDetailScreen.kt (add-to-cart) -->
+    <string name="label_cart_quantity">مقدار</string>
+    <string name="btn_add_to_cart">افزودن به سبد</string>
+    <string name="msg_added_to_cart">به سبد خرید اضافه شد</string>
+
+    <!-- ui/products/ProductListScreen.kt (cart access point) -->
+    <string name="btn_cart">سبد خرید</string>
+
+    <!-- ui/cart/CartScreen.kt -->
+    <string name="label_cart_item_subtotal">جمع جزء: %1$s تومان</string>
+    <string name="label_cart_total">جمع کل: %1$s تومان</string>
+    <string name="empty_cart">سبد خرید شما خالی است</string>
+    <string name="btn_place_order">ثبت سفارش</string>
+    <string name="btn_remove_from_cart">حذف</string>
+    <string name="title_order_placed">سفارش ثبت شد</string>
+    <string name="label_order_id_value">شماره سفارش: %1$s</string>
+    <string name="label_order_total_value">مبلغ کل: %1$s تومان</string>
+    <string name="btn_back_to_product_list">بازگشت به لیست محصولات</string>
+    <string name="btn_apply_quantity">اعمال</string>
+    <string name="btn_edit_order">ویرایش سفارش</string>
+    <string name="btn_cancel_order">لغو سفارش</string>
+    <string name="msg_cancel_order_confirm">مطمئنید می‌خواهید این سفارش را لغو کنید؟</string>
+    <string name="btn_yes">بله</string>
+    <string name="btn_no">خیر</string>
+    <string name="title_order_cancelled">سفارش لغو شد</string>
+
+    <!-- ui/orders/OrderEditScreen.kt -->
+    <string name="btn_save_order_changes">ثبت تغییرات</string>
+    <string name="msg_order_items_updated">تغییرات سفارش با موفقیت ثبت شد</string>
+    <string name="empty_order_items">این سفارش دیگر هیچ آیتمی ندارد</string>
+
+    <!-- Order.status labels — ui/visitor/VisitorOrderListScreen.kt, VisitorOrderDetailScreen.kt -->
+    <string name="status_pending">در انتظار تخصیص</string>
+    <string name="status_assigned">تخصیص داده شده</string>
+    <string name="status_loading">بارگیری شد</string>
+    <string name="status_delivered">تحویل داده شد</string>
+    <string name="status_cancelled">لغو شده</string>
+    <string name="label_order_status_value">وضعیت: %1$s</string>
+
+    <!-- ui/visitor/VisitorOrderListScreen.kt -->
+    <string name="empty_visitor_orders">سفارشی برای شما تخصیص داده نشده است</string>
+
+    <!-- ui/visitor/VisitorOrderDetailScreen.kt -->
+    <string name="label_buyer_name_value">نام خریدار: %1$s</string>
+    <string name="label_buyer_phone_value">شماره تماس: %1$s</string>
+    <string name="label_buyer_address_value">آدرس: %1$s</string>
+    <string name="msg_address_not_registered">آدرس ثبت نشده</string>
+    <string name="label_order_item_quantity_value">تعداد: %1$s</string>
+    <string name="label_order_item_unit_price_value">قیمت واحد: %1$s تومان</string>
+    <string name="btn_start_loading">شروع بارگیری</string>
+    <string name="btn_mark_delivered">تحویل داده شد</string>
+    <string name="msg_confirm_delivered">مطمئنید این سفارش تحویل داده شد؟</string>
+
+    <!-- ui/orders/BuyerOrderListScreen.kt -->
+    <string name="label_order_created_at_value">تاریخ ثبت: %1$s</string>
+    <string name="empty_buyer_orders">سفارشی ثبت نکرده‌اید</string>
+
+    <!-- ui/products/ProductListScreen.kt (my-orders access point) -->
+    <string name="btn_my_orders">سفارش‌های من</string>
+
+    <!-- ui/orders/BuyerOrderDetailScreen.kt -->
+    <string name="title_status_history">تاریخچه وضعیت</string>
+    <string name="label_status_change_entry">%1$s — %2$s</string>
+
+    <!-- ui/profile/ProfileScreen.kt (logout) -->
+    <string name="btn_logout">خروج از حساب</string>
+    <string name="msg_logout_confirm">مطمئنید می‌خواهید از حساب خود خارج شوید؟</string>
+
+    <!-- ui/orders/BuyerOrderDetailScreen.kt (invoice access point) -->
+    <string name="btn_view_invoice">مشاهده فاکتور</string>
+
+    <!-- ui/invoice/InvoiceScreen.kt -->
+    <string name="label_invoice_number_value">شماره فاکتور: %1$s</string>
+    <string name="label_invoice_issued_at_value">تاریخ صدور: %1$s</string>
+    <string name="label_invoice_item_line_total_value">جمع: %1$s تومان</string>
+    <string name="btn_download_invoice_pdf">دانلود فاکتور (PDF)</string>
+
+    <!-- ui/invoice/InvoiceViewModel.kt -->
+    <string name="error_no_pdf_viewer">هیچ برنامه‌ای برای نمایش PDF یافت نشد</string>
+
+    <!-- ui/products/ProductListScreen.kt (notifications access point) -->
+    <string name="btn_notifications">اعلان‌ها</string>
+
+    <!-- ui/notifications/NotificationListScreen.kt -->
+    <string name="btn_mark_all_notifications_read">علامت‌گذاری همه به‌عنوان خوانده‌شده</string>
+    <string name="empty_notifications">اعلانی وجود ندارد</string>
+
+    <!-- ui/admin/AdminProductListScreen.kt -->
+    <string name="btn_add_new_product">افزودن محصول جدید</string>
+    <string name="btn_activate_product">فعال‌سازی</string>
+    <string name="btn_deactivate_product">غیرفعال‌سازی</string>
+    <string name="label_product_inactive_badge">غیرفعال</string>
+    <string name="btn_delete_product">حذف محصول</string>
+    <string name="msg_delete_product_confirm">این عمل غیرقابل‌بازگشت است؛ مطمئنید می‌خواهید این محصول را برای همیشه حذف کنید؟</string>
+
+    <!-- ui/navigation/AppNavHost.kt (admin product create/edit placeholder) -->
+    <string name="placeholder_admin_product_form">فرم افزودن/ویرایش محصول — این بخش هنوز ساخته نشده است</string>
+
+    <!-- ui/admin/AdminProductFormScreen.kt -->
+    <string name="label_product_title">عنوان</string>
+    <string name="label_product_color">رنگ (اختیاری)</string>
+    <string name="label_product_price">قیمت (تومان)</string>
+    <string name="label_product_weight">وزن</string>
+    <string name="label_product_stock">موجودی</string>
+    <string name="label_product_active">فعال</string>
+    <string name="msg_product_saved">محصول با موفقیت ذخیره شد</string>
+
+    <!-- ui/admin/AdminProductFormScreen.kt (product images) -->
+    <string name="title_product_images">تصاویر محصول</string>
+    <string name="btn_add_product_image">افزودن تصویر</string>
+    <string name="msg_max_images_reached">حداکثر ۵ تصویر مجاز است</string>
+    <string name="msg_save_product_before_images">برای افزودن تصویر، ابتدا محصول را ذخیره کنید</string>
+
+    <!-- ui/admin/AdminProductFormScreen.kt (price/stock read-only rows + change dialogs) -->
+    <string name="label_product_price_value">قیمت: %1$s تومان</string>
+    <string name="label_product_stock_value">موجودی: %1$s</string>
+    <string name="btn_change_price">تغییر قیمت</string>
+    <string name="btn_change_stock">تغییر موجودی</string>
+    <string name="btn_cancel">انصراف</string>
+    <string name="stock_reason_initial">اولیه</string>
+    <string name="stock_reason_sale">فروش</string>
+    <string name="stock_reason_restock">تامین مجدد</string>
+    <string name="stock_reason_adjustment">تعدیل</string>
+
+    <!-- ui/admin/AdminProductFormScreen.kt (price/stock history access point) -->
+    <string name="btn_view_price_stock_history">تاریخچه‌ی قیمت و موجودی</string>
+
+    <!-- ui/admin/ProductHistoryScreen.kt -->
+    <string name="tab_price_history">تاریخچه‌ی قیمت</string>
+    <string name="tab_stock_history">تاریخچه‌ی موجودی</string>
+    <string name="label_price_history_change">از %1$s به %2$s تومان</string>
+    <string name="label_stock_history_change">از %1$s به %2$s</string>
+    <string name="label_history_changed_at_by">%1$s — %2$s</string>
+    <string name="empty_price_history">تاریخچه‌ی قیمتی ثبت نشده</string>
+    <string name="empty_stock_history">تاریخچه‌ی موجودی ثبت نشده</string>
+
+    <!-- ui/admin/AdminProductListScreen.kt (users access point) -->
+    <string name="btn_users">کاربران</string>
+
+    <!-- ui/admin/AdminUserListScreen.kt -->
+    <string name="btn_add_new_visitor">افزودن ویزیتور جدید</string>
+    <string name="role_label_buyer">خریدار</string>
+    <string name="empty_users_list">کاربری یافت نشد</string>
+    <string name="btn_view_visitor_performance">عملکرد</string>
+
+    <!-- ui/admin/VisitorPerformanceScreen.kt -->
+    <string name="msg_visitor_performance_all_note">این لیست عملکرد همه‌ی ویزیتورها را نشان می‌دهد؛ ردیف هایلایت‌شده مربوط به ویزیتور انتخاب‌شده است.</string>
+    <string name="label_total_assigned_value">تخصیص‌یافته: %1$s</string>
+    <string name="label_delivered_value">تحویل‌شده: %1$s</string>
+    <string name="label_cancelled_value">لغوشده: %1$s</string>
+    <string name="label_avg_delivery_time_value">میانگین زمان تحویل: %1$s</string>
+    <string name="label_avg_delivery_hours">%1$s ساعت</string>
+    <string name="msg_no_data">بدون داده</string>
+    <string name="empty_visitor_performance">هیچ ویزیتوری یافت نشد</string>
+
+    <!-- ui/admin/AdminOrderListScreen.kt -->
+    <string name="btn_assign_to_visitor">تخصیص به ویزیتور</string>
+    <string name="title_select_visitor">انتخاب ویزیتور</string>
+    <string name="empty_active_visitors">ویزیتور فعالی یافت نشد</string>
+    <string name="empty_admin_orders">سفارشی یافت نشد</string>
+    <string name="msg_cancel_order_admin_confirm">این لغو توسط ادمین انجام می‌شود و غیرقابل‌بازگشت است؛ مطمئنید می‌خواهید این سفارش را لغو کنید؟</string>
+
+    <!-- ui/admin/AdminProductListScreen.kt (orders access point) -->
+    <string name="btn_orders">سفارش‌ها</string>
+
+    <!-- ui/admin/AdminProductListScreen.kt (dashboard access point) -->
+    <string name="btn_dashboard">داشبورد</string>
+
+    <!-- ui/admin/AdminDashboardScreen.kt -->
+    <string name="title_order_status">وضعیت سفارش‌ها</string>
+    <string name="title_revenue">درآمد</string>
+    <string name="title_top_products">پرفروش‌ترین محصولات</string>
+    <string name="title_low_stock">موجودی کم</string>
+    <string name="title_buyer_signups">ثبت‌نام‌های خریدار</string>
+    <string name="label_from_date">از تاریخ</string>
+    <string name="label_to_date">تا تاریخ</string>
+    <string name="btn_show_revenue">نمایش</string>
+    <string name="label_revenue_value">درآمد کل: %1$s تومان</string>
+    <string name="label_quantity_sold_value">تعداد فروخته‌شده: %1$s</string>
+    <string name="label_signup_count_value">%1$s — %2$s ثبت‌نام</string>
+    <string name="label_period_daily">روزانه</string>
+    <string name="label_period_weekly">هفتگی</string>
+    <string name="btn_view_all_visitor_performance">مشاهده‌ی عملکرد ویزیتورها</string>
+
+    <!-- ui/common/JalaliDatePickerDialog.kt -->
+    <string name="btn_previous_month">ماه قبل</string>
+    <string name="btn_next_month">ماه بعد</string>
+
+</resources>

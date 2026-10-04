@@ -1,157 +1,28 @@
-﻿import os
-import django
-from django.contrib.auth.hashers import make_password
-
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'plastic_products.settings')
-django.setup()
-
 from users.models import User
-from products.models import Product, PriceHistory, StockHistory
-from orders.models import Order, OrderItem, CartItem, OrderAssignment, OrderStatusHistory, Invoice
+from products.models import Product
 
-print("1. Creating / Updating Users (2 Admins & 1 Visitor)...")
-admin1, _ = User.objects.update_or_create(
-    phone="09334121868",
+admin, created = User.objects.get_or_create(
+    phone="09120000001",
+    defaults={"full_name": "Admin Test", "role": "admin", "username": "09120000001"}
+)
+if admin.role != "admin":
+    admin.role = "admin"
+    admin.save()
+
+product, created = Product.objects.get_or_create(
+    title="Test Product",
     defaults={
-        "full_name": "\u0627\u062f\u0645\u06cc\u0646 \u0627\u0648\u0644 (\u0627\u0635\u0644\u06cc)",
-        "role": "admin",
-        "username": "09334121868",
-        "admin_pin": make_password("1234")
+        "price": 150000,
+        "weight": 1,
+        "color": "blue",
+        "quality": "primary",
+        "stock": 100,
+        "created_by": admin,
     }
 )
-
-admin2, _ = User.objects.update_or_create(
-    phone="09035032922",
-    defaults={
-        "full_name": "\u0627\u062f\u0645\u06cc\u0646 \u062f\u0648\u0645",
-        "role": "admin",
-        "username": "09035032922",
-        "admin_pin": make_password("1234")
-    }
-)
-
-visitor, _ = User.objects.update_or_create(
+print("PRODUCT_ID:", product.id)
+visitor, _ = User.objects.get_or_create(
     phone="09130000002",
-    defaults={
-        "full_name": "\u0648\u06cc\u0632\u06cc\u062a\u0648\u0631 \u062a\u0633\u062a",
-        "role": "visitor",
-        "username": "09130000002"
-    }
+    defaults={"full_name": "Visitor Test", "role": "visitor", "username": "09130000002"}
 )
-
-print("2. Clearing old test orders & histories...")
-Invoice.objects.all().delete()
-OrderAssignment.objects.all().delete()
-OrderStatusHistory.objects.all().delete()
-OrderItem.objects.all().delete()
-Order.objects.all().delete()
-CartItem.objects.all().delete()
-PriceHistory.objects.all().delete()
-StockHistory.objects.all().delete()
-Product.objects.all().delete()
-
-print("3. Seeding 36 Products with clean UTF-8 Persian text...")
-C_NAYLEX = "\u0646\u0627\u06cc\u0644\u06a9\u0633 \u062f\u0633\u062a\u0647\u200c\u062f\u0627\u0631 \u0634\u0641\u0627\u0641"
-C_TISSUE = "\u062f\u0633\u062a\u0645\u0627\u0644 \u06a9\u0627\u063a\u0630\u06cc"
-C_CUP    = "\u0644\u06cc\u0648\u0627\u0646 \u06cc\u06a9\u0628\u0627\u0631 \u0645\u0635\u0631\u0641"
-C_TRASH  = "\u06a9\u06cc\u0633\u0647 \u0632\u0628\u0627\u0644\u0647"
-C_SOFREH = "\u0633\u0641\u0631\u0647 \u06cc\u06a9\u0628\u0627\u0631 \u0645\u0635\u0631\u0641"
-C_ZIP    = "\u067e\u0644\u0627\u0633\u062a\u06cc\u06a9 \u0632\u06cc\u067e\u200c\u062f\u0627\u0631"
-C_FREEZE = "\u067e\u0644\u0627\u0633\u062a\u06cc\u06a9 \u0641\u0631\u06cc\u0632\u0631"
-
-U_KG     = "\u06a9\u06cc\u0644\u0648\u06cc\u06cc"
-U_NUM    = "\u0639\u062f\u062f\u06cc"
-U_PACK2  = "\u0628\u0633\u062a\u0647 2 \u0639\u062f\u062f\u06cc"
-U_PACK500= "\u067e\u06a9 500 \u0639\u062f\u062f\u06cc"
-U_ROLL250= "\u0631\u0648\u0644\u06cc (250 \u06af\u0631\u0645\u06cc)"
-U_PACK   = "\u0628\u0633\u062a\u0647\u200c\u0627\u06cc"
-U_PACK10 = "\u0628\u0633\u062a\u0647\u200c\u0627\u06cc (10 \u0639\u062f\u062f\u06cc)"
-U_PACK100= "\u0628\u0633\u062a\u0647\u200c\u0627\u06cc (100 \u0639\u062f\u062f\u06cc)"
-U_PACK500F="\u0628\u0633\u062a\u0647\u200c\u0627\u06cc (500 \u0639\u062f\u062f\u06cc)"
-U_ROLL100= "\u0631\u0648\u0644\u06cc (100 \u0639\u062f\u062f\u06cc)"
-U_ROLL250F="\u0631\u0648\u0644\u06cc (250 \u0639\u062f\u062f\u06cc)"
-
-P_NAYLEX = "1 \u06a9\u06cc\u0644\u0648\u06cc\u06cc | \u06a9\u06cc\u0633\u0647\u200c\u0627\u06cc (25 \u06a9\u06cc\u0644\u0648\u06cc\u06cc)"
-Q_PRIMARY= "\u0627\u0648\u0644\u06cc\u0647"
-
-raw_products = [
-    # (1) Naylex
-    (f"{C_NAYLEX} 20\u00d730", C_NAYLEX, "\u062f\u0627\u0631\u0648\u062e\u0627\u0646\u0647", "", U_KG, P_NAYLEX, 85000, False),
-    (f"{C_NAYLEX} 25\u00d735", C_NAYLEX, "\u0622\u062c\u06cc\u0644 \u0641\u0631\u0648\u0634\u06cc", "", U_KG, P_NAYLEX, 85000, False),
-    (f"{C_NAYLEX} 30\u00d740", C_NAYLEX, "\u0639\u0645\u0648\u0645\u06cc", "", U_KG, P_NAYLEX, 80000, True),
-    (f"{C_NAYLEX} 37\u00d747", C_NAYLEX, "\u0639\u0645\u0648\u0645\u06cc", "", U_KG, P_NAYLEX, 80000, True),
-    (f"{C_NAYLEX} 45\u00d755", C_NAYLEX, "\u0639\u0645\u0648\u0645\u06cc (\u06a9\u0645\u200c\u0641\u0631\u0648\u0634)", "", U_KG, P_NAYLEX, 82000, False),
-    (f"{C_NAYLEX} 55\u00d765", C_NAYLEX, "\u0639\u0645\u0648\u0645\u06cc", "", U_KG, P_NAYLEX, 80000, True),
-    (f"{C_NAYLEX} 60\u00d780 (\u062e\u0634\u06a9\u0634\u0648\u06cc\u06cc)", C_NAYLEX, "\u062e\u0634\u06a9\u0634\u0648\u06cc\u06cc", "", U_KG, P_NAYLEX, 88000, False),
-    (f"{C_NAYLEX} 80\u00d7120 (\u062e\u0634\u06a9\u0634\u0648\u06cc\u06cc)", C_NAYLEX, "\u062e\u0634\u06a9\u0634\u0648\u06cc\u06cc", "", U_KG, P_NAYLEX, 88000, False),
-    (f"{C_NAYLEX} 54\u00d774 (\u0646\u0627\u0646 \u0644\u0648\u0627\u0634)", C_NAYLEX, "\u0646\u0627\u0646 (\u0644\u0648\u0627\u0634)", "", U_KG, P_NAYLEX, 84000, False),
-    (f"{C_NAYLEX} 60\u00d780 (\u0646\u0627\u0646 \u062a\u0627\u0641\u062a\u0648\u0646)", C_NAYLEX, "\u0646\u0627\u0646 (\u062a\u0627\u0641\u062a\u0648\u0646)", "", U_KG, P_NAYLEX, 84000, False),
-
-    # (2) Tissue (QLean)
-    ("\u062f\u0633\u062a\u0645\u0627\u0644 \u0631\u0648\u0645\u06cc\u0632\u06cc/\u062c\u0639\u0628\u0647\u200c\u0627\u06cc 100 \u0628\u0631\u06af \u062f\u0648\u0644\u0627", C_TISSUE, "\u0631\u0648\u0645\u06cc\u0632\u06cc / \u062c\u0639\u0628\u0647\u200c\u0627\u06cc", "QLean", U_NUM, "\u06a9\u06cc\u0641\u06cc\u062a \u0645\u0631\u063a\u0648\u0628 | 100 \u0628\u0631\u06af \u062f\u0648\u0644\u0627", 22000, True),
-    ("\u062f\u0633\u062a\u0645\u0627\u0644 \u0631\u0648\u0645\u06cc\u0632\u06cc/\u062c\u0639\u0628\u0647\u200c\u0627\u06cc 250 \u0628\u0631\u06af \u062f\u0648\u0644\u0627", C_TISSUE, "\u0631\u0648\u0645\u06cc\u0632\u06cc / \u062c\u0639\u0628\u0647\u200c\u0627\u06cc", "QLean", U_NUM, "\u06a9\u06cc\u0641\u06cc\u062a \u0645\u0631\u063a\u0648\u0628 | 250 \u0628\u0631\u06af \u062f\u0648\u0644\u0627", 45000, True),
-    ("\u062f\u0633\u062a\u0645\u0627\u0644 \u062a\u0648\u0627\u0644\u062a \u0628\u0633\u062a\u0647 2 \u0639\u062f\u062f\u06cc", C_TISSUE, "\u062f\u0633\u062a\u0645\u0627\u0644 \u062a\u0648\u0627\u0644\u062a", "QLean", U_PACK2, "\u06a9\u06cc\u0641\u06cc\u062a \u0645\u0631\u063a\u0648\u0628 | \u0628\u0633\u062a\u0647 2 \u0639\u062f\u062f\u06cc", 38000, False),
-    ("\u062d\u0648\u0644\u0647 \u06cc\u06a9\u0628\u0627\u0631 \u0645\u0635\u0631\u0641 \u0628\u0633\u062a\u0647 2 \u0639\u062f\u062f\u06cc", C_TISSUE, "\u062d\u0648\u0644\u0647 \u06cc\u06a9\u0628\u0627\u0631 \u0645\u0635\u0631\u0641", "QLean", U_PACK2, "\u06a9\u06cc\u0641\u06cc\u062a \u0645\u0631\u063a\u0648\u0628 | \u0628\u0633\u062a\u0647 2 \u0639\u062f\u062f\u06cc", 48000, False),
-
-    # (3) Disposable Cup
-    ("\u0644\u06cc\u0648\u0627\u0646 \u06cc\u06a9\u0628\u0627\u0631 \u0645\u0635\u0631\u0641 \u067e\u0644\u0627\u0633\u062a\u06cc\u06a9\u06cc (\u0639\u0633\u0644 \u067e\u0644\u0627\u0633\u062a)", C_CUP, "\u067e\u0644\u0627\u0633\u062a\u06cc\u06a9\u06cc", "\u0639\u0633\u0644 \u067e\u0644\u0627\u0633\u062a", U_PACK500, "\u06a9\u0627\u0631\u062a\u0648\u0646\u06cc \u0648 \u067e\u06a9\u06cc (\u06a9\u0627\u0631\u062a\u0646 10 \u067e\u06a9\u06cc\u060c \u0647\u0631 \u067e\u06a9 500 \u0639\u062f\u062f)", 300000, True),
-    ("\u0644\u06cc\u0648\u0627\u0646 \u06cc\u06a9\u0628\u0627\u0631 \u0645\u0635\u0631\u0641 \u067e\u0644\u0627\u0633\u062a\u06cc\u06a9\u06cc (\u0645\u0628\u06cc\u0646 \u067e\u0644\u0627\u0633\u062a)", C_CUP, "\u067e\u0644\u0627\u0633\u062a\u06cc\u06a9\u06cc", "\u0645\u0628\u06cc\u0646 \u067e\u0644\u0627\u0633\u062a", U_PACK500, "\u06a9\u0627\u0631\u062a\u0648\u0646\u06cc \u0648 \u067e\u06a9\u06cc (\u06a9\u0627\u0631\u062a\u0646 10 \u067e\u06a9\u06cc\u060c \u0647\u0631 \u067e\u06a9 500 \u0639\u062f\u062f)", 380000, False),
-
-    # (4) Trash Bag
-    ("\u06a9\u06cc\u0633\u0647 \u0632\u0628\u0627\u0644\u0647 \u06a9\u0648\u0686\u06a9 (37\u00d747) - \u0631\u0648\u0644\u06cc", C_TRASH, "\u0633\u0627\u06cc\u0632 \u06a9\u0648\u0686\u06a9 (37\u00d747)", "", U_ROLL250, "\u0631\u0648\u0644 250 \u06af\u0631\u0645\u06cc", 90000, True),
-    ("\u06a9\u06cc\u0633\u0647 \u0632\u0628\u0627\u0644\u0647 \u06a9\u0648\u0686\u06a9 (37\u00d747) - \u06a9\u06cc\u0644\u0648\u06cc\u06cc", C_TRASH, "\u0633\u0627\u06cc\u0632 \u06a9\u0648\u0686\u06a9 (37\u00d747)", "", U_KG, "\u0639\u0631\u0636\u0647 \u06a9\u06cc\u0644\u0648\u06cc\u06cc", 300000, False),
-    ("\u06a9\u06cc\u0633\u0647 \u0632\u0628\u0627\u0644\u0647 \u0645\u062a\u0648\u0633\u0637 (60\u00d780) - \u0631\u0648\u0644\u06cc", C_TRASH, "\u0633\u0627\u06cc\u0632 \u0645\u062a\u0648\u0633\u0637 (60\u00d780)", "", U_ROLL250, "\u0631\u0648\u0644 250 \u06af\u0631\u0645\u06cc", 90000, True),
-    ("\u06a9\u06cc\u0633\u0647 \u0632\u0628\u0627\u0644\u0647 \u0645\u062a\u0648\u0633\u0637 (60\u00d780) - \u06a9\u06cc\u0644\u0648\u06cc\u06cc", C_TRASH, "\u0633\u0627\u06cc\u0632 \u0645\u062a\u0648\u0633\u0637 (60\u00d780)", "", U_KG, "\u0639\u0631\u0636\u0647 \u06a9\u06cc\u0644\u0648\u06cc\u06cc", 300000, False),
-    ("\u06a9\u06cc\u0633\u0647 \u0632\u0628\u0627\u0644\u0647 \u0628\u0632\u0631\u06af (80\u00d7120) - \u0631\u0648\u0644\u06cc", C_TRASH, "\u0633\u0627\u06cc\u0632 \u0628\u0632\u0631\u06af (80\u00d7120)", "", U_ROLL250, "\u0631\u0648\u0644 250 \u06af\u0631\u0645\u06cc", 90000, False),
-    ("\u06a9\u06cc\u0633\u0647 \u0632\u0628\u0627\u0644\u0647 \u0628\u0632\u0631\u06af (80\u00d7120) - \u06a9\u06cc\u0644\u0648\u06cc\u06cc", C_TRASH, "\u0633\u0627\u06cc\u0632 \u0628\u0632\u0631\u06af (80\u00d7120)", "", U_KG, "\u0639\u0631\u0636\u0647 \u06a9\u06cc\u0644\u0648\u06cc\u06cc", 300000, True),
-
-    # (5) Sofreh
-    ("\u0633\u0641\u0631\u0647 \u06cc\u06a9\u0628\u0627\u0631 \u0645\u0635\u0631\u0641 10 \u0645\u062a\u0631\u06cc (\u06af\u0644\u0631\u06cc\u0632)", C_SOFREH, "10 \u0645\u062a\u0631\u06cc", "\u06af\u0644\u0631\u06cc\u0632", U_PACK, "\u0645\u062a\u0631\u0627\u0698 10 \u0645\u062a\u0631\u06cc | \u0628\u0633\u062a\u0647\u200c\u0627\u06cc", 45000, True),
-    ("\u0633\u0641\u0631\u0647 \u06cc\u06a9\u0628\u0627\u0631 \u0645\u0635\u0631\u0641 15 \u0645\u062a\u0631\u06cc (\u06af\u0644\u0631\u06cc\u0632)", C_SOFREH, "15 \u0645\u062a\u0631\u06cc", "\u06af\u0644\u0631\u06cc\u0632", U_PACK, "\u0645\u062a\u0631\u0627\u0698 15 \u0645\u062a\u0631\u06cc | \u0628\u0633\u062a\u0647\u200c\u0627\u06cc", 65000, False),
-    ("\u0633\u0641\u0631\u0647 \u06cc\u06a9\u0628\u0627\u0631 \u0645\u0635\u0631\u0641 20 \u0645\u062a\u0631\u06cc (\u0645\u062d\u0645\u062f\u06cc)", C_SOFREH, "20 \u0645\u062a\u0631\u06cc", "\u0645\u062d\u0645\u062f\u06cc", U_PACK, "\u0645\u062a\u0631\u0627\u0698 20 \u0645\u062a\u0631\u06cc | \u0628\u0633\u062a\u0647\u200c\u0627\u06cc", 85000, False),
-    ("\u0633\u0641\u0631\u0647 \u06cc\u06a9\u0628\u0627\u0631 \u0645\u0635\u0631\u0641 30 \u0645\u062a\u0631\u06cc (\u0645\u062d\u0645\u062f\u06cc)", C_SOFREH, "30 \u0645\u062a\u0631\u06cc", "\u0645\u062d\u0645\u062f\u06cc", U_PACK, "\u0645\u062a\u0631\u0627\u0698 30 \u0645\u062a\u0631\u06cc | \u0628\u0633\u062a\u0647\u200c\u0627\u06cc", 120000, False),
-
-    # (6) Zip-lock
-    (f"{C_ZIP} 6\u00d78", C_ZIP, "\u0633\u0627\u06cc\u0632 6\u00d78", "", U_PACK10, "\u0647\u0631 \u0628\u0633\u062a\u0647 \u0634\u0627\u0645\u0644 10 \u0639\u062f\u062f", 20000, False),
-    (f"{C_ZIP} 8\u00d710", C_ZIP, "\u0633\u0627\u06cc\u0632 8\u00d710", "", U_PACK10, "\u0647\u0631 \u0628\u0633\u062a\u0647 \u0634\u0627\u0645\u0644 10 \u0639\u062f\u062f", 25000, True),
-    (f"{C_ZIP} 10\u00d718", C_ZIP, "\u0633\u0627\u06cc\u0632 10\u00d718", "", U_PACK10, "\u0647\u0631 \u0628\u0633\u062a\u0647 \u0634\u0627\u0645\u0644 10 \u0639\u062f\u062f", 35000, True),
-    (f"{C_ZIP} 18\u00d720", C_ZIP, "\u0633\u0627\u06cc\u0632 18\u00d720", "", U_PACK10, "\u0647\u0631 \u0628\u0633\u062a\u0647 \u0634\u0627\u0645\u0644 10 \u0639\u062f\u062f", 45000, False),
-
-    # (7) Freezer Bag
-    ("\u0641\u0631\u06cc\u0632\u0631 \u0633\u0627\u062f\u0647 (\u0628\u0633\u062a\u0647 100 \u0639\u062f\u062f\u06cc)", C_FREEZE, "\u0641\u0631\u06cc\u0632\u0631 \u0633\u0627\u062f\u0647", "", U_PACK100, "\u0628\u0633\u062a\u0647 100 \u0639\u062f\u062f\u06cc \u0639\u0645\u0648\u0645\u06cc", 30000, False),
-    ("\u0641\u0631\u06cc\u0632\u0631 \u0633\u0627\u062f\u0647 (\u0628\u0633\u062a\u0647 500 \u0639\u062f\u062f\u06cc)", C_FREEZE, "\u0641\u0631\u06cc\u0632\u0631 \u0633\u0627\u062f\u0647", "", U_PACK500F, "\u0628\u0633\u062a\u0647 500 \u0639\u062f\u062f\u06cc \u0639\u0645\u0648\u0645\u06cc", 135000, False),
-    ("\u0641\u0631\u06cc\u0632\u0631 \u0686\u0633\u0628\u06cc \u062a\u0642\u0648\u06cc\u0645\u06cc (\u0628\u0633\u062a\u0647 100 \u0639\u062f\u062f\u06cc)", C_FREEZE, "\u0641\u0631\u06cc\u0632\u0631 \u0686\u0633\u0628\u06cc \u062a\u0642\u0648\u06cc\u0645\u06cc", "", U_PACK100, "\u0627\u0633\u062a\u0641\u0627\u062f\u0647 \u0622\u0633\u0627\u0646 | \u0628\u0633\u062a\u0647 100 \u0639\u062f\u062f\u06cc", 38000, True),
-    ("\u0641\u0631\u06cc\u0632\u0631 \u062e\u0627\u0646\u0648\u0627\u062f\u0647 (\u0645\u062e\u0635\u0648\u0635 \u0634\u06cc\u0631 \u0648 \u0644\u0628\u0646\u06cc\u0627\u062a)", C_FREEZE, "\u0641\u0631\u06cc\u0632\u0631 \u062e\u0627\u0646\u0648\u0627\u062f\u0647", "", U_PACK, "\u0633\u0627\u06cc\u0632 \u0628\u0632\u0631\u06af\u062a\u0631 \u0648 \u0636\u062e\u0627\u0645\u062a \u0628\u0627\u0644\u0627", 55000, False),
-    ("\u0641\u0631\u06cc\u0632\u0631 \u062a\u0648\u067e\u06cc / \u0631\u0648\u0644\u06cc (100 \u0639\u062f\u062f\u06cc)", C_FREEZE, "\u0641\u0631\u06cc\u0632\u0631 \u062a\u0648\u067e\u06cc (\u0631\u0648\u0644\u06cc)", "", U_ROLL100, "\u0631\u0648\u0644 100 \u0639\u062f\u062f\u06cc \u067e\u0631\u0641\u0631\u0648\u0634", 42000, True),
-    ("\u0641\u0631\u06cc\u0632\u0631 \u062a\u0648\u067e\u06cc / \u0631\u0648\u0644\u06cc (250 \u0639\u062f\u062f\u06cc)", C_FREEZE, "\u0641\u0631\u06cc\u0632\u0631 \u062a\u0648\u067e\u06cc (\u0631\u0648\u0644\u06cc)", "", U_ROLL250F, "\u0631\u0648\u0644 250 \u0639\u062f\u062f\u06cc \u067e\u0631\u0641\u0631\u0648\u0634", 95000, True),
-]
-
-cat_images = {
-    C_NAYLEX: ["/media/cat_naylex.png"],
-    C_TISSUE: ["/media/cat_tissue.png"],
-    C_CUP:    ["/media/cat_cup.png"],
-    C_TRASH:  ["/media/cat_trash.png"],
-    C_SOFREH: ["/media/cat_sofreh.png"],
-    C_ZIP:    ["/media/cat_ziplock.png"],
-    C_FREEZE: ["/media/cat_freezer.png"],
-}
-
-for title, cat, sub, brand, unit, pack, price, best in raw_products:
-    Product.objects.create(
-        title=title,
-        category=cat,
-        sub_category=sub,
-        brand=brand,
-        unit_label=unit,
-        packaging_info=pack,
-        description=f"{title} | {cat} ({sub}) | \u0648\u0627\u062d\u062f: {unit} | {pack}",
-        price=price,
-        weight=1,
-        quality=Q_PRIMARY,
-        stock=500,
-        is_bestseller=best,
-        image_urls=cat_images.get(cat, []),
-        created_by=admin1
-    )
-
-print("SUCCESS! First product title in DB:", Product.objects.first().title)
+print("VISITOR_ID:", visitor.id)

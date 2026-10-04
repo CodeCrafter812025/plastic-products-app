@@ -1,34 +1,88 @@
-package ir.codecrafter.plasticproducts.ui.profile
+﻿package ir.codecrafter.plasticproducts.ui.profile
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import ir.codecrafter.plasticproducts.R
+import ir.codecrafter.plasticproducts.ui.common.ErrorWithRetry
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
+    onLoggedOut: () -> Unit,
+    onBackClick: () -> Unit = {},
     viewModel: ProfileViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    var showLogoutConfirm by remember { mutableStateOf(false) }
 
-    Scaffold { paddingValues: PaddingValues ->
+    LaunchedEffect(viewModel) {
+        viewModel.events.collect { event ->
+            when (event) {
+                ProfileEvent.LoggedOut -> onLoggedOut()
+            }
+        }
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        text = stringResource(R.string.title_profile),
+                        fontWeight = FontWeight.Bold,
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = onBackClick) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.btn_back_to_list),
+                        )
+                    }
+                },
+            )
+        },
+    ) { paddingValues: PaddingValues ->
         if (state.isLoading) {
             Box(
                 modifier = Modifier
@@ -41,32 +95,42 @@ fun ProfileScreen(
             return@Scaffold
         }
 
+        if (state.errorMessage != null && state.phone.isBlank()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
+                contentAlignment = Alignment.Center,
+            ) {
+                ErrorWithRetry(
+                    message = state.errorMessage.orEmpty(),
+                    onRetry = viewModel::loadProfile,
+                    modifier = Modifier.padding(24.dp),
+                )
+            }
+            return@Scaffold
+        }
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+                .verticalScroll(rememberScrollState())
                 .padding(24.dp),
         ) {
-            Text(
-                text = "پروفایل",
-                style = MaterialTheme.typography.headlineSmall,
-            )
-
             OutlinedTextField(
                 value = state.phone,
                 onValueChange = {},
-                label = { Text("شماره موبایل") },
+                label = { Text(stringResource(R.string.label_phone_number)) },
                 enabled = false,
                 singleLine = true,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 24.dp),
+                modifier = Modifier.fillMaxWidth(),
             )
 
             OutlinedTextField(
                 value = state.fullName,
                 onValueChange = viewModel::onFullNameChange,
-                label = { Text("نام کامل") },
+                label = { Text(stringResource(R.string.label_full_name)) },
                 singleLine = true,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -76,7 +140,7 @@ fun ProfileScreen(
             OutlinedTextField(
                 value = state.address,
                 onValueChange = viewModel::onAddressChange,
-                label = { Text("آدرس") },
+                label = { Text(stringResource(R.string.label_address)) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 16.dp),
@@ -111,9 +175,109 @@ fun ProfileScreen(
                         color = MaterialTheme.colorScheme.onPrimary,
                     )
                 } else {
-                    Text("ذخیره")
+                    Text(stringResource(R.string.btn_save))
                 }
             }
+
+            if (state.role == "admin") {
+                Text(
+                    text = stringResource(R.string.title_admin_pin_section),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(top = 32.dp),
+                )
+
+                OutlinedTextField(
+                    value = state.newPin,
+                    onValueChange = viewModel::onNewPinChange,
+                    label = { Text(stringResource(R.string.label_new_pin)) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 16.dp),
+                )
+
+                OutlinedTextField(
+                    value = state.confirmPin,
+                    onValueChange = viewModel::onConfirmPinChange,
+                    label = { Text(stringResource(R.string.label_confirm_pin)) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 16.dp),
+                )
+
+                val pinErrorMessage = state.pinErrorMessage
+                val pinSuccessMessage = state.pinSuccessMessage
+                if (pinErrorMessage != null) {
+                    Text(
+                        text = pinErrorMessage,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(top = 16.dp),
+                    )
+                } else if (pinSuccessMessage != null) {
+                    Text(
+                        text = pinSuccessMessage,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(top = 16.dp),
+                    )
+                }
+
+                Button(
+                    onClick = viewModel::setAdminPin,
+                    enabled = !state.isSavingPin,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
+                        .padding(top = 16.dp),
+                ) {
+                    if (state.isSavingPin) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.onPrimary,
+                        )
+                    } else {
+                        Text(stringResource(R.string.btn_save_pin))
+                    }
+                }
+            }
+
+            TextButton(
+                onClick = { showLogoutConfirm = true },
+                modifier = Modifier.padding(top = 16.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.Logout,
+                    contentDescription = stringResource(R.string.btn_logout),
+                    modifier = Modifier.size(ButtonDefaults.IconSize),
+                )
+                Spacer(modifier = Modifier.size(ButtonDefaults.IconSpacing))
+                Text(stringResource(R.string.btn_logout))
+            }
         }
+    }
+
+    if (showLogoutConfirm) {
+        AlertDialog(
+            onDismissRequest = { showLogoutConfirm = false },
+            title = { Text(stringResource(R.string.btn_logout)) },
+            text = { Text(stringResource(R.string.msg_logout_confirm)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showLogoutConfirm = false
+                    viewModel.logout()
+                }) {
+                    Text(stringResource(R.string.btn_yes))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showLogoutConfirm = false }) {
+                    Text(stringResource(R.string.btn_no))
+                }
+            },
+        )
     }
 }
