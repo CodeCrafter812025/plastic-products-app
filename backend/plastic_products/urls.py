@@ -4,7 +4,7 @@ from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenRefreshView
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
-from users.views import AuthViewSet, UserViewSet, AccountDeletionRequestViewSet
+from users.views import AuthViewSet, UserViewSet, AccountDeletionRequestViewSet, SystemSettingsView
 from products.views import ProductViewSet, PriceHistoryViewSet, StockHistoryViewSet
 from orders.views import CartViewSet, OrderViewSet, OrderAssignmentViewSet, VisitorOrderStatusViewSet
 from core.views import SystemSettingViewSet, NotificationViewSet, AdminReportsViewSet
@@ -38,6 +38,7 @@ router.register(r'admin-reports', AdminReportsViewSet, basename='admin-reports')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('api/v1/users/settings/', SystemSettingsView.as_view(), name='system-settings'),
     path('api/v1/', include(router.urls)),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),

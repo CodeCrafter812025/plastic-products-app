@@ -1,4 +1,4 @@
-from users.models import User
+﻿from users.models import User
 from products.models import Product
 
 admin, created = User.objects.get_or_create(

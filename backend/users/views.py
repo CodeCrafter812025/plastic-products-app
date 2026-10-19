@@ -264,3 +264,25 @@ class AccountDeletionRequestViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+
+from .models import SystemSettings
+from .serializers import SystemSettingsSerializer
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+
+class SystemSettingsView(APIView):
+    def get(self, request):
+        settings, _ = SystemSettings.objects.get_or_create(id=1)
+        return Response({"support_phone": settings.support_phone})
+
+    def put(self, request):
+        if not request.user.is_authenticated or request.user.role != "admin":
+            return Response({"error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
+        settings, _ = SystemSettings.objects.get_or_create(id=1)
+        phone = request.data.get("support_phone")
+        if phone:
+            settings.support_phone = phone
+            settings.save()
+            return Response({"message": "Settings updated"})
+        return Response({"error": "No phone provided"}, status=status.HTTP_400_BAD_REQUEST)

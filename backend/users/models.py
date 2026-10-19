@@ -87,3 +87,9 @@ class AccountDeletionRequest(models.Model):
     def __str__(self):
         return f"{self.user.phone} - {self.status}"
 
+
+
+class SystemSettings(models.Model):
+    support_phone = models.CharField(max_length=20, default="09120000000")
+    def __str__(self):
+        return "System Settings"

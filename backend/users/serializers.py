@@ -63,3 +63,10 @@ class VisitorCreateSerializer(serializers.Serializer):
             is_active=True
         )
         return user
+
+from .models import SystemSettings
+from rest_framework import serializers
+class SystemSettingsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SystemSettings
+        fields = ["support_phone"]
