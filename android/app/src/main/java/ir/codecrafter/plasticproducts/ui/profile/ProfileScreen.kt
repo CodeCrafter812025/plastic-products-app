@@ -181,6 +181,35 @@ fun ProfileScreen(
 
             if (state.role == "admin") {
                 Text(
+                    text = "تنظیمات عمومی فروشگاه",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(top = 32.dp, bottom = 16.dp)
+                )
+                OutlinedTextField(
+                    value = state.supportPhone,
+                    onValueChange = viewModel::onSupportPhoneChange,
+                    label = { Text("شماره تماس با پشتیبانی (خریداران)") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                val settingsMsg = state.settingsMessage
+                if (settingsMsg != null) {
+                    Text(text = settingsMsg, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(top = 8.dp))
+                }
+                Button(
+                    onClick = viewModel::saveSystemSettings,
+                    enabled = !state.isSavingSettings,
+                    modifier = Modifier.fillMaxWidth().height(56.dp).padding(top = 8.dp)
+                ) {
+                    if (state.isSavingSettings) {
+                        CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onPrimary)
+                    } else {
+                        Text("ذخیره شماره پشتیبانی")
+                    }
+                }
+                Text(
                     text = stringResource(R.string.title_admin_pin_section),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,

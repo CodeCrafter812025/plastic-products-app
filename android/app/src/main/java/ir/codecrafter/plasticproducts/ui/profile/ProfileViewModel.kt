@@ -32,6 +32,9 @@ data class ProfileUiState(
     val isSavingPin: Boolean = false,
     val pinErrorMessage: String? = null,
     val pinSuccessMessage: String? = null,
+    val supportPhone: String = "",
+    val isSavingSettings: Boolean = false,
+    val settingsMessage: String? = null
 )
 
 sealed class ProfileEvent {
@@ -75,6 +78,9 @@ class ProfileViewModel @Inject constructor(
                         address = profile.address.orEmpty(),
                         role = profile.role,
                     )
+                    if (profile.role == "admin") {
+                        loadSystemSettings()
+                    }
                 }
                 else -> _uiState.value = _uiState.value.copy(
                     isLoading = false,
@@ -84,13 +90,34 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
-    fun onFullNameChange(value: String) {
-        _uiState.value = _uiState.value.copy(fullName = value, saveSuccessMessage = null)
+    private fun loadSystemSettings() {
+        viewModelScope.launch {
+            when (val result = profileRepository.getSystemSettings()) {
+                is AuthResult.Success -> _uiState.value = _uiState.value.copy(supportPhone = result.data)
+                else -> {}
+            }
+        }
     }
 
-    fun onAddressChange(value: String) {
-        _uiState.value = _uiState.value.copy(address = value, saveSuccessMessage = null)
+    fun saveSystemSettings() {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isSavingSettings = true, settingsMessage = null)
+            when (profileRepository.updateSystemSettings(_uiState.value.supportPhone)) {
+                is AuthResult.Success -> _uiState.value = _uiState.value.copy(
+                    isSavingSettings = false,
+                    settingsMessage = "تنظیمات با موفقیت ذخیره شد"
+                )
+                else -> _uiState.value = _uiState.value.copy(
+                    isSavingSettings = false,
+                    settingsMessage = "خطا در ذخیره تنظیمات"
+                )
+            }
+        }
     }
+
+    fun onFullNameChange(value: String) { _uiState.value = _uiState.value.copy(fullName = value, saveSuccessMessage = null) }
+    fun onAddressChange(value: String) { _uiState.value = _uiState.value.copy(address = value, saveSuccessMessage = null) }
+    fun onSupportPhoneChange(value: String) { _uiState.value = _uiState.value.copy(supportPhone = value, settingsMessage = null) }
 
     fun save() {
         val state = _uiState.value
@@ -118,13 +145,8 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
-    fun onNewPinChange(value: String) {
-        _uiState.value = _uiState.value.copy(newPin = value, pinErrorMessage = null, pinSuccessMessage = null)
-    }
-
-    fun onConfirmPinChange(value: String) {
-        _uiState.value = _uiState.value.copy(confirmPin = value, pinErrorMessage = null, pinSuccessMessage = null)
-    }
+    fun onNewPinChange(value: String) { _uiState.value = _uiState.value.copy(newPin = value, pinErrorMessage = null, pinSuccessMessage = null) }
+    fun onConfirmPinChange(value: String) { _uiState.value = _uiState.value.copy(confirmPin = value, pinErrorMessage = null, pinSuccessMessage = null) }
 
     fun setAdminPin() {
         val state = _uiState.value
@@ -138,8 +160,7 @@ class ProfileViewModel @Inject constructor(
         }
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isSavingPin = true, pinErrorMessage = null, pinSuccessMessage = null)
-            val result = profileRepository.setAdminPin(state.newPin)
-            when (result) {
+            when (val result = profileRepository.setAdminPin(state.newPin)) {
                 is AuthResult.Success -> _uiState.value = _uiState.value.copy(
                     isSavingPin = false,
                     newPin = "",
@@ -163,6 +184,6 @@ class ProfileViewModel @Inject constructor(
             null -> context.getString(R.string.error_generic)
         }
         AuthResult.NetworkError -> context.getString(R.string.error_network)
-        is AuthResult.Success -> "" // never reached — callers only pass non-Success results here
+        is AuthResult.Success -> "" 
     }
 }

@@ -107,28 +107,27 @@ fun ProductListScreen(
                 title = {
                     Column {
                         Text(
-                            text = "\u067e\u062e\u0634 \u0645\u0633\u062a\u0642\u06cc\u0645 \u0645\u062d\u0635\u0648\u0644\u0627\u062a \u067e\u0644\u0627\u0633\u062a\u06cc\u06a9\u06cc",
+                            text = "پخش مستقیم محصولات پلاستیکی",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                         )
                         Text(
-                            text = "\u062e\u0631\u06cc\u062f \u0628\u06cc\u200c\u0648\u0627\u0633\u0637\u0647 \u0627\u0632 \u06a9\u0627\u0631\u062e\u0627\u0646\u0647",
+                            text = "خرید بی‌واسطه از کارخانه",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f),
                         )
                     }
                 },
                 actions = {
-                    // دکمه تماس مستقیم با واحد فروش کارخانه
                     IconButton(
                         onClick = {
-                            val dialIntent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:09035032922"))
+                            val dialIntent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:${state.supportPhone}"))
                             context.startActivity(dialIntent)
                         },
                     ) {
                         Icon(
                             imageVector = Icons.Default.Phone,
-                            contentDescription = "\u062a\u0645\u0627\u0633 \u0628\u0627 \u0648\u0627\u062d\u062f \u0641\u0631\u0648\u0634",
+                            contentDescription = "تماس با واحد فروش",
                         )
                     }
 
@@ -159,7 +158,7 @@ fun ProductListScreen(
                     selected = true,
                     onClick = {},
                     icon = { Icon(Icons.Default.Storefront, contentDescription = null) },
-                    label = { Text("\u06a9\u0627\u062a\u0627\u0644\u0648\u06af") },
+                    label = { Text("کاتالوگ") },
                 )
                 NavigationBarItem(
                     selected = false,
@@ -189,7 +188,7 @@ fun ProductListScreen(
                 )
             }
         },
-    ) { paddingValues: PaddingValues ->
+    ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -219,7 +218,7 @@ fun ProductListScreen(
                         viewModel.onCategoryChange(null)
                         viewModel.onBestsellerToggle(false)
                     },
-                    label = { Text("\u0647\u0645\u0647 \u0645\u062d\u0635\u0648\u0644\u0627\u062a") },
+                    label = { Text("همه محصولات") },
                 )
                 FilterChip(
                     selected = state.filter.isBestseller == true,
@@ -231,7 +230,7 @@ fun ProductListScreen(
                             modifier = Modifier.size(16.dp),
                         )
                     },
-                    label = { Text("\u067e\u0631\u0641\u0631\u0648\u0634\u200c\u0647\u0627") },
+                    label = { Text("پرفروش‌ها") },
                 )
                 ProductCategory.ALL.forEach { cat ->
                     FilterChip(
@@ -404,7 +403,7 @@ private fun ProductGroupCard(group: ProductGroupItem, onClick: () -> Unit) {
                         modifier = Modifier.align(Alignment.TopEnd),
                     ) {
                         Text(
-                            text = "\u2605 \u067e\u0631\u0641\u0631\u0648\u0634",
+                            text = "★ پرفروش",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onPrimaryContainer,
                             fontWeight = FontWeight.Bold,
@@ -420,7 +419,7 @@ private fun ProductGroupCard(group: ProductGroupItem, onClick: () -> Unit) {
                         modifier = Modifier.align(Alignment.BottomStart),
                     ) {
                         Text(
-                            text = "${group.variantCount} \u0633\u0627\u06cc\u0632 / \u0645\u062f\u0644",
+                            text = "${group.variantCount} سایز / مدل",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSecondaryContainer,
                             fontWeight = FontWeight.Bold,
@@ -441,7 +440,7 @@ private fun ProductGroupCard(group: ProductGroupItem, onClick: () -> Unit) {
 
                 if (!group.brandsSummary.isNullOrBlank()) {
                     Text(
-                        text = "\u0628\u0631\u0646\u062f: ${group.brandsSummary}",
+                        text = "برند: ${group.brandsSummary}",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.secondary,
                         maxLines = 1,
@@ -450,7 +449,7 @@ private fun ProductGroupCard(group: ProductGroupItem, onClick: () -> Unit) {
                     )
                 } else if (!group.subCategoriesSummary.isNullOrBlank()) {
                     Text(
-                        text = "\u06a9\u0627\u0631\u0628\u0631\u062f: ${group.subCategoriesSummary}",
+                        text = "کاربرد: ${group.subCategoriesSummary}",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
@@ -461,9 +460,9 @@ private fun ProductGroupCard(group: ProductGroupItem, onClick: () -> Unit) {
 
                 val formattedMinPrice = PriceFormatter.format(group.minPrice)
                 val priceLabel = if (group.minPrice != group.maxPrice) {
-                    "\u0627\u0632 $formattedMinPrice \u062a\u0648\u0645\u0627\u0646"
+                    "از $formattedMinPrice تومان"
                 } else {
-                    "$formattedMinPrice \u062a\u0648\u0645\u0627\u0646"
+                    "$formattedMinPrice تومان"
                 }
 
                 Text(

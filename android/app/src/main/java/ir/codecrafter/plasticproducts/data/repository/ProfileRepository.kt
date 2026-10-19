@@ -84,4 +84,34 @@ class ProfileRepository @Inject constructor(
         is ErrorMessage.StringMessage -> message.value
         is ErrorMessage.FieldErrors -> message.fields.values.flatten().joinToString()
     }
+
+    suspend fun getSystemSettings(): AuthResult<String> {
+        return try {
+            val response = userApi.getSystemSettings()
+            if (response.isSuccessful) {
+                val raw = response.body()?.string().orEmpty()
+                val jsonObj = org.json.JSONObject(raw)
+                val phone = when {
+                    jsonObj.has("support_phone") -> jsonObj.getString("support_phone")
+                    jsonObj.has("data") && jsonObj.getJSONObject("data").has("support_phone") ->
+                        jsonObj.getJSONObject("data").getString("support_phone")
+                    else -> "09120000000"
+                }
+                AuthResult.Success(phone)
+            } else {
+                AuthResult.NetworkError
+            }
+        } catch (e: Exception) {
+            AuthResult.NetworkError
+        }
+    }
+
+    suspend fun updateSystemSettings(phone: String): AuthResult<Unit> {
+        return try {
+            val response = userApi.updateSystemSettings(mapOf("support_phone" to phone))
+            if (response.isSuccessful) AuthResult.Success(Unit) else AuthResult.NetworkError
+        } catch (e: Exception) {
+            AuthResult.NetworkError
+        }
+    }
 }

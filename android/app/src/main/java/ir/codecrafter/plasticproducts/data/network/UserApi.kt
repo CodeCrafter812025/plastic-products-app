@@ -31,4 +31,10 @@ interface UserApi {
     /** Admin-only, acts on the logged-in admin's own account — no path id. */
     @POST("users/set-admin-pin/")
     suspend fun setAdminPin(@Body body: SetAdminPinBody): Response<ApiEnvelope<SetAdminPinResponse>>
+
+    @retrofit2.http.GET("users/settings/")
+    suspend fun getSystemSettings(): retrofit2.Response<okhttp3.ResponseBody>
+
+    @retrofit2.http.PUT("users/settings/")
+    suspend fun updateSystemSettings(@retrofit2.http.Body body: Map<String, String>): retrofit2.Response<Unit>
 }

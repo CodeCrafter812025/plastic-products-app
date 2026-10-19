@@ -47,6 +47,7 @@ data class ProductListUiState(
     val filter: ProductFilter = ProductFilter(),
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
+    val supportPhone: String = "09120000000",
 )
 
 @OptIn(FlowPreview::class)
@@ -73,7 +74,10 @@ class ProductListViewModel @Inject constructor(
                 }
         }
         viewModelScope.launch {
-            reloadRequests.collectLatest { loadProducts() }
+            reloadRequests.collectLatest {
+                loadProducts()
+                loadSupportPhone()
+            }
         }
         reloadRequests.tryEmit(Unit)
     }
@@ -99,11 +103,24 @@ class ProductListViewModel @Inject constructor(
 
     fun retryLoad() {
         reloadRequests.tryEmit(Unit)
+        loadSupportPhone()
     }
 
     private fun updateFilter(transform: (ProductFilter) -> ProductFilter) {
         _uiState.update { it.copy(filter = transform(it.filter)) }
         reloadRequests.tryEmit(Unit)
+    }
+
+    private fun loadSupportPhone() {
+        viewModelScope.launch {
+            val repo = ir.codecrafter.plasticproducts.di.EntryPointAccess.getProfileRepository(context)
+            if (repo != null) {
+                val res = repo.getSystemSettings()
+                if (res is AuthResult.Success) {
+                    _uiState.update { it.copy(supportPhone = res.data) }
+                }
+            }
+        }
     }
 
     private suspend fun loadProducts() {
