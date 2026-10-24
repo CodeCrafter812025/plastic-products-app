@@ -47,7 +47,7 @@ android {
         debug {
             // Temporarily pointed at a physical device via `adb reverse` instead of
             // the emulator's 10.0.2.2 host alias.
-            buildConfigField("String", "BASE_URL", "\"http://127.0.0.1:8000/api/v1/\"")
+            buildConfigField("String", "BASE_URL", "\"https://fatehcenter.ir/api/v1/\"")
         }
         release {
             isMinifyEnabled = true
@@ -55,7 +55,7 @@ android {
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             signingConfig = signingConfigs.getByName("release")
             // TODO: placeholder until the production API domain is decided
-            buildConfigField("String", "BASE_URL", "\"https://api.plasticproducts.example.com/api/v1/\"")
+            buildConfigField("String", "BASE_URL", "\"https://fatehcenter.ir/api/v1/\"")
         }
     }
 
